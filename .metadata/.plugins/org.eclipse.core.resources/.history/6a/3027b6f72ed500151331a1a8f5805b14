@@ -1,0 +1,125 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 11-Feb-2016
+ * File Name : DBackFile.java
+ */
+package com.dilmus.scabi.common;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSBuckets;
+import com.mongodb.client.gridfs.GridFSDownloadStream;
+import com.mongodb.client.gridfs.GridFSUploadStream;
+import com.mongodb.client.gridfs.model.GridFSDownloadByNameOptions;
+import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DBackFile {
+
+	final static Logger log = LoggerFactory.getLogger(DBackTable.class);
+
+	private DBackDB m_ddb = null;
+	private MongoDatabase m_mongodb = null;
+    private GridFSBucket m_gridFSBucket = null;
+    private GridFSUploadOptions m_options = null;
+    private boolean m_firstTime = true;
+	private int m_chunkSize = 0; // Bytes
+	private int m_bufferSize = 0; // Bytes
+    
+	public DBackFile(DBackDB ddb) {
+		m_ddb = ddb;
+		m_mongodb = ddb.getDatabase();
+		m_firstTime = true;
+		m_chunkSize = 1024*1024;
+		m_bufferSize = 64*1024*1024;
+
+	}
+	
+	public int put(String fileName, String fullFilePath) throws IOException, DScabiException {
+		long time1;
+		long time2;
+		int n = 0;
+
+		if (m_firstTime) {
+			m_gridFSBucket = GridFSBuckets.create(m_mongodb);
+	
+	        // Create some custom options
+			m_options = new GridFSUploadOptions()
+	                .chunkSizeBytes(1024*1024)
+	                .metadata(new Document("type", "File"));
+			m_firstTime = false;
+		}
+		
+        // Get the input stream
+        time1 = System.currentTimeMillis();
+        InputStream streamToUpload = new FileInputStream(fullFilePath);
+
+        byte data[] = new byte[64*1024*1024];
+        GridFSUploadStream uploadStream = m_gridFSBucket.openUploadStream(fileName, m_options);
+
+        while ((n = streamToUpload.read(data)) > 0) {
+            uploadStream.write(data, 0, n);
+        }
+        uploadStream.close();
+        streamToUpload.close();
+        
+        time2 = System.currentTimeMillis();
+
+        log.debug("put() The fileId of the uploaded file is: " + uploadStream.getFileId().toHexString());
+        log.debug("put() Upload time taken : time2 - time1 : " + (time2 - time1));
+		
+		return 0;
+	}
+
+	public int get(String fileName, String fullFilePath) throws IOException, DScabiException {
+		long time1;
+		long time2;
+		int n = 0;
+
+		if (m_firstTime) {
+			m_gridFSBucket = GridFSBuckets.create(m_mongodb);
+	
+	        // Create some custom options
+			m_options = new GridFSUploadOptions()
+	                .chunkSizeBytes(1024*1024)
+	                .metadata(new Document("type", "File"));
+			m_firstTime = false;
+		}
+		
+        time1 = System.currentTimeMillis();
+        FileOutputStream streamToDownload = new FileOutputStream(fullFilePath);
+        GridFSDownloadByNameOptions downloadOptions = new GridFSDownloadByNameOptions().revision(-1);
+
+        GridFSDownloadStream downloadStream = m_gridFSBucket.openDownloadStreamByName(fileName, downloadOptions);
+        //long fileLength = downloadStream.getGridFSFile().getLength();
+        byte[] bytesToWriteTo = new byte[64*1024*1024];
+        
+        while ((n = downloadStream.read(bytesToWriteTo)) > 0) {
+        	streamToDownload.write(bytesToWriteTo, 0, n);
+        }
+        downloadStream.close();
+        streamToDownload.close();
+        
+        time2 = System.currentTimeMillis();
+        log.debug("get() Download time taken : time2 - time1 : " + (time2 - time1));
+		
+		return 0;
+	}
+
+	
+}

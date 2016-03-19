@@ -1,0 +1,163 @@
+package com.dilmus.test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.util.Asserts;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 27-Feb-2016
+ * File Name : Test2.java
+ */
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Test2 {
+	static Logger log;
+	public static void main(String args[]) {
+	       System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+	        System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+	        System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+	        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+	  		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+	  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+
+			final Logger log = LoggerFactory.getLogger(Test2.class);
+			Test2.log = log;
+			
+			try {
+				
+				throw new Exception();
+			} catch (Throwable e) {
+				
+				
+				
+				log.debug(e.toString());
+				//log.debug(" Cause : " + e.getCause().toString());
+				StackTraceElement stacka[] = e.getStackTrace();
+				for (StackTraceElement stack : stacka ) {
+					log.debug(" StackTrace : " + stack.toString());
+				}
+			}
+			
+			String a[] = new String[10];
+			a[0] = "hwedf";
+			a[6] = "wdeeg";
+			log.debug("a.toString() : {}", a.toString());
+			
+			
+			/*
+			List<Integer> list = new ArrayList<Integer>();
+			for (Integer i : list) {
+				
+				System.out.println(i);
+			}
+			System.out.println("ok");
+			try {
+					//Test2.execute();
+			} catch (Exception e) { e.printStackTrace(); }
+			*/
+	}
+	
+	public static void execute() throws ClientProtocolException, IOException, InterruptedException, ExecutionException {
+		/*
+        CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault();
+        try {
+            httpclient.start();
+            HttpGet request = new HttpGet("http://www.apache.org/");
+            Future<HttpResponse> future = httpclient.execute(request, null);
+            HttpResponse response = future.get();
+            System.out.println("Response: " + response.getStatusLine());
+            System.out.println("Shutting down");
+        } finally {
+            httpclient.close();
+        }
+        System.out.println("Done");
+		*/
+		
+		/*
+		try (CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault()) {
+		    httpclient.start();
+		    HttpPost request = new HttpPost(addr);
+		    StringEntity entity = new StringEntity(event, ContentType.create("application/json", Consts.UTF_8));
+		    request.setEntity(entity);
+		    httpclient.execute(request, null);
+		} catch (Exception e) {
+		    LOG.error("Failed to sending event", e);
+		}
+		*/
+		//Asserts a;
+        CloseableHttpAsyncClient m_httpClient = HttpAsyncClients.createDefault();
+       
+        m_httpClient.start();
+
+        HttpHost m_target = new HttpHost("localhost", 4568, "http");
+		//HttpPost postRequest = new HttpPost("http://localhost:4568/hello");
+		HttpPost postRequest = new HttpPost("/");
+		
+	    StringEntity params = new StringEntity("");
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("execute() executing request to " + m_target);
+
+		//HttpAsyncRequestConsumer<HttpRequest> gh;
+		
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		Future<HttpResponse> future = m_httpClient.execute(m_target, postRequest, null);
+		//Future<HttpResponse> future = m_httpClient.execute(postRequest, null);
+        //HttpResponse httpResponse = future.get();
+		while(future.isDone() == false) {
+			log.debug("Inside while");
+		}
+        HttpResponse httpResponse = null;
+		try {
+			httpResponse = future.get(100, TimeUnit.NANOSECONDS);
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("execute()----------------------------------------");
+		log.debug("execute() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("execute() {}", headers[i]);
+		}
+		log.debug("execute()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("execute() {}", jsonString);
+		}
+
+	}
+
+}

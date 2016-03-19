@@ -1,0 +1,109 @@
+
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.dilmus.dilshad.scabi.client.DComputeUnit;
+import com.dilmus.dilshad.scabi.client.Dson;
+
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 06-Mar-2016
+ * File Name : MyPrimeCheckUnit.java
+ */
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class MyPrimeCheckUnit extends DComputeUnit {
+
+	public BigInteger sqrt(BigInteger x) {
+    	
+        BigInteger div = BigInteger.ZERO.setBit(x.bitLength()/2);
+        BigInteger div2 = div;
+
+        for(;;) {
+            BigInteger y = div.add(x.divide(div)).shiftRight(1);
+            if (y.equals(div) || y.equals(div2))
+                return y;
+            div2 = div;
+            div = y;
+        }
+    }
+    
+	public String compute(Dson jsonInput) {
+    	long time1 = System.currentTimeMillis();
+
+		int totalunits = jsonInput.getTU();
+		int thisunit = jsonInput.getCU();
+		Dson dson = null;
+		String inputNumber = null;
+		
+		System.out.println("totalunits : " + totalunits);
+		System.out.println("thisunit : " + thisunit);
+		
+		try {
+			dson = jsonInput.getInput();
+			inputNumber = dson.getString("NumberToCheck");
+		} catch (Exception e) {
+			return e.toString();
+		}
+		
+		System.out.println("dson : " + dson);
+		System.out.println("inputNumber : " + inputNumber);
+    	
+		BigInteger input = new BigInteger(inputNumber);
+			
+		BigInteger two =new BigInteger("2");
+		BigInteger sqr;
+		BigInteger i;
+
+    	// chunk = sqrt(N) / TU
+    	// (CU - 1) * chunk + 1 to CU * chunk
+
+		sqr = new BigInteger(sqrt(input).toString());
+    	//log.debug("sqrt of input {} is : {}", input.toString(), sqr.toString());
+    	System.out.println("sqrt of input " + input.toString() + " is " + sqr.toString());
+		if (input.remainder(two) == BigInteger.ZERO)
+			return "false";
+		i = new BigInteger("3");
+
+		BigInteger chunk = sqr.divide(new BigInteger("" + totalunits));
+		BigInteger start = new BigInteger("" + thisunit);
+		start = start.subtract(BigInteger.ONE);
+		start = start.multiply(chunk);
+		start = start.add(BigInteger.ONE);
+		
+		// if one, start from 3
+		if (start.compareTo(BigInteger.ONE) == 0)
+			start = i;
+		// make it odd number
+		if (start.remainder(two) == BigInteger.ZERO)
+			start = start.add(BigInteger.ONE);
+		
+		BigInteger stop = new BigInteger("" + thisunit);
+		stop = stop.multiply(chunk);
+		
+		i = start;
+		while (true) {
+			//log.debug("i is now : {}", i.toString());
+			if (i.compareTo(stop) > 0)
+				break;
+			if (input.remainder(i) == BigInteger.ZERO)
+				return "false";
+			i = i.add(two);
+			
+		}
+    	long time2 = System.currentTimeMillis();
+    	System.out.println("Time taken : " + (time2 - time1)); 
+
+		return "true";			
+	}
+
+
+}

@@ -1,0 +1,91 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 26-Jan-2016
+ * File Name : ComputeMeta.java
+ */
+package com.dilmus.scabi.common;
+
+import java.io.IOException;
+import java.util.Date;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.WriteConcern;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DComputeMeta {
+
+	private DB db;
+	private DBCollection table;
+	private String fullHostName;
+	private String port;
+	private BasicDBObject document;
+	
+	public DComputeMeta(DB db, String fullHostName, String port) {
+		this.db = db;
+		this.table = db.getCollection("ComputeMetaDataTable");
+		this.fullHostName = fullHostName;
+		this.port = port;
+    	
+		// create a document to store key and value
+    	document = new BasicDBObject();
+    	document.put("ComputeHost", fullHostName);
+    	document.put("ComputePort", port);
+	}
+	
+	public DComputeMeta(DB db, String jsonString) throws IOException {
+		this.db = db;
+		this.table = db.getCollection("ComputeMetaDataTable");
+		DJson djson = new DJson(jsonString);
+		this.fullHostName = djson.getString("ComputeHost");
+		this.port = djson.getString("ComputePort");
+    	
+		// create a document to store key and value
+    	document = new BasicDBObject();
+    	document.put("ComputeHost", fullHostName);
+    	document.put("ComputePort", port);
+	}
+	
+	public int updateStatus(String status) throws DScabiException {
+		int n = 0;
+    	
+    	DBCursor cursorExist = table.find(document);
+    	n = cursorExist.count();
+    	if (1 == n) {
+			System.out.println("Inside 1 == n");
+			System.out.println("Inside 1 == n updating");
+   			// Update
+    	    BasicDBObject newDocument = new BasicDBObject();
+    	   	newDocument.put("Status", status); // Available, Inuse, Hold, Blocked
+
+    	   	BasicDBObject updateObj = new BasicDBObject();
+    	   	updateObj.put("$set", newDocument);
+
+    	   	table.update(document, updateObj);
+    	}  else if (0 == n) {
+			throw new DScabiException("No matches found for ComputeHost, ComputePort", "CMA.USS.1");
+    	} else {
+			System.out.println("Multiple matches found");
+			throw new DScabiException("Multiple matches found for ComputeHost, ComputePort", "CMA.USS.2");
+    	}
+    	return 0;
+	}
+	
+	public int remove() throws DScabiException {
+		table.remove(document, WriteConcern.SAFE);
+		return 0;
+	}
+	
+	@Override
+	public String toString() {
+		return DJsonString.computeHostPort(fullHostName, port);
+	}
+}

@@ -1,0 +1,451 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Jan-2016
+ * File Name : MNSMain.java
+ */
+
+package com.dilmus.dilshad.scabi.ms;
+
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import com.dilmus.dilshad.scabi.common.DDB;
+import com.dilmus.dilshad.scabi.common.DMJson;
+
+import com.dilmus.dilshad.scabi.common.DMNamespace;
+import com.dilmus.dilshad.scabi.common.DMNamespaceHelper;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.common.DTable;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
+import com.dilmus.dilshad.scabi.common.DMUtil;
+
+import java.io.IOException;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+
+@Path("/")
+public class MetaServer extends Application {
+
+	private static Logger log = null;
+	
+	private static DDB m_ddb = null;
+	private static DMComputeServerHelper m_cmh = null;
+	private static DMNamespaceHelper m_dnh = null;
+	private static boolean m_firstTime = true;
+	private Set<Class<?>> st = new HashSet<Class<?>>();
+	private static Integer m_syncObj = new Integer(0);
+	
+	public MetaServer() throws DScabiException {
+		//classesSet.add(ApplicationCommandResource.class);
+		st.add(MetaServer.class);
+		
+	}
+	 
+	public Set<Class<?>> getClasses() {
+		return st;
+	}
+	
+	public static int initialize() throws DScabiException {
+	   	synchronized(m_syncObj) {
+	   		if (m_firstTime) {
+				//m_ddb = new DDB("localhost", "27017", "MetaDB");
+			   	m_cmh = new DMComputeServerHelper(m_ddb);
+			   	m_dnh = new DMNamespaceHelper(m_ddb);
+			   	m_firstTime = false;
+			   	log.debug("initialize() called");
+	   		}
+		}
+		return 0;
+	}
+	
+   @GET
+   @Path("/")
+   public String get() { return "hello world from MetaServer"; }
+
+   /* Not used
+   @POST
+   @Path("/Meta/Compute/Alloc")
+   public String computeAlloc(String request) throws DScabiException {
+	   	DMComputeMeta cm;
+	   	synchronized(m_cmh) {
+	   		// cm = m_cmh.alloc(); // findOne() is not there
+	   		// cm.updateStatus("Inuse");
+	   		// this status update request should come from Compute server only
+	   	}
+	   	return cm.toString();
+   
+   }
+	*/
+   
+   @POST
+   @Path("/Meta/Compute/Register")
+   public String computeRegister(String request) throws DScabiException, IOException {
+	   log.debug("request : {}", request);
+	   try {
+		   synchronized(m_cmh) {
+			   m_cmh.checkIfRunningAndRemove();
+			   DMJson djson = new DMJson(request);
+			   m_cmh.register(djson.getString("ComputeHost"), djson.getString("ComputePort"));
+		   }
+	   } catch (Error | RuntimeException e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Exception e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Throwable e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   }
+   
+	   return DMJson.ok();
+   
+   }
+
+   @POST
+   @Path("/Meta/isRunning")
+   public String isRunning(String request) throws DScabiException {
+	   	return DMJson.ok();
+   
+   }
+
+   @POST
+   @Path("/Meta/Compute/GetMany")
+   public String getComputeMany(String request) throws DScabiException {
+	   	//DMComputeServer cma[];
+	   	List<DMComputeServer> cma = null;
+	   	DMJson djson = null;
+	   	DMJson djsonResponse = null;
+	   	int howMany = 0;
+	   	try {
+	   		djson = new DMJson(request);
+	   		howMany = Integer.parseInt(djson.getString("GetComputeMany"));
+	   	
+		   	synchronized(m_cmh) {
+		   		cma = m_cmh.getMany(howMany);
+		   		// status update request for each Compute Server should come from Compute server only
+		   	}
+		   	djsonResponse = new DMJson("Count", "" + cma.size());
+		   	int k = 1;
+		   	for (DMComputeServer cm : cma) {
+		   		log.debug("cm.toString() : {}", cm.toString());
+		   		djsonResponse = djsonResponse.add("" + k, cm.toString());
+		   		k++;
+		   	}
+	   	} catch (Error | RuntimeException e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+		} catch (Exception e) {
+			return DMJson.error(DMUtil.serverErrMsg(e));
+		} catch (Throwable e) {
+			return DMJson.error(DMUtil.serverErrMsg(e));
+		}
+	   	log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
+	   	return djsonResponse.toString();
+   
+   }
+
+   @POST
+   @Path("/Meta/Compute/GetManyMayExclude")
+   public String getComputeManyMayExclude(String request) throws DScabiException {
+	   	//DMComputeServer cma[];
+	   	List<DMComputeServer> cma = null;
+	   	DMJson djson = null;
+	   	DMJson djsonResponse = null;
+	   	int howMany = 0;
+	   	String jsonStrExclude = null;
+	   	try {
+	   		djson = new DMJson(request);
+	   		howMany = Integer.parseInt(djson.getString("GetComputeMany"));
+	   		jsonStrExclude = djson.getString("ComputeExclude");
+		   	synchronized(m_cmh) {
+		   		cma = m_cmh.getManyMayExclude(howMany, jsonStrExclude);
+		   		// status update request for each Compute Server should come from Compute server only
+		   	}
+		   	djsonResponse = new DMJson("Count", "" + cma.size());
+		   	int k = 1;
+		   	for (DMComputeServer cm : cma) {
+		   		log.debug("cm.toString() : {}", cm.toString());
+		   		djsonResponse = djsonResponse.add("" + k, cm.toString());
+		   		k++;
+		   	}
+	   	} catch (Error | RuntimeException e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+		} catch (Exception e) {
+			return DMJson.error(DMUtil.serverErrMsg(e));
+		} catch (Throwable e) {
+			return DMJson.error(DMUtil.serverErrMsg(e));
+		}
+	   	log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
+	   	return djsonResponse.toString();
+   
+   }
+   
+   @POST
+   @Path("/Meta/Namespace/Register")
+   public String namespaceRegister(String request) throws DScabiException, IOException {
+	   log.debug("request : {}", request);
+	   try {
+		   synchronized(m_dnh) {
+			   DMJson dmjson = new DMJson(request);
+			   String uuid = m_dnh.register(dmjson);
+			   return DMJson.result(uuid);
+		   }
+	   } catch (Error | RuntimeException e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Exception e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Throwable e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   }
+   
+   }
+
+   @POST
+   @Path("/Meta/Namespace/isExist")
+   public String namespaceExists(String request) throws DScabiException, IOException {
+	   log.debug("request : {}", request);
+	   try {
+	   		log.debug("namespaceExists() request : {}", request);
+	   		DMJson djson = new DMJson(request);
+	   		synchronized(m_dnh) {
+	   			boolean isExist = m_dnh.namespaceExists(djson.getString("Namespace"));
+	   			log.debug("isExist : {}", isExist);
+	   			if (isExist)
+	   				return DMJson.asTrue();
+	   			else
+	   				return DMJson.asFalse();
+	   		}
+	   } catch (Error | RuntimeException e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Exception e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   } catch (Throwable e) {
+		   return DMJson.error(DMUtil.serverErrMsg(e));
+	   }
+   
+   }
+
+   @POST
+   @Path("/Meta/Namespace/FindOne")
+   public String findOneNamespace(String request) throws DScabiException {
+	   	DMNamespace dname;
+	   	
+	   	try {
+	   		DMJson djson = new DMJson(request);
+	   		synchronized(m_dnh) {
+	   			dname = m_dnh.findOneNamespace(djson.getString("Type"));
+	   		}
+	   	} catch (Error | RuntimeException e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Exception e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Throwable e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	}
+	   	
+	   	return dname.toString();
+   
+   }
+
+   @POST
+   @Path("/Meta/Namespace/Get")
+   public String getNamespace(String request) throws DScabiException {
+	   	DMNamespace dname;
+	   	try {
+	   		log.debug("getNamespace() request : {}", request);
+	   		DMJson djson = new DMJson(request);
+	   		synchronized(m_dnh) {
+	   			dname = m_dnh.getNamespace(djson.getString("Namespace"));
+	   		}
+	   	} catch (Error | RuntimeException e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Exception e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Throwable e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	}
+	   		
+	   	return dname.toString();
+   
+   }
+   
+   
+   @POST
+   @Path("/Meta/Namespace/GetByQuery")
+   public String getNamespaceByQuery(String request) throws DScabiException {
+	   	DMNamespace dname;
+	   	try {
+	   		log.debug("getNamespace() request : {}", request);
+	   		DMJson djson = new DMJson(request);
+	   		synchronized(m_dnh) {
+	   			dname = m_dnh.getNamespaceByJsonStrQuery(djson.getString("Namespace"), djson.getString("Type"));
+	   		}
+	   	} catch (Error | RuntimeException e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Exception e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	} catch (Throwable e) {
+	   		return DMJson.error(DMUtil.serverErrMsg(e));
+	   	}
+	   	
+	   	return dname.toString();
+   
+   }
+
+   
+   public static void main(String[] args) throws Exception 
+   {
+	   int port = 5000;
+	   String dbHost = "localhost";
+	   String dbPort = "27017";
+	   boolean debug = false;
+	   
+	   if (4 == args.length) {
+		   port = Integer.parseInt(args[0]);
+		   dbHost = args[1];
+		   dbPort = args[2];
+		   System.out.println("Port : " + port);
+		   System.out.println("dbHost : " + dbHost);
+		   System.out.println("dbPort : " + dbPort);
+		   if (args[3].equalsIgnoreCase("debug"))
+			   debug = true;
+		   else {
+			   System.out.println("Unrecognized commandline argument. Exiting.");
+			   System.out.println("Usage : <MetaServer_Port> <MetaServer_HostName> <MetaServer_Port> [debug]");
+			   System.out.println("Usage : <MetaServer_Port> [debug]");
+			   System.out.println("Usage : <No arguments> to use default settings");
+			   return;
+		   }
+	   } else if (3 == args.length) {
+		   port = Integer.parseInt(args[0]);
+		   dbHost = args[1];
+		   dbPort = args[2];
+		   System.out.println("Port : " + port);
+		   System.out.println("dbHost : " + dbHost);
+		   System.out.println("dbPort : " + dbPort);
+	   } else if (2 == args.length) {
+		   port = Integer.parseInt(args[0]);
+		   System.out.println("Port : " + port);
+		   if (args[1].equalsIgnoreCase("debug"))
+			   debug = true;
+		   else {
+			   System.out.println("Unrecognized commandline argument. Exiting.");
+			   System.out.println("Usage : <MetaServer_Port> [debug]");
+			   System.out.println("Usage : <MetaServer_Port> <MetaServer_HostName> <MetaServer_Port> [debug]");
+			   System.out.println("Usage : <No arguments> to use default settings");
+			   return;
+		   }
+	   } else if (1 == args.length) {
+		   port = Integer.parseInt(args[0]);
+		   System.out.println("Port : " + port);
+	   }
+	   
+       System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+       System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+       System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+       System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+       System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+       System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+       //System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
+   	   //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+       final Logger log = LoggerFactory.getLogger(MetaServer.class);
+       MetaServer.log = log;
+
+       createDatabasesIfAbsent("localhost", "27017");
+       m_ddb = new DDB("localhost", "27017", "MetaDB");
+       createTablesIfAbsent();
+       populateDataIfAbsent();
+       initialize();
+       m_cmh.removeAll();
+       
+       ServletHolder sh = new ServletHolder(HttpServletDispatcher.class);
+       sh.setInitParameter("javax.ws.rs.Application", MetaServer.class.getCanonicalName()); 
+       Server server = new Server(5000);
+       ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+       context.setContextPath("/");
+       server.setHandler(context);
+       context.addServlet(sh, "/*");
+       server.start();
+
+       log.debug("MetaServer started");
+       
+       
+   }
+	
+  private static int createDatabasesIfAbsent(String dbHost, String dbPort) throws DScabiException {
+	   
+	  MongoClient mongo = new MongoClient(dbHost, Integer.parseInt(dbPort));
+	  MongoDatabase mongodb = mongo.getDatabase("MetaDB");	
+	  MongoDatabase mongodb2 = mongo.getDatabase("AppTableDB");
+	  MongoDatabase mongodb3 = mongo.getDatabase("JavaFileDB");
+	  MongoDatabase mongodb4 = mongo.getDatabase("FileDB");
+	  log.debug("mongodb.getName() : {}", mongodb.getName());
+	  log.debug("mongodb2.getName() : {}", mongodb2.getName());
+	  log.debug("mongodb3.getName() : {}", mongodb3.getName());
+	  log.debug("mongodb4.getName() : {}", mongodb4.getName());
+
+	  mongo.close();
+	  return 0;
+   }
+  
+   private static int createTablesIfAbsent() throws DScabiException {
+	   
+	   if (false == m_ddb.tableExists("ComputeMetaDataTable")) {
+		   m_ddb.createTable("ComputeMetaDataTable");
+	   }
+	   if (false == m_ddb.tableExists("NamespaceTable")) {
+		   m_ddb.createTable("NamespaceTable");
+	   }
+   
+	   return 0;
+   }
+   
+   private static int populateDataIfAbsent() throws DScabiException, IOException {
+		DTable t = m_ddb.getTable("NamespaceTable");
+		if (t.count() != 0)
+			return 0;
+
+		String uuid1 = UUID.randomUUID().toString();
+		String uuid2 = UUID.randomUUID().toString();
+		String uuid3 = UUID.randomUUID().toString();
+		String uuid4 = UUID.randomUUID().toString();
+		String uuid5 = UUID.randomUUID().toString();
+		Date d= new Date();
+		String sdate = d.toString();
+		String jsonRow1 = "{ \"Namespace\" : \"MyOrg.Meta1\", \"Type\" : \"MetaThis\", \"Host\" : \"localhost\", \"Port\" : \"4567\", \"UserID\" : \"test\", \"Pwd\" : \"hello\", \"SystemSpecificName\" : \"MetaServer\", \"SystemType\" : \"MetaServer\", \"SystemUUID\" : \"" + uuid1 + "\", \"RegisteredDate\" : \"" + sdate + "\", \"Status\" : \"Available\", \"StatusDate\" : \"" + sdate + "\" }";
+		String jsonRow2 = "{ \"Namespace\" : \"MyOrg.Meta2\", \"Type\" : \"MetaRemote\", \"Host\" : \"localhost\", \"Port\" : \"4567\", \"UserID\" : \"test\", \"Pwd\" : \"hello\", \"SystemSpecificName\" : \"MetaServer\",  \"SystemType\" : \"MetaServer\", \"SystemUUID\" : \"" + uuid2 + "\", \"RegisteredDate\" : \"" + sdate + "\", \"Status\" : \"Available\", \"StatusDate\" : \"" + sdate + "\" }";
+		String jsonRow3 = "{ \"Namespace\" : \"MyOrg.MyTables\", \"Type\" : \"AppTable\", \"Host\" : \"localhost\", \"Port\" : \"27017\", \"UserID\" : \"test\", \"Pwd\" : \"hello\", \"SystemSpecificName\" : \"AppTableDB\", \"SystemType\" : \"MongoDB\", \"SystemUUID\" : \"" + uuid3 + "\", \"RegisteredDate\" : \"" + sdate + "\", \"Status\" : \"Available\", \"StatusDate\" : \"" + sdate + "\" }";
+		String jsonRow4 = "{ \"Namespace\" : \"MyOrg.MyJavaFiles\", \"Type\" : \"JavaFile\", \"Host\" : \"localhost\", \"Port\" : \"27017\", \"UserID\" : \"test\", \"Pwd\" : \"hello\", \"SystemSpecificName\" : \"JavaFileDB\", \"SystemType\" : \"MongoDB\", \"SystemUUID\" : \"" + uuid4 + "\", \"RegisteredDate\" : \"" + sdate + "\", \"Status\" : \"Available\", \"StatusDate\" : \"" + sdate + "\" }";
+		String jsonRow5 = "{ \"Namespace\" : \"MyOrg.MyFiles\", \"Type\" : \"File\", \"Host\" : \"localhost\", \"Port\" : \"27017\", \"UserID\" : \"test\", \"Pwd\" : \"hello\", \"SystemSpecificName\" : \"FileDB\",  \"SystemType\" : \"MongoDB\", \"SystemUUID\" : \"" + uuid5 + "\", \"RegisteredDate\" : \"" + sdate + "\", \"Status\" : \"Available\", \"StatusDate\" : \"" + sdate + "\" }";
+				
+		String jsonCheck = "{ \"Namespace\" : \"1\" }";
+		
+		t.insertRow(jsonRow1, jsonCheck);
+		t.insertRow(jsonRow2, jsonCheck);
+		t.insertRow(jsonRow3, jsonCheck);
+		t.insertRow(jsonRow4, jsonCheck);
+		t.insertRow(jsonRow5, jsonCheck);
+	   
+	   return 0;
+   }
+}

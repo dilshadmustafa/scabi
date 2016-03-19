@@ -1,0 +1,88 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 28-Feb-2016
+ * File Name : DThreadPoolExecutor.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DThreadPoolExecutor extends ThreadPoolExecutor {
+
+	private Compute m_compute = null;
+		
+	public DThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime,
+		      					TimeUnit unit, BlockingQueue<Runnable> workQueue, Compute compute) {
+		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+		m_compute = compute;
+		
+	}
+		 	 
+	protected void afterExecute(Runnable r, Throwable t) {
+		  super.afterExecute(r, t);
+		  
+		  if (t == null && r instanceof Future<?>) {
+			  Future<?> future = (Future<?>) r;
+			  try {
+				  if (future.isDone()) {
+		            future.get();
+		          }
+			  } catch (CancellationException ce) {
+				  //t = ce;
+				  ComputeRun crun = m_compute.getFutureCRunMap(future);
+				  if (crun != null) {
+					  crun.setExecutionError(ce.toString());
+				  }
+			  } catch (ExecutionException ee) {
+				  //t = ee.getCause();
+				  ComputeRun crun = m_compute.getFutureCRunMap(future);
+				  if (crun != null) {
+					  crun.setExecutionError(ee.toString());
+				  }
+			  } catch (InterruptedException ie) {
+				  ComputeRun crun = m_compute.getFutureCRunMap(future);
+				  if (crun != null) {
+					  crun.setExecutionError(ie.toString());
+				  }
+				  Thread.currentThread().interrupt(); // ignore/reset
+			  }
+		  }
+		  if (t != null && r instanceof Future<?>) {
+			  //System.out.println(t);
+			  Future<?> future = (Future<?>) r;
+			  ComputeRun crun = m_compute.getFutureCRunMap(future);
+			  if (crun != null) {
+				  crun.setExecutionError(t.toString());
+			  }
+
+		  }
+		      
+		      /*
+			    super.afterExecute(r, t);
+			    if (t != null) {
+			      // Exception occurred, forward to handler
+			    }
+			    // ... Perform task-specific cleanup actions
+			*/
+		  }
+		  @Override
+		  public void terminated() {
+		    super.terminated();
+		    // ... Perform final clean-up actions
+		  }
+		  
+}

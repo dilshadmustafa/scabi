@@ -1,0 +1,622 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Jan-2016
+ * File Name : ScabiClient.java
+ */
+
+package com.dilmus.clientapp;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
+
+import org.apache.http.*;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.dilshad.scabi.client.Computable;
+import com.dilmus.dilshad.scabi.client.Compute;
+import com.dilmus.dilshad.scabi.client.ComputeSync;
+import com.dilmus.dilshad.scabi.client.ComputeUnit;
+import com.dilmus.dilshad.scabi.client.Dson;
+import com.dilmus.dilshad.scabi.client.Meta;
+import com.dilmus.dilshad.scabi.client.ScabiClientException;
+import com.dilmus.dilshad.scabi.common.DClassLoader;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.common.DUtil;
+
+import java.math.*;
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+
+
+public class ScabiClient {
+
+	
+    public static void main(String[] args) throws IOException, ParseException, ScabiClientException, DScabiException, java.text.ParseException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
+        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+        System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+        System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+  		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+  		//System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
+    	//System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+  		final Logger log = LoggerFactory.getLogger(ScabiClient.class);
+
+    	System.out.println("ScabiClient");
+        //test2();
+    	Meta meta = new Meta("localhost", "4567");
+        //meta.validate();
+        //ComputeSync c = meta.computeAlloc();
+        //log.debug("Compute is {}", c);
+        
+        //Compute c2 = new Compute(meta);
+        //log.debug("Compute is {}", c2);
+        
+        //Compute c3 = new Compute("{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4568\" }");
+        //log.debug("Compute is {}", c3);
+        
+  		// works
+        /*
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = \"{ \\\"Status\\\":\\\"Available\\\" }\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+         */
+        //works
+        /*
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = json.json(\"{ <<<Status>>> : <<<Available>>> }\");" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+        */
+        /* works
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(@ComputeMetaDataTable@);" +
+				"String jsonQuery = @{ @@Status@@ : @@Available@@ }@;" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+        */
+        //works
+        /*
+        String action ="dao = database.createDAO();" +
+					 	"dao.setTableName(@ComputeMetaDataTable@);" +
+					 	"jsonQuery = @{ @@Status@@ : @@Available@@ }@;" +
+					 	"jsonResult = dao.executeQuery(jsonQuery);" +
+					 	"return jsonResult;";
+        
+        c.executeCode(action);
+        c.executeClass(CU.class);
+        */
+    	/*
+    	ComputeUnit cu = new ComputeUnit() {
+			int x = 0;
+			
+    		public String compute(Dson jsonInput) {
+    			newX();
+    			x = x + 3;
+    			return "compute() from ComputeUnit from CNS " + x;			
+    		}
+    		
+    		private int newX() {
+    			x = x + 5;
+    			return x;
+    		}
+    	
+    	};
+    	c.executeObject(cu);
+    	 */
+    	ComputeUnit cu2 = new ComputeUnit() {
+    		public List<Long> primes;
+    		private boolean sieve[];
+
+    		public void primeSieve(long max)
+    		{
+    	        primes = new ArrayList<Long>(); // Must include at least 2, 3.
+    	        primes.add(2L);
+    	        primes.add(3L);
+    	        sieve = new boolean[(int)max + 1];
+    	        for (Long p1  : primes) {
+    	            long p = p1.longValue();
+    	            
+    	        	for (long i = p * p; i < sieve.length; i += p) 
+    	        		sieve[(int)i] = true;
+    	        
+    	        }
+    	     }
+
+    	    public boolean extend()
+    	    {
+    	        long p = primes.get(primes.size() - 1) + 2;
+    	        while (sieve[(int)p]) { 
+    	        	p += 2;
+    	        	if (p >= sieve.length) {
+    	        		log.debug("sieve array index will exceed for p : {}", p);
+    	        		return false;
+    	        	}
+    	        }
+    	        for (long i = p * p; i < sieve.length; i += p) 
+    	        	sieve[(int)i] = true;
+    	        primes.add(p);
+    	        return true;
+    	    }
+    	    /*
+    		public String compute(Dson jsonInput) {
+    			int totalunits = jsonInput.getTU();
+    			int thisunit = jsonInput.getSU();
+    			long p;
+    			primeSieve(250000000L);
+    			// while ((p = extend()) < 1000000L) ;
+    			while(extend()) ;
+    			p = primes.get(primes.size() - 1);
+    			return "" + p;			
+    		}
+    		*/
+    	    /*
+    	    public String compute(Dson jsonInput) {
+    			int totalunits = jsonInput.getTU();
+    			int thisunit = jsonInput.getSU();
+    			long sqr;
+    			long i;
+    			// takes 80 sec for 19 digits
+    			long input = 9182237390125665823L; // 270000000L
+    			
+    			sqr = (long)Math.sqrt((double)input);
+    			
+    			if (input % 2L == 0)
+    				return "false";
+    			
+    			for (i = 3; i <= sqr; i++ ) {
+        			if (input % i == 0)
+        				return "false";
+    			}
+    			
+    			return "true";			
+    		}
+    		*/
+    	    public BigInteger sqrt(BigInteger x) {
+    	        BigInteger div = BigInteger.ZERO.setBit(x.bitLength()/2);
+    	        BigInteger div2 = div;
+    	        // Loop until we hit the same value twice in a row, or wind
+    	        // up alternating.
+    	        for(;;) {
+    	            BigInteger y = div.add(x.divide(div)).shiftRight(1);
+    	            if (y.equals(div) || y.equals(div2))
+    	                return y;
+    	            div2 = div;
+    	            div = y;
+    	        }
+    	    }
+    	    /*
+    	    public BigInteger sqrt(BigInteger n) {
+    	    	  BigInteger a = BigInteger.ONE;
+    	    	  BigInteger b = new BigInteger(n.shiftRight(5).add(new BigInteger("8")).toString());
+    	    	  while(b.compareTo(a) >= 0) {
+    	    	    BigInteger mid = new BigInteger(a.add(b).shiftRight(1).toString());
+    	    	    if(mid.multiply(mid).compareTo(n) > 0) b = mid.subtract(BigInteger.ONE);
+    	    	    else a = mid.add(BigInteger.ONE);
+    	    	  }
+    	    	  return a.subtract(BigInteger.ONE);
+    	    }
+    	    */
+    	    
+    		public String compute2(Dson jsonInput) {
+    			int totalunits = jsonInput.getTU();
+    			int thisunit = jsonInput.getSU();
+    			Dson dson2 = null;
+    			try {
+    				dson2 = jsonInput.getInput();
+    			} catch (Exception e) {
+    				Dson.error(e.toString());
+    			}
+    			
+    			System.out.println("totalunits : " + totalunits);
+    			System.out.println("thisunit : " + thisunit);
+    			System.out.println("dson2 : " + dson2);
+    			
+    	    	String sqr1 = sqrt(new BigInteger("4")).toString();
+    	    	//log.debug("sqrt 4 : {}", sqr1);
+    	    	System.out.println("sqrt 4 : " + sqr1);
+    	    	String sqr2 = sqrt(new BigInteger("9")).toString();
+    	    	//log.debug("sqrt 9 : {}", sqr2);
+    	    	System.out.println("sqrt 9 : " + sqr2);
+    	    	String sqr3 = sqrt(new BigInteger("256")).toString();
+    	    	//log.debug("sqrt 256 : {}", sqr3);
+    	    	System.out.println("sqrt 256 : " + sqr3);
+    	    	
+    			// 15 digits, Time taken : 3272, 3 sec
+    			BigInteger input = new BigInteger("993960000099397");
+    			
+    			// 19 digits, Time taken : 294212, 5 min
+    			//BigInteger input = new BigInteger("9182237390125665823"); // "5915587277", 270000000L
+    			
+    			// 30 digits, hours???
+    			//BigInteger input = new BigInteger("671998030559713968361666935769");
+    			
+    			// 20 digits, Time taken : 1493298, 25 min
+    	    	// 20 digits, Time taken : 1572848, 27 min
+    			//BigInteger input = new BigInteger("71755440315342536873");
+    			
+    			// 20 digits, Time taken : 352399, 6 min
+    	    	// 20 digits, Time taken : 356107, 6 min
+    			//BigInteger input = new BigInteger("12764787846358441471");
+    					
+    			BigInteger two =new BigInteger("2");
+    			BigInteger sqr;
+    			BigInteger i;
+    			
+    			sqr = new BigInteger(sqrt(input).toString());
+    	    	//log.debug("sqrt of input {} is : {}", input.toString(), sqr.toString());
+    	    	System.out.println("sqrt of input " + input.toString() + " is " + sqr.toString());
+    			if (input.remainder(two) == BigInteger.ZERO)
+    				return "false";
+    			i = new BigInteger("3");
+    			while (true) {
+    				//log.debug("i is now : {}", i.toString());
+    				if (i.compareTo(sqr) >= 0)
+    					break;
+    				if (input.remainder(i) == BigInteger.ZERO)
+        				return "false";
+    				i = i.add(two);
+    				
+    			}
+    			return "true";			
+    		}
+    	
+    		public String compute(Dson jsonInput) {
+    	    	long time1 = System.currentTimeMillis();
+
+    			int totalunits = jsonInput.getTU();
+    			int thisunit = jsonInput.getSU();
+    			Dson dson2 = null;
+    			try {
+    				dson2 = jsonInput.getInput();
+    			} catch (Exception e) {
+    				Dson.error(e.toString());
+    			}
+    			
+    			System.out.println("totalunits : " + totalunits);
+    			System.out.println("thisunit : " + thisunit);
+    			System.out.println("dson2 : " + dson2);
+    	    	
+    			// 15 digits, Time taken : 3272, 3 sec
+    			// 25 Compute Units, 630 millisec
+    			// 15 CU, 2784 millisec, 2608 millisec
+    			BigInteger input = new BigInteger("993960000099397");
+    			
+    			// 19 digits, Time taken : 294212, 5 min
+    			//BigInteger input = new BigInteger("9182237390125665823"); // "5915587277", 270000000L
+    			
+    			// 30 digits, hours???
+    			//BigInteger input = new BigInteger("671998030559713968361666935769");
+    			
+    			// 20 digits, Time taken : 1493298, 25 min
+    	    	// 20 digits, Time taken : 1572848, 27 min
+    			//BigInteger input = new BigInteger("71755440315342536873");
+    			
+    			// 20 digits, Time taken : 352399, 6 min
+    	    	// 20 digits, Time taken : 356107, 6 min
+    			//BigInteger input = new BigInteger("12764787846358441471");
+    					
+    			BigInteger two =new BigInteger("2");
+    			BigInteger sqr;
+    			BigInteger i;
+
+    	    	// chunk = sqrt / TU
+    	    	// (SU - 1) * chunk + 1 to SU * chunk
+
+    			sqr = new BigInteger(sqrt(input).toString());
+    	    	//log.debug("sqrt of input {} is : {}", input.toString(), sqr.toString());
+    	    	System.out.println("sqrt of input " + input.toString() + " is " + sqr.toString());
+    			if (input.remainder(two) == BigInteger.ZERO)
+    				return "false";
+    			i = new BigInteger("3");
+
+    			BigInteger chunk = sqr.divide(new BigInteger("" + totalunits));
+    			BigInteger start = new BigInteger("" + thisunit);
+    			start = start.subtract(BigInteger.ONE);
+    			start = start.multiply(chunk);
+    			start = start.add(BigInteger.ONE);
+    			
+    			// if one, start from 3
+    			if (start.compareTo(BigInteger.ONE) == 0)
+    				start = i;
+    			// make it odd number
+    			if (start.remainder(two) == BigInteger.ZERO)
+    				start = start.add(BigInteger.ONE);
+    			
+    			BigInteger stop = new BigInteger("" + thisunit);
+    			stop = stop.multiply(chunk);
+    			
+    			i = start;
+    			while (true) {
+    				//log.debug("i is now : {}", i.toString());
+    				if (i.compareTo(stop) > 0)
+    					break;
+    				if (input.remainder(i) == BigInteger.ZERO)
+        				return "false";
+    				i = i.add(two);
+    				
+    			}
+    	    	long time2 = System.currentTimeMillis();
+    	    	System.out.println("Time taken : " + (time2 - time1)); 
+
+    			return "true";			
+    		}
+    	
+    	
+    	};
+    	long time1 = System.currentTimeMillis();
+    	//String primeresult = cu2.compute(Dson.dummyDson());
+    	//String primeresult = c.executeObject(cu2);
+    	Compute c = new Compute(meta);
+    	c.executeObject(cu2).setInput(Dson.empty()).maxSplit(15).build();
+    	/*
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();    	c.test();
+    	c.test();   	c.test();
+    	c.test();
+    	*/
+    	long time2 = System.currentTimeMillis();
+    	//log.debug("prime number check result : {}", primeresult);
+
+    	//log.debug("Last prime number : {}", primeresult);
+    	log.debug("Time taken : {}", time2 - time1); 
+    	
+    	// works
+        //meta.getNamespace("myorg.Meta1");
+        //meta.getNamespace("org.dilmus.scabi.Meta3"); // negative test
+        
+        // works
+        //meta.findOneMetaThisNS();
+        //meta.findOneMetaRemoteNS();
+        //meta.findOneAppTableNS();
+        //meta.findOneJavaFileNS();
+        //meta.findOneFileNS();
+
+        //works
+        //Namespace name = meta.findOneFileNS();
+        //log.debug("name details : {} {} {} {} {} {} {}", name.getHost(), name.getPort(), name.getNamespace());
+        
+        //works
+        //Dfile f = new Dfile(meta);
+        //f.findOneNamespace();
+        //f.getNamespace("org.dilmus.scabi.File1");
+        //f.setNamespace("org.dilmus.scabi.File1");
+        //Namespace name = f.findOneNamespace();
+        //f.setNamespace(name);
+        //Date date = new Date();
+        //f.put("App9.class", "/home/anees/testdata/in/App9.class");
+        //f.get("App9.class", "/home/anees/testdata/out/App9.class" + "_" + date.toString());
+        
+        //works 
+        /*
+        f.removeFilesIncompleteMetaData("App8.class", "");
+        f.removeFilesIncompleteMetaData("App7.class", "");
+        f.removeFilesIncompleteMetaData("App6.class", "");
+        f.removeFilesIncompleteMetaData("App5.class", "");
+        f.removeFilesIncompleteMetaData("App4.class", "");
+        f.removeFilesIncompleteMetaData("App3.class", "");
+        f.removeFilesIncompleteMetaData("App2.class", "");
+        f.removeFilesIncompleteMetaData("App1.class", "");
+        */
+        //works
+        //f.removeAllFilesIncompleteMetaData();
+        
+        //works
+        //String fileName = "App9.class";
+        //String strFileID = "56c5baff52aeac13b741bf0f";
+        //log.debug("file name : {}, file id : {}, valid or not : {}", fileName, strFileID, f.isValidMetaData(fileName, strFileID));
+        
+        //f.close();
+        //meta.close();
+        //===========================================
+        // Java File related
+        
+        // use gridfs inside to put file
+        //meta.uploadJavaFile(namespace or jsonNamespace, file name to put, where to read file "/anees/home/testdata/in/App.class");
+
+        // use gridfs inside to put file
+        //meta.uploadJavaFileStream(namespace or jsonNamespace, file name to put, where to read file InputStream);
+
+        // use gridfs inside to get file
+        //meta.downloadJavaFile(namespace or jsonNamespace, file name to get, where to write file "/home/anees/testdata/out/App.class");
+
+        // use gridfs inside to get file
+        //meta.downloadJavaFileStream(namespace or jsonNamespace, file name to get, where to write file OutputStream);
+        
+        //===========================================
+        // Compute related
+        
+        // compute.executeJarFile(namespace or jsonjsonNamespace, .jar file name to execute, jsonInput)
+        // compute.executeJarFile(namespace or jsonjsonNamespace, .jar file name to execute, .class file inside jar, jsonInput)
+        // compute.executeClassFile(namespace or jsonjsonNamespace, .class file name to execute, jsonInput)
+
+        //===========================================
+        // App Table related
+        
+        // meta.createTable(namespace or jsonNamespace, table name)
+        // meta.insertRow(namespace or jsonNamespace, jsonInsert, jsonCheck)
+        // meta.executeQuery(namespace or jsonNamespace, jsonQuery)
+        // meta.executeUpdate(namespace or jsonNamespace, jsonUpdate, jsonWhere)
+        
+        // decide meta.executeQuery(), etc. or client versions of DAO. which one ?
+        // DECISION:- don't use meta.executeQuery(), etc. for DB. use client versions DAO, DAOHelper, Json, JsonHelper.
+        // and provide client versions of DAO, DAOHelper, Json, JsonHelper. These form part of API 
+        // exposed to client.
+        
+        //===========================================
+        // Async Task
+        
+        // AsyncTask asy = new AsyncTask(Runnable r);
+        
+    }
+
+    public void test() {
+        CloseableHttpClient httpClient;
+
+        // use httpClient (no need to close it explicitly)
+    	try {
+    		httpClient = HttpClientBuilder.create().build();
+    	    // use httpClient (no need to close it explicitly)
+    		// specify the host, protocol, and port
+    		HttpHost target = new HttpHost("localhost", 4567, "http");
+    		
+    			// specify the get request
+    			// works HttpGet getRequest = new HttpGet("/hello");
+    			// /forecastrss?p=80020&u=f
+    			/*
+    			String myString = "{\"id\":123, \"name\":\"Pankaj Kumar\", \"permanent\":true, \"address\":{ \"street\":\"El Camino Real\"," + 
+    	            	"\"city\":\"San Jose\", \"zipcode\":95014 }, \"phoneNumbers\":[9988664422, 1234567890]," +
+    					"\"role\":\"Developer\" }";
+    			*/
+    			//String myString = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4568\" }";
+    			String myString = "";
+    			// {"id":123, "name":"Pankaj Kumar", "permanent":true, "address":{ "street":"El Camino Real","city":"San Jose", "zipcode":95014 }, "phoneNumbers":[9988664422, 1234567890],"role":"Developer" }
+    			
+    			// HttpPost postRequest = new HttpPost("/hellopost");
+    			// HttpPost postRequest = new HttpPost("/Meta/Compute/Register");
+    			HttpPost postRequest = new HttpPost("/Meta/Compute/Alloc");
+    			
+    			// StringEntity params =new StringEntity("details={\"name\":\"myname\",\"age\":\"20\"} ");
+    		    StringEntity params =new StringEntity(myString);
+    		    
+    		    // works postRequest.addHeader("content-type", "application/x-www-form-urlencoded");
+    		    postRequest.addHeader("content-type", "application/json");
+    		    postRequest.setEntity(params);
+    		            			
+    			System.out.println("executing request to " + target);
+    	
+    			// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+    			HttpResponse httpResponse = httpClient.execute(target, postRequest);
+    			HttpEntity entity = httpResponse.getEntity();
+    		
+    			System.out.println("----------------------------------------");
+    			System.out.println(httpResponse.getStatusLine());
+    			Header[] headers = httpResponse.getAllHeaders();
+    			for (int i = 0; i < headers.length; i++) {
+    			System.out.println(headers[i]);
+    			}
+    		System.out.println("----------------------------------------");
+    	
+    		if (entity != null) {
+    			System.out.println(EntityUtils.toString(entity));
+    		}
+    	
+    
+    	
+    } catch (IOException e) {
+
+        // handle
+    	e.printStackTrace();
+    }
+
+    finally {
+    // When HttpClient instance is no longer needed,
+    // shut down the connection manager to ensure
+    // immediate deallocation of all system resources
+   
+    }   
+    	
+    }
+
+    public static void test2() {
+        CloseableHttpClient httpClient;
+
+        // use httpClient (no need to close it explicitly)
+    	try {
+    		httpClient = HttpClientBuilder.create().build();
+    	    // use httpClient (no need to close it explicitly)
+    		// specify the host, protocol, and port
+    		HttpHost target = new HttpHost("localhost", 8182, "http");
+    		
+    			// specify the get request
+    			// works HttpGet getRequest = new HttpGet("/hello");
+    			// /forecastrss?p=80020&u=f
+    			/*
+    			String myString = "{\"id\":123, \"name\":\"Pankaj Kumar\", \"permanent\":true, \"address\":{ \"street\":\"El Camino Real\"," + 
+    	            	"\"city\":\"San Jose\", \"zipcode\":95014 }, \"phoneNumbers\":[9988664422, 1234567890]," +
+    					"\"role\":\"Developer\" }";
+    			*/
+    			String myString = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4568\" }";
+    			//String myString = "";
+    			// {"id":123, "name":"Pankaj Kumar", "permanent":true, "address":{ "street":"El Camino Real","city":"San Jose", "zipcode":95014 }, "phoneNumbers":[9988664422, 1234567890],"role":"Developer" }
+    			
+    			// HttpPost postRequest = new HttpPost("/hellopost");
+    			// HttpPost postRequest = new HttpPost("/Meta/Compute/Register");
+    			HttpPost postRequest = new HttpPost("/Meta/Compute/Alloc");
+    			
+    			// StringEntity params =new StringEntity("details={\"name\":\"myname\",\"age\":\"20\"} ");
+    		    StringEntity params =new StringEntity(myString);
+    		    
+    		    // works postRequest.addHeader("content-type", "application/x-www-form-urlencoded");
+    		    postRequest.addHeader("Content-Type", "application/json");
+    		    postRequest.setEntity(params);
+    		            			
+    			System.out.println("executing request to " + target);
+    	
+    			// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+    			HttpResponse httpResponse = httpClient.execute(target, postRequest);
+    			HttpEntity entity = httpResponse.getEntity();
+    		
+    			System.out.println("----------------------------------------");
+    			System.out.println(httpResponse.getStatusLine());
+    			Header[] headers = httpResponse.getAllHeaders();
+    			for (int i = 0; i < headers.length; i++) {
+    			System.out.println(headers[i]);
+    			}
+    		System.out.println("----------------------------------------");
+    	
+    		if (entity != null) {
+    			System.out.println(EntityUtils.toString(entity));
+    		}
+    	
+    
+    	
+    } catch (IOException e) {
+
+        // handle
+    	e.printStackTrace();
+    }
+
+    finally {
+    // When HttpClient instance is no longer needed,
+    // shut down the connection manager to ensure
+    // immediate deallocation of all system resources
+   
+    }   
+    	
+    }
+
+    
+}

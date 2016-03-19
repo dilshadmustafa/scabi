@@ -1,0 +1,14 @@
+DELEGATES_PREFERENCE=delegateValidatorList
+USER_BUILD_PREFERENCE=enabledBuildValidatorList
+USER_MANUAL_PREFERENCE=enabledManualValidatorList
+USER_PREFERENCE=saveAutomaticallyfalseprojectsCanOverridetruedisableAllValidationtrueversion1.2.600.v201501211647
+confirmDialog=false
+eclipse.preferences.version=1
+override=false
+saveAuto=false
+stateTS=0
+suspend=true
+vals/org.eclipse.wst.dtd.core.dtdDTDValidator/global=FF01
+vals/org.eclipse.wst.xml.core.xml/global=FF03
+vals/org.eclipse.wst.xsd.core.xsd/global=FF02162org.eclipse.wst.xsd.core.internal.validation.eclipse.Validator
+vf.version=3

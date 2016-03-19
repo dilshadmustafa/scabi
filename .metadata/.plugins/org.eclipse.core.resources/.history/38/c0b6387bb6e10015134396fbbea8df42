@@ -1,0 +1,708 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 29-Feb-2016
+ * File Name : DComputeAsync.java
+ */
+package com.dilmus.dilshad.scabi.client.async;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.http.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.dilshad.scabi.client.DComputeUnit;
+import com.dilmus.dilshad.scabi.client.DMeta;
+import com.dilmus.dilshad.scabi.client.DScabiClientException;
+import com.dilmus.dilshad.scabi.common.DMJson;
+import com.dilmus.dilshad.scabi.common.DMUtil;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DComputeAsync implements Runnable {
+
+	private final Logger log = LoggerFactory.getLogger(DComputeAsync.class);
+	private ExecutorService m_threadPool = null;
+	private DMeta m_meta = null;
+	private int m_commandID = 1;
+	private HashMap<String, DComputeAsyncConfig> m_commandMap = null;
+	private String m_jsonInput = null;
+	private HashMap<String, String> m_outputMap = null;
+	private int m_maxSplit = 1;
+	private int m_maxRetry = 0;
+	private int m_maxThreads = 1;
+	private int m_splitTotal = 0;
+	private DComputeAsyncConfig m_config = null;
+	private boolean m_isPerformInProgress = false;
+	private boolean m_crunListReady = false;
+	private boolean m_futureListReady = false;
+
+	private List<DComputeAsyncConfig> m_cconfigList = null;
+	private List<DComputeAsyncRun> m_crunList = null;
+	private List<DComputeNoBlock> m_cnbList = null;
+	
+	private List<Future<?>> m_futureList = null;
+	private HashMap<Future<?>, DRangeRunner> m_futureRRunMap = null;
+	
+	private Future<?> m_futureCompute = null;
+	private Future<?> m_futureRetry = null;
+	
+	private int m_noOfRangeRunners = 0;
+	
+	private DRetryAsyncMonitor m_retryAsyncMonitor = null;
+	
+	private boolean m_isSplitSet = false;
+	private int m_startSplit = -1;
+	private int m_endSplit = -1;
+	
+	public List<DComputeAsyncConfig> getCConfigList() {
+		return m_cconfigList;
+	}
+	
+	public List<DComputeAsyncRun> getCRunList() {
+		return m_crunList;
+	}
+	
+	public List<DComputeNoBlock> getCNBList() {
+		return m_cnbList;
+	}
+	
+	public ExecutorService getExecutorService() {
+		return m_threadPool;
+	}
+	
+	public int putFutureRRunMap(Future<?> f, DRangeRunner rrun) {
+		synchronized (this) {
+			m_futureRRunMap.put(f, rrun);
+		}
+		return 0;
+	}
+	
+	public DRangeRunner getFutureRRunMap(Future<?> f) {
+		synchronized (this) {
+			return m_futureRRunMap.get(f);
+		}
+	}
+
+	public HashMap<Future<?>, DRangeRunner> getFutureRRunMap() {
+			return m_futureRRunMap;
+	}
+	
+	public DComputeAsync(DMeta meta) {
+		
+		m_meta = meta;
+		m_commandMap = new HashMap<String, DComputeAsyncConfig>();
+		
+		m_maxSplit = 1;
+		m_maxRetry = 0;
+		m_maxThreads = 1;
+		m_splitTotal = 0;
+		
+		m_cconfigList = new ArrayList<DComputeAsyncConfig>();
+		m_crunList = new ArrayList<DComputeAsyncRun>();
+		m_cnbList = new ArrayList<DComputeNoBlock>();
+		
+		m_futureList = new ArrayList<Future<?>>();
+		m_futureRRunMap = new HashMap<Future<?>, DRangeRunner>();
+		
+	}
+	
+	public int initialize() throws InterruptedException {
+		
+		m_threadPool.shutdownNow();
+		m_threadPool.awaitTermination(10, TimeUnit.MINUTES);
+		m_threadPool = null;
+
+		m_commandID = 1;
+		m_commandMap.clear();
+		m_jsonInput = null;
+		m_outputMap = null;
+		
+		m_maxSplit = 1;
+		m_maxRetry = 0;
+		m_maxThreads = 1;
+		m_splitTotal = 0;
+		
+		m_config = null;
+
+		m_isPerformInProgress = false;
+		m_crunListReady = false;
+		m_futureListReady = false;
+
+		synchronized (this) {
+			
+		m_cconfigList.clear();
+		// m_crunList is not thread safe and RetryMonitor is also using it
+		// So it is cleared after thread pool shutdown
+		m_crunList.clear();
+		m_cnbList.clear();
+				
+		m_futureList.clear();
+		m_futureRRunMap.clear();
+		
+		}
+		
+		return 0;
+	}
+	
+	public int close() {
+		m_threadPool.shutdownNow();
+		m_threadPool = null;
+		return 0;
+	}
+	
+	public DComputeAsync executeCode(String code) throws DScabiException {
+		if (m_isPerformInProgress) {
+			throw new DScabiException("Perform already in progress", "COE.EOT.1");
+		}
+		if (m_config != null) {
+			m_config.setInput(m_jsonInput);
+			m_config.setOutput(m_outputMap);
+			m_config.setMaxSplit(m_maxSplit);
+			m_config.setMaxRetry(m_maxRetry);
+			m_commandMap.put("" + m_commandID, m_config);
+			m_commandID++;
+			
+			m_splitTotal = m_splitTotal + m_maxSplit;
+
+			m_maxSplit = 1;
+			m_maxRetry = 0;
+
+			m_cconfigList.add(m_config);
+			
+			m_config = null;
+			
+			m_jsonInput = null;
+			m_outputMap = null;
+			m_isSplitSet = false;
+			m_startSplit = -1;
+			m_endSplit = -1;
+
+		}
+		m_config = new DComputeAsyncConfig(code);
+		
+		return this;
+	}
+
+	public DComputeAsync executeClass(Class<? extends DComputeUnit> cls) throws DScabiException {
+		if (m_isPerformInProgress) {
+			throw new DScabiException("Perform already in progress", "COE.EOT.1");
+		}
+		if (m_config != null) {
+			m_config.setInput(m_jsonInput);
+			m_config.setOutput(m_outputMap);
+			m_config.setMaxSplit(m_maxSplit);
+			m_config.setMaxRetry(m_maxRetry);
+			m_commandMap.put("" + m_commandID, m_config);
+			m_commandID++;
+			
+			m_splitTotal = m_splitTotal + m_maxSplit;
+
+			m_maxSplit = 1;
+			m_maxRetry = 0;
+
+			m_cconfigList.add(m_config);
+			
+			m_config = null;
+			
+			m_jsonInput = null;
+			m_outputMap = null;
+			m_isSplitSet = false;
+			m_startSplit = -1;
+			m_endSplit = -1;
+
+		}
+		m_config = new DComputeAsyncConfig(cls);
+		
+		return this;
+	}
+
+	
+	public DComputeAsync executeObject(DComputeUnit unit) throws DScabiException {
+		if (m_isPerformInProgress) {
+			throw new DScabiException("Perform already in progress", "COE.EOT.1");
+		}
+		if (m_config != null) {
+			m_config.setInput(m_jsonInput);
+			m_config.setOutput(m_outputMap);
+			m_config.setMaxSplit(m_maxSplit);
+			m_config.setMaxRetry(m_maxRetry);
+			
+			if (m_isSplitSet) {
+				if (m_startSplit > m_maxSplit)
+					throw new DScabiException("startSplit should not be > maxSplit", "CAS.EOT.2");
+				else if (m_endSplit > m_maxSplit)
+					throw new DScabiException("endSplit should not be > maxSplit", "CAS.EOT.3");
+				m_config.setSplitRange(m_startSplit, m_endSplit);
+			}
+			
+			m_commandMap.put("" + m_commandID, m_config);
+			m_commandID++;
+			
+			m_splitTotal = m_splitTotal + m_maxSplit;
+
+			m_maxSplit = 1;
+			m_maxRetry = 0;
+
+			m_cconfigList.add(m_config);
+			
+			m_config = null;
+			
+			m_jsonInput = null;
+			m_outputMap = null;
+			m_isSplitSet = false;
+			m_startSplit = -1;
+			m_endSplit = -1;
+
+		}
+		m_config = new DComputeAsyncConfig(unit);
+		
+		return this;
+	}
+
+	public DComputeAsync input(String jsonInput) {
+		m_jsonInput = jsonInput;
+		return this;
+	}
+	
+	public DComputeAsync input(Properties propertyInput) {
+		//m_jsonInput = jsonInput;
+		return this;
+	}
+
+	public DComputeAsync input(HashMap<String, String> mapInput) {
+		//m_jsonInput = jsonInput;
+		return this;
+	}
+	
+	public DComputeAsync output(HashMap<String, String> outputMap) {
+		// outputTo()
+		m_outputMap = outputMap;
+		return this;
+	}
+
+	public DComputeAsync split(int maxSplit) throws DScabiException {
+		if (maxSplit <= 0)
+			throw new DScabiException("Split should be > 0" , "CAS.SPT.1");
+		m_maxSplit = maxSplit;
+		return this;
+	}
+	
+	int splitRange(int startSplit, int endSplit) throws DScabiException {
+		
+		if (startSplit <= 0) {
+			throw new DScabiException("startSplit should not be <= 0", "CAS.SSR.1");
+		}
+		if (endSplit <= 0) {
+			throw new DScabiException("endSplit should not be <= 0", "CAS.SSR.2");
+		}
+		if (startSplit > endSplit) {
+			throw new DScabiException("startSplit should not be > endSplit", "CAS.SSR.3");
+		}
+		m_isSplitSet = true;
+		m_startSplit = startSplit;
+		m_endSplit = endSplit;
+
+		return 0;
+	}
+
+	
+	public DComputeAsync maxRetry(int maxRetry) {
+		m_maxRetry = maxRetry;
+		return this;
+	}
+	
+	public DComputeAsync maxThreads(int maxThreads) {
+		m_maxThreads = maxThreads;
+		return this;
+	}
+		
+	public int addToFutureList(Future<?> f) {
+		synchronized (this) {
+			m_futureList.add(f);
+		}
+		return 0;
+	}
+	
+	public Future<?> getFromFutureList(int index) {
+		synchronized (this) {
+			return m_futureList.get(index);
+		}
+	}
+	
+	public void run() {
+		
+		DComputeNoBlock cnba[];
+		 
+		try {
+			// TODO m_meta.getComputeMany(m_splitTotal);
+			cnba = m_meta.getComputeNoBlockMany(2);
+		} catch (ParseException | IOException | DScabiClientException e) {
+			//e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		
+        for (DComputeNoBlock cnb : cnba) {
+        	log.debug("run() Compute is {}", cnb);
+        	m_cnbList.add(cnb);
+        }
+        
+        Set<String> st = m_commandMap.keySet();
+        int k = 0;
+        for (String key : st) {
+        	DComputeAsyncConfig config = m_commandMap.get(key);
+			int maxSplit = config.getMaxSplit();
+			log.debug("run() maxSplit : {}", maxSplit);
+        	int startSplit = 1;
+        	int endSplit = maxSplit;
+			if (config.isSplitSet()) {
+				startSplit = config.getStartSplit();
+				log.debug("run() startSplit : {}", startSplit);
+				endSplit = config.getEndSplit();
+			}
+        	
+			//works for (int i = 0; i < maxSplit; i++) {
+			for (int i = startSplit; i <= endSplit; i++) {	
+        		log.debug("Inside split for loop");
+        		if (k >= cnba.length)
+    	        	k = 0;
+            	DComputeAsyncRun crun = new DComputeAsyncRun(); 
+            	m_crunList.add(crun);
+            	crun.setConfig(config);
+            	crun.setTU(maxSplit);
+            	//works crun.setSU(i + 1);
+            	crun.setSU(i);
+            	crun.setMaxRetry(config.getMaxRetry());
+            	crun.setComputeNB(cnba[k]);
+    			k++;
+    			
+        	}
+        }
+        log.debug("run() m_crunList.size() : {}", m_crunList.size()); 
+        m_crunListReady = true;
+        
+        int totalCRun = m_crunList.size();
+        k = 0;
+        int count = 0;
+        log.debug("m_noOfRangeRunners : {}", m_noOfRangeRunners);
+        for (int i = 0; i < m_noOfRangeRunners; i++) {
+        	int startCRun = k;
+        	int endCRun = k + (totalCRun / m_noOfRangeRunners);
+        	if (totalCRun == m_noOfRangeRunners)
+        		endCRun = k;
+        	if (endCRun >= totalCRun)
+        		endCRun = totalCRun - 1;
+        	DRangeRunner rr = null;
+			try {
+				rr = new DRangeRunner(this, startCRun, endCRun);
+				log.debug("DRangeRunner created. startCRun : {}, endCRun : {}", startCRun, endCRun);
+				count++;
+			} catch (DScabiException e) {
+				//e.printStackTrace();
+				throw new RuntimeException(e);
+			}
+     	
+        	Future<?> f = m_threadPool.submit(rr);
+        	addToFutureList(f);
+        	putFutureRRunMap(f, rr);
+        	
+        	k = endCRun + 1;
+        	if (k >= totalCRun) {
+        		log.debug("run() DRangeRunner(s) created");
+        		break;
+        	}
+        	//log.debug("run() proceeding");
+        }
+        m_futureListReady = true;
+        
+        m_noOfRangeRunners = count;
+        log.debug("run() DRangeRunner(s) created count : {}", count);
+        m_retryAsyncMonitor = new DRetryAsyncMonitor(this, m_meta);
+        m_futureRetry = m_threadPool.submit(m_retryAsyncMonitor);
+               
+	}
+
+	public boolean finish() throws DScabiException, ExecutionException, InterruptedException {
+		if (false == m_isPerformInProgress)
+			return true;
+		log.debug("finish() m_splitTotal : {}", m_splitTotal);
+		log.debug("finish() m_crunList.size() : {}", m_crunList.size());
+		log.debug("finish() m_crunListReady : {}", m_crunListReady);
+		log.debug("finish() m_futureListReady : {}", m_futureListReady);
+		
+		try {
+			m_futureCompute.get();
+			m_futureRetry.get();
+			
+		} catch (CancellationException | InterruptedException | ExecutionException e) {
+			//e.printStackTrace();
+			throw e;
+		}
+		
+		log.debug("finish() m_futureList.size() : {}", m_futureList.size());
+		int gap = 0;
+		while (false == m_futureListReady) {
+			// TODO log.debug from this point onwards doesn't work if we don't use log.debug here!!!
+			if (0 == gap % 1000000000) // reduce this number if needed to make it print atleast once
+				log.debug("finish() m_futureListReady : {}", m_futureListReady);
+			gap++;
+		}
+		log.debug("finish() m_futureList.size() : {}", m_futureList.size());
+
+		for (Future<?> f : m_futureList) {
+			String result = null;
+        	
+			try {
+				f.get();
+					
+			} catch (CancellationException | InterruptedException | ExecutionException e) {
+				//e.printStackTrace();
+				result = DMJson.error(DMUtil.clientErrMsg(e));
+			
+				DRangeRunner rr = getFutureRRunMap(f);
+				for (int j = rr.getStartCRun(); j <= rr.getEndCRun(); j++) {
+					DComputeAsyncRun crun = m_crunList.get(j);
+					DComputeAsyncConfig config = crun.getConfig();
+					synchronized (config) {
+						if (false == config.isResultSet(crun.getSU())) {
+							crun.setExecutionError(result);
+						}
+					}
+	
+				} // End for
+				
+			} // End catch
+        
+        } // End for
+		List<DComputeNoBlock> cnba = m_retryAsyncMonitor.getCNBList();
+		for (DComputeNoBlock cnb : cnba) {
+			try {
+				cnb.close();
+			} catch (Error | RuntimeException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+			
+		}
+ 		log.debug("finish() Exiting finish()");
+ 		initialize();
+ 		return true;
+	
+	}
+	
+	public boolean finish(long checkTillNanoSec) throws Exception {
+		if (false == m_isPerformInProgress)
+			return true;
+		long time1 = System.nanoTime();
+		log.debug("finish(nanosec) m_splitTotal : {}", m_splitTotal);
+		log.debug("finish(nanosec) m_crunList.size() : {}", m_crunList.size());
+		log.debug("finish(nanosec) m_crunListReady : {}", m_crunListReady);
+		log.debug("finish() m_futureListReady : {}", m_futureListReady);
+
+		try {
+			m_futureCompute.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
+			m_futureRetry.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
+			
+		} catch (CancellationException | InterruptedException | ExecutionException e) {
+			//e.printStackTrace();
+			throw e;
+		}
+
+		log.debug("finish() m_futureList.size() : {}", m_futureList.size());
+		int gap = 0;
+		while (false == m_futureListReady) {
+			// TODO log.debug from this point onwards doesn't work if we don't use log.debug here!!!
+			if (0 == gap % 1000000000) // reduce this number if needed to make it print atleast once
+				log.debug("finish() m_futureListReady : {}", m_futureListReady);
+			gap++; // this is just for the log.debug issue mentioned above
+			if (System.nanoTime() - time1 >= checkTillNanoSec)
+				return false;
+
+		}
+		log.debug("finish() m_futureList.size() : {}", m_futureList.size());
+
+        for (Future<?> f : m_futureList) {
+        	String result = null;
+       	
+       		try {
+				f.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
+					
+			} catch (CancellationException | InterruptedException | ExecutionException e) {
+				//e.printStackTrace();
+				result = DMJson.error(DMUtil.clientErrMsg(e));
+			
+				DRangeRunner rr = getFutureRRunMap(f);
+				for (int j = rr.getStartCRun(); j <= rr.getEndCRun(); j++) {
+					DComputeAsyncRun crun = m_crunList.get(j);
+					DComputeAsyncConfig config = crun.getConfig();
+					synchronized (config) {
+						if (false == config.isResultSet(crun.getSU())) {
+							crun.setExecutionError(result);
+						}
+					}
+	
+				} // End for
+				
+			} // End catch
+       
+        } // End for
+        List<DComputeNoBlock> cnba = m_retryAsyncMonitor.getCNBList();
+		for (DComputeNoBlock cnb : cnba) {
+			try {
+				cnb.close();
+			} catch (Error | RuntimeException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+			
+		}
+		log.debug("finfinish(nanosec) Exiting finish()");
+		initialize();
+		return true;
+
+	}
+
+	public boolean isDone() {
+		if (false == m_isPerformInProgress)
+			return true;
+		log.debug("isDone() m_splitTotal : {}", m_splitTotal);
+		log.debug("isDone() m_crunList.size() : {}", m_crunList.size());
+		log.debug("isDone() m_crunListReady : {}", m_crunListReady);
+		if (false == m_crunListReady)
+			return false;
+		log.debug("isDone() m_crunList.size() : {}", m_crunList.size());
+
+		boolean check = true;
+
+		check = m_futureCompute.isDone();
+		check = m_futureRetry.isDone();
+		
+		log.debug("isDone() m_futureList.size() : {}", m_futureList.size());
+		int gap = 0;
+		while (false == m_futureListReady) {
+			// TODO log.debug from this point onwards doesn't work if we don't use log.debug here!!!
+			if (0 == gap % 1000000000) // reduce this number if needed to make it print atleast once
+				log.debug("isDone() m_futureListReady : {}", m_futureListReady);
+			gap++;
+		}
+		log.debug("isDone() m_futureList.size() : {}", m_futureList.size());
+
+		for (Future<?> f : m_futureList) {
+  			check = f.isDone();
+        }
+
+		log.debug("isDone() Exiting finish()");
+		return check;
+	}
+
+	
+	public DComputeAsync perform() throws ParseException, IOException, DScabiClientException, DScabiException {
+		if (m_config != null) {
+			m_config.setInput(m_jsonInput);
+			m_config.setOutput(m_outputMap);
+			m_config.setMaxSplit(m_maxSplit);
+			m_config.setMaxRetry(m_maxRetry);
+			m_commandMap.put("" + m_commandID, m_config);
+			m_commandID++;
+						
+			m_splitTotal = m_splitTotal + m_maxSplit;
+
+			m_maxSplit = 1;
+			m_maxRetry = 0;
+
+			m_cconfigList.add(m_config);
+			
+			m_config = null;
+		}
+
+		if (1 == m_commandID) {
+			log.debug("No commands are added");
+			return this;
+		}
+		log.debug("perform() m_splitTotal : {}", m_splitTotal);
+		log.debug("perform() m_maxThreads : {}", m_maxThreads);
+		if (0 == m_splitTotal) {
+			log.debug("m_splitTotal is zero. Cannot proceed with perform()");
+			return this;
+		}
+		
+		if (false == m_isPerformInProgress)
+			m_isPerformInProgress = true;
+		else {
+			throw new DScabiException("Perform already in progress", "COE.PEM.1");
+		}
+		if (1 == m_maxThreads) {
+			long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+			log.debug("perform() usedMemory : {}", usedMemory);
+			long freeMemory = Runtime.getRuntime().maxMemory() - usedMemory;
+			log.debug("perform() freeMemory : {}", freeMemory);
+			
+			long noOfThreads = freeMemory / (1024 * 1024); // Assuming 1 Thread consumes 1MB Stack memory
+			log.debug("perform() noOfThreads : {}", noOfThreads);
+			
+			if (m_splitTotal < noOfThreads) {
+				m_threadPool = Executors.newFixedThreadPool(m_splitTotal + 2); // +1 to include thread for this class run() method
+				//m_threadPool = new DThreadPoolExecutor(
+				//		m_splitTotal + 2, m_splitTotal + 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), this);
+				
+				log.debug("threads created : {}", m_splitTotal + 2);
+				m_noOfRangeRunners = m_splitTotal;
+			} else {
+				m_threadPool = Executors.newFixedThreadPool((int)noOfThreads);
+				//m_threadPool = new DThreadPoolExecutor(
+				//		(int)noOfThreads, (int)noOfThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), this);
+			
+				log.debug("threads created : {}", noOfThreads);
+				m_noOfRangeRunners = (int)noOfThreads - 2;
+			}
+		}
+		else
+		{
+			m_threadPool = Executors.newFixedThreadPool(m_maxThreads);
+			//m_threadPool = new DThreadPoolExecutor(
+			//		m_maxThreads, m_maxThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), this);
+			
+			log.debug("perform() threads created : {}", m_maxThreads);
+			if (m_maxThreads > 2)
+				m_noOfRangeRunners = m_maxThreads - 2;
+			else
+				m_noOfRangeRunners = m_maxThreads;
+		}
+		log.debug("m_noOfRangeRunners : {}", m_noOfRangeRunners);
+        		
+		m_futureCompute = m_threadPool.submit(this);
+		
+		return this;
+	}
+	
+}

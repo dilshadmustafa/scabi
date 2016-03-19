@@ -1,0 +1,470 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 07-Feb-2016
+ * File Name : Dson.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Dson {
+
+	private static final Logger log = LoggerFactory.getLogger(Dson.class);
+	private String m_jsonString = null;
+	private JsonObject m_jsonObject = null;
+	private boolean isDsonEmpty = false;
+	
+	public Dson(String jsonString) throws IOException {
+		m_jsonString = jsonString;
+		InputStream fis = new ByteArrayInputStream(Charset.forName("UTF-16").encode(jsonString).array());
+		
+		JsonReader jsonReader = Json.createReader(fis);
+		
+		/* Reference - create using factory
+		JsonReaderFactory factory = Json.createReaderFactory(null);
+		jsonReader = factory.createReader(fis);
+		*/
+		
+		m_jsonObject = jsonReader.readObject();
+		
+		jsonReader.close();
+		fis.close();
+
+	}
+	
+	public Dson(JsonObject jsonObject) {
+		
+		m_jsonObject = jsonObject;
+		m_jsonString = jsonObject.toString();
+	}
+
+	public Dson() {
+		
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add("Empty", "1");
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+
+		isDsonEmpty = true;
+	}
+
+	public Dson(String key, String value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+	
+	public Dson(String key, int value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+	
+	public Dson(String key, long value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+	
+	public Dson(String key, float value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+
+	public Dson(String key, double value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+
+	public Dson(String key, boolean value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+    	job.add(key, value);
+	    JsonObject j = job.build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		
+	}
+
+	public String getString(String field) {
+		return m_jsonObject.getString(field);
+	}
+	
+	public int getInt(String field) {
+		return m_jsonObject.getInt(field);
+	}
+
+	public JsonNumber getNumber(String field) {
+		return m_jsonObject.getJsonNumber(field);
+	}
+
+	public boolean getBoolean(String field) {
+		return m_jsonObject.getBoolean(field);
+	}
+	
+	public JsonArray getJsonArray(String field) {
+		return m_jsonObject.getJsonArray(field);
+	}
+	public JsonObject getJsonObject(String field) {
+		return m_jsonObject.getJsonObject(field);
+	}
+	
+	public Set<String> keySet() {
+		return m_jsonObject.keySet();
+	}
+	
+	public String toString() {
+		//log.debug("toString() jsonString : {}", m_jsonString);
+		return m_jsonString;
+	}
+	
+	public Dson add(String key, String value) {
+		JsonObjectBuilder job = Json.createObjectBuilder();
+
+		if (false == isDsonEmpty) {
+			for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+				job.add(entry.getKey(), entry.getValue());
+			}
+		}
+		    
+		JsonObject j = job.add(key, value).build();
+		
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, int value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (false == isDsonEmpty) {
+		    for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+		        job.add(entry.getKey(), entry.getValue());
+		    }
+	    }
+	    JsonObject j = job.add(key, value).build();
+	
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, long value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (false == isDsonEmpty) {
+		    for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+		        job.add(entry.getKey(), entry.getValue());
+		    }
+	    }
+	    JsonObject j = job.add(key, value).build();
+	
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+
+	public Dson add(String key, float value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (false == isDsonEmpty) {
+		    for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+		        job.add(entry.getKey(), entry.getValue());
+		    }
+	    }
+	    JsonObject j = job.add(key, value).build();
+	
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+
+	public Dson add(String key, double value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (false == isDsonEmpty) {
+		    for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+		        job.add(entry.getKey(), entry.getValue());
+		    }
+	    }
+	    JsonObject j = job.add(key, value).build();
+	
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, boolean value) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (false == isDsonEmpty) {
+		    for (Entry<String, JsonValue> entry : m_jsonObject.entrySet()) {
+		        job.add(entry.getKey(), entry.getValue());
+		    }
+	    }
+	    JsonObject j = job.add(key, value).build();
+	
+		m_jsonObject = j;
+		m_jsonString = j.toString();
+		isDsonEmpty = false;
+		return this;
+	}
+
+	private static Dson createDsonList(HashMap<String, String> hmap, ArrayList<String> fieldNames) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == fieldNames.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : fieldNames) {
+	    	//System.out.println("createDsonList() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDsonList() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, (String) hmap.get(field));
+	    }
+	    JsonObject j = job.build();
+		
+		return new Dson(j);
+		
+	}
+	
+	private static Dson createDsonSet(HashMap<String, String> hmap, Set<String> st) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == st.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : st) {
+	    	//System.out.println("createDsonSet() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDsonSet() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, (String) hmap.get(field));
+	    }
+	    JsonObject j = job.build();
+		
+		return new Dson(j);
+		
+	}
+		
+	private static Dson createDson(ArrayList<String> arrayofDJsons) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+	    int n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDson() jsonString : {}", s);
+	        //System.out.println("createDson() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+	    JsonObject j = job.build();
+		
+		return new Dson(j);
+		
+	}
+	
+	private static Dson createDsonWithCount(ArrayList<String> arrayofDJsons) {
+	    JsonObjectBuilder job = Json.createObjectBuilder();
+
+	    String count = "" + arrayofDJsons.size();
+	    job.add("Count", "" + count);
+	    int n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDsonWithCount() jsonString : {}", s);
+	        //System.out.println("createDsonWithCount() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+	    JsonObject j = job.build();
+		
+		return new Dson(j);
+		
+	}
+	
+	public static String ok() {
+		return "{ \"Ok\" : \"1\" }";
+	}
+
+	public static String empty() {
+		return "{ \"Empty\" : \"1\" }";
+	}
+
+	public static String returnTrue() {
+		return "{ \"True\" : \"1\" }";
+	}
+
+	public static String returnFalse() {
+		return "{ \"False\" : \"1\" }";
+	}
+
+
+	
+	
+	public static String error(String errorMessage) {
+		//return "{ \"Error\" : \"" + errorMessage + "\" }";
+		return (new Dson("Error", errorMessage)).toString();
+	}
+	
+	public static String result(String result) {
+		//return "{ \"Result\" : \"" + result + "\" }";
+		return (new Dson("Result", result)).toString();
+	}
+
+	public boolean isOk() throws IOException {
+		
+		Set<String> st = m_jsonObject.keySet();
+		
+		if (1 == st.size() && st.contains("Ok"))
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isError() throws IOException {
+		
+		Set<String> st = m_jsonObject.keySet();
+		
+		if (1 == st.size() && st.contains("Error"))
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isEmpty() throws IOException {
+		
+		Set<String> st = m_jsonObject.keySet();
+		
+		if (1 == st.size() && st.contains("Empty"))
+			return true;
+		else if (m_jsonObject.isEmpty())
+			return true;
+		else
+			return false;
+	}
+
+	public int getTU() {
+		return getIntOf("TotalComputeUnit");
+	}
+
+	public int getCU() {
+		return getIntOf("SplitComputeUnit");
+	}
+	
+	public int getIntOf(String field) {
+		return Integer.parseInt(getString(field));
+	}
+	
+	public long getLongOf(String field) {
+		return Long.parseLong(getString(field));
+	}
+
+	public float getFloatOf(String field) {
+		return Float.parseFloat(getString(field));
+	}
+
+	public double getDoubleOf(String field) {
+		return Double.parseDouble(getString(field));
+	}
+
+	public boolean getBooleanOf(String field) {
+		return Boolean.parseBoolean(getString(field));
+	}
+	
+	public Dson getInput() throws IOException {
+		return new Dson(getString("JsonInput"));
+	}
+	
+	public Dson getResult() throws IOException {
+		return new Dson(getString("Result"));
+	}
+
+	public int getCount() throws IOException {
+		return Integer.parseInt(getString("Count"));
+	}
+
+	public boolean contains(String key) {
+		return m_jsonObject.keySet().contains(key);
+	}
+	
+	public static Dson dummyDson() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "1");
+		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+		Dson dson3 = dson2.add("JsonInput", Dson.empty());
+
+		return dson3;
+	}
+
+	public static String dummy() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "1");
+		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+		Dson dson3 = dson2.add("JsonInput", Dson.empty());
+
+		return dson3.toString();
+	}
+
+}

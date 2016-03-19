@@ -1,0 +1,180 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 27-Jan-2016
+ * File Name : Compute.java
+ */
+package com.dilmus.scabi.client;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.scabi.common.DJson;
+import com.dilmus.scabi.common.DJsonHelper;
+
+
+import javax.json.JsonObject;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Compute {
+
+	private final Logger log = LoggerFactory.getLogger(Compute.class);
+	private CloseableHttpClient httpClient;
+	private String jsonString;
+	private HttpHost target;
+	private String computeHost;
+	private String computePort;
+	private DJson djson;
+	private String jsonInput;
+	
+	public Compute(CloseableHttpClient httpClient, String jsonString) throws IOException {
+		this.httpClient = httpClient;
+		this.jsonString = jsonString;
+		djson = new DJson(jsonString);
+		computeHost = djson.getString("ComputeHost");
+		computePort = djson.getString("ComputePort");
+		target = new HttpHost(computeHost, Integer.parseInt(computePort), "http");
+		jsonInput ="{ \"Empty\" : \"1\" }";		
+	}
+	
+	public String toString() {
+		return jsonString;
+	}
+	
+	public int setInput(String jsonInput) {
+		this.jsonInput = jsonInput;
+		return 0;
+	}
+	
+	public void execute() throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute");
+		
+	    StringEntity params = new StringEntity(jsonInput);
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("executing request to " + target);
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = httpClient.execute(target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("----------------------------------------");
+		log.debug("{}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("{}", headers[i]);
+		}
+		log.debug("----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("{}", jsonString);
+		}
+
+	}
+
+	public void execute(String bshScript) throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute");
+
+		//String jsonBshScript = "{ \"" + bshScript +"\" : \"1\" }";
+		//DJson djson1 = new DJson(jsonBshScript);
+		//DJson djson1 = new DJson(jsonInput);
+		//DJson djson2 = djson1.add(bshScript, "1");
+		//StringEntity params = new StringEntity(djson2.toString());
+
+        //String action = "DDAO dao = database.createDAO();" +
+        	//	"dao.setTableName(\\\"ComputeMetaDataTable\\\");";
+        
+		// works finally
+		/* works
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\\\"ComputeMetaDataTable\\\");" +
+				"String jsonQuery = \\\"{ \\\\\\\"Status\\\\\\\":\\\\\\\"Available\\\\\\\" }\\\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+        // Result { "bshsource" : "DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = \"{ \"Status\":\"Available\" }\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;" }
+		// Error fails in json parsing
+		/* Error fails in json parsing
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = \"{ \\\"Status\\\":\\\"Available\\\" }\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+		//String jsonBshScript = "{ \"bshsource\" : \"" + action +"\" }";
+		//DJson djson1 = new DJson(jsonBshScript);
+		//StringEntity params = new StringEntity(djson1.toString());
+		//StringEntity params = new StringEntity(jsonBshScript);
+		
+		
+		// works finally
+        /*
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = \"{ \\\"Status\\\":\\\"Available\\\" }\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+        */
+        // Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\\\"ComputeMetaDataTable\\\");String jsonQuery = \\\"{ \\\"Status\\\":\\\"Available\\\" }\\\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+       // works
+        
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = json.json(\"{ <<<Status>>> : <<<Available>>> }\");" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		
+		// Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = json.json(\"{ [Status] : [Available] }\");String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+        DJson djson1 = new DJson("bshsource", action);
+		DJson djson2 = djson1.add("jsoninput", jsonInput);
+		StringEntity params = new StringEntity(djson2.toString());
+		
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("executing request to " + target);
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = httpClient.execute(target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("----------------------------------------");
+		log.debug("{}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("{}", headers[i]);
+		}
+		log.debug("----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("{}", jsonString);
+		}
+
+	}
+
+
+
+}

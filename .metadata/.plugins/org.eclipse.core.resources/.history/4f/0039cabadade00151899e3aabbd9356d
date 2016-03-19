@@ -1,0 +1,60 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 29-Feb-2016
+ * File Name : DRangeRunner.java
+ */
+package com.dilmus.dilshad.scabi.client.async;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.dilmus.dilshad.scabi.client.DComputeRun;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DRangeRunner implements Runnable {
+
+	private DComputeAsync m_compute = null;
+	private List<DComputeAsyncRun> m_localCRunList = null;
+	
+	public DRangeRunner(DComputeAsync compute, int start, int end) {
+		m_compute = compute;
+		
+		m_localCRunList = new ArrayList<DComputeAsyncRun>();
+		synchronized(m_compute) {
+			List<DComputeAsyncRun> crunList = compute.getCRunList();
+			m_localCRunList.addAll(crunList);
+			
+			/* Not used
+			for (DComputeAsyncRun crun : crunList) {
+				if (false == m_localCRunList.contains(crun))
+					m_localCRunList.add(crun);
+			}
+			*/
+		}
+		
+		
+	}
+
+
+	@Override
+	public void run() {
+		
+		for (DComputeAsyncRun crun : m_localCRunList) {
+			
+			
+			
+			
+			
+			
+		}
+	}
+	
+	
+	
+}

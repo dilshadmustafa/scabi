@@ -1,0 +1,655 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Jan-2016
+ * File Name : MNSMain.java
+ */
+
+package com.dilmus.dilshad.scabi.mns;
+
+//import static spark.Spark.*;
+
+// MongoDB
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.dilmus.dilshad.scabi.common.DBackDB;
+import com.dilmus.dilshad.scabi.common.DComputeMeta;
+import com.dilmus.dilshad.scabi.common.DComputeMetaHelper;
+import com.dilmus.dilshad.scabi.common.DJson;
+import com.dilmus.dilshad.scabi.common.DJsonHelper;
+import com.dilmus.dilshad.scabi.common.DNamespace;
+import com.dilmus.dilshad.scabi.common.DNamespaceHelper;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
+import com.mongodb.WriteConcern;
+
+// GridFS
+import java.io.File;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.Mongo;
+import com.mongodb.MongoException;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSInputFile;
+
+//import spark.Request;
+//import spark.Response;
+//import spark.Route;
+
+// Json
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+
+@Path("/")
+public class MNSMain extends Application {
+
+	private static Logger log = null;
+	
+	private static DBackDB m_ddb = null;
+	private static DComputeMetaHelper m_cmh = null;
+	private static DNamespaceHelper m_dnh = null;
+	private static boolean m_firstTime = true;
+	private Set<Class<?>> st = new HashSet<Class<?>>();
+	private static Integer m_syncObj = new Integer(0);
+	
+	public MNSMain() throws DScabiException {
+		//classesSet.add(ApplicationCommandResource.class);
+		st.add(MNSMain.class);
+		
+	}
+	 
+	public Set<Class<?>> getClasses() {
+		return st;
+	}
+	
+	public static int initialize() throws DScabiException {
+	   	synchronized(m_syncObj) {
+	   		if (m_firstTime) {
+				m_ddb = new DBackDB("localhost", "27017", "MetaDB");
+			   	m_cmh = new DComputeMetaHelper(m_ddb);
+			   	m_dnh = new DNamespaceHelper(m_ddb);
+			   	m_firstTime = false;
+			   	log.debug("initialize() called");
+	   		}
+		}
+		return 0;
+	}
+	
+   @GET
+   @Path("/")
+   public String get() { return "hello world from MNS"; }
+
+   @POST
+   @Path("/Meta/Compute/Alloc")
+   public String computeAlloc(String request) throws DScabiException {
+	   	DComputeMeta cm;
+	   	synchronized(m_cmh) {
+	   		cm = m_cmh.alloc();
+	   		// TODO Use this later, not now : cm.updateStatus("Inuse");
+	   		// TODO on further analysis this status update request should come from Compute server only
+	   	}
+	   	return cm.toString();
+   
+   }
+
+   @POST
+   @Path("/Meta/Compute/Register")
+   public String computeRegister(String request) throws DScabiException, IOException {
+	   	synchronized(m_cmh) {
+	   		m_cmh.register(request);
+	   	}
+	   	return DJsonHelper.computeRegisterOk() + request;
+   
+   }
+
+   @POST
+   @Path("/Meta/Validate")
+   public String computeValidate(String request) throws DScabiException {
+	   	return DJsonHelper.ok();
+   
+   }
+
+   @POST
+   @Path("/Meta/Compute/GetMany")
+   public String getComputeMany(String request) throws DScabiException {
+	   	DComputeMeta cma[];
+	   	DJson djson = null;
+	   	DJson djsonResponse = null;
+	   	int howMany = 0;
+	   	try {
+	   	djson = new DJson(request);
+	   	howMany = djson.getInt("GetComputeMany");
+	   	
+		   	synchronized(m_cmh) {
+		   		cma = m_cmh.getMany(howMany);
+		   		// TODO Use this later, not now : cm.updateStatus("Inuse");
+		   		// TODO on further analysis this status update request should come from Compute server only
+		   	}
+		   	djsonResponse = new DJson("Count", cma.length);
+		   	int i = 1;
+		   	for (DComputeMeta cm : cma) {
+		   		djsonResponse.add("" + i, cm.toString());
+		   	}
+	   	} catch (Exception e) {
+	   		return DJson.error(e.toString());
+	   	}
+	   	return djsonResponse.toString();
+   
+   }
+
+   
+   @POST
+   @Path("/Meta/Namespace/FindOne")
+   public String findOneNamespace(String request) throws DScabiException {
+	   	DNamespace dname;
+	   	synchronized(m_dnh) {
+	   		try {
+	       		DJson djson = new DJson(request);
+	       		dname = m_dnh.findOneNamespace(djson.getString("Type"));
+	   		}
+	   		catch (Exception e) {
+	   			return DJsonHelper.error(e.getMessage());
+	   		}
+	   	}
+	   	return dname.toString();
+   
+   }
+
+   @POST
+   @Path("/Meta/Namespace/Get")
+   public String getNamespace(String request) throws DScabiException {
+	   	DNamespace dname;
+	   	synchronized(m_dnh) {
+	   		try {
+	       		DJson djson = new DJson(request);
+	       		dname = m_dnh.getNamespace(djson.getString("Namespace"));
+	   		}
+	   		catch (Exception e) {
+	   			return DJsonHelper.error(e.getMessage());
+	   		}
+	   	}
+	   	return dname.toString();
+   
+   }
+
+   
+   public static void main(String[] args) throws Exception 
+   {
+
+       System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+       System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+       System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+       System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+       System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+       System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+       //System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
+   	   //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+       final Logger log = LoggerFactory.getLogger(MNSMain.class);
+       MNSMain.log = log;
+
+       MNSMain.initialize();
+       
+       ServletHolder sh = new ServletHolder(HttpServletDispatcher.class);
+       sh.setInitParameter("javax.ws.rs.Application", MNSMain.class.getCanonicalName()); 
+       Server server = new Server(4567);
+       ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+       context.setContextPath("/");
+       server.setHandler(context);
+       context.addServlet(sh, "/*");
+       server.start();
+
+       log.debug("MNS started");
+       
+       
+   }
+
+   /*
+    public static void main2(String[] args) throws DScabiException {
+        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+        System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+        System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+  		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+  		//System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
+    	//System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+  		final Logger log = LoggerFactory.getLogger(MNSMain.class);
+  		
+  		// Connect to MongoDB
+    	//MongoClient mongo = new MongoClient("localhost", 27017);
+    	//DB db = mongo.getDB("MetaDB");
+    	DBackDB ddb = new DBackDB("localhost", "27017", "MetaDB");
+    	DComputeMetaHelper cmh = new DComputeMetaHelper(ddb);
+    	DNamespaceHelper dnh = new DNamespaceHelper(ddb);
+    	
+    	
+  		
+        get("/hellomns", (req, res) -> "Hello World MNS5");
+
+        post("/Meta/Validate", (req, res) -> {
+        	return DJsonHelper.ok();
+        });
+
+        
+        post("/Meta/Compute/Alloc", (req, res) -> {
+        	DComputeMeta cm;
+        	synchronized(cmh) {
+        		cm = cmh.alloc();
+        		// TODO Use this later, not now : cm.updateStatus("Inuse");
+        	}
+        	res.status(200);
+        	res.header("content-type", "application/json");
+        	//res.body(cm.toString());
+        	return cm.toString();
+        	
+        });
+        
+        post("/Meta/Compute/Register", (req, res) -> {
+        	synchronized(cmh) {
+        		cmh.register(req.body());
+        	}
+        	return DJsonHelper.computeRegisterOk() + req.body();
+        });
+        
+        post("/Meta/Namespace/Get", (req, res) -> {
+        	DNamespace dname;
+        	synchronized(dnh) {
+        		try {
+	        		DJson djson = new DJson(req.body());
+	        		dname = dnh.getNamespace(djson.getString("Namespace"));
+        		}
+        		catch (Exception e) {
+        			return DJsonHelper.error(e.getMessage());
+        		}
+        	}
+        	return dname.toString();
+        });
+        
+        post("/Meta/Namespace/FindOne", (req, res) -> {
+        	DNamespace dname;
+        	synchronized(dnh) {
+        		try {
+	        		DJson djson = new DJson(req.body());
+	        		dname = dnh.findOneNamespace(djson.getString("Type"));
+        		}
+        		catch (Exception e) {
+        			return DJsonHelper.error(e.getMessage());
+        		}
+        	}
+        	return dname.toString();
+        });
+        
+        //========================================
+        try {
+        	//String myString = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4568\" }";
+        	//DJson djson = new DJson(myString);
+        	//log.debug("DJson test : {}", djson.getString("ComputeHost"));
+        	//log.debug("DJson test : {}", djson.getString("ComputeHost2"));
+        	//cmh.alloc();
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+        // post("/hellopost", (req, res) -> {
+    	//     return "Sent Request is : " + req.body();
+    	// });
+    	
+    	//get("/hello", new Route() {
+        //    @Override
+        //    public Object handle(Request request, Response response) {
+        //        return "Hello World! from get";
+        //    }
+        //    });
+    	//post("/hellopost", new Route() {
+        //    @Override
+         //   public Object handle(Request request, Response response) {
+         //       return "Hello World! from post";
+         //   }
+         //   });
+    	
+    	// log levels are ERROR > WARN > INFO > DEBUG > TRACE
+        log.trace("trace");
+        log.debug("debug");
+        log.info("info");
+        log.warn("warning");
+        log.error("error");    	
+    	
+    	System.out.println("from jar file Hello world MNS5");
+        // MNSMain.testdb();
+    	//MNSMain.testdb2();
+        // MNSMain.testgridfs();
+    	
+    	//try {
+        //	throw new ScabiException("This is from Main method", "MMN.MAN.1");
+    	//}
+    	//catch (Exception e) {
+    	//	e.printStackTrace();
+    	//}
+    	
+    	
+    	//try {
+        //	MNSMain.testjson();
+        //}
+        //catch (Exception e) {
+        //	e.printStackTrace();
+        //}
+		
+    
+    
+    }
+	*/
+	public static int testdb() {
+		int n = 0;
+	    try {
+
+	    	// Connect to MongoDB
+	    	MongoClient mongo = new MongoClient("localhost", 27017);
+
+	    	// client that makes it possible to connect a replica set 
+	    	// MongoClient mongoClient = new MongoClient( Arrays.asList(new ServerAddress("localhost", 27017), new ServerAddress("localhost", 27018), new ServerAddress("localhost", 27019)));	    	
+
+	    	// Get database
+	    	// if database doesn't exists, MongoDB will create it for you
+	    	DB db = mongo.getDB("MetaDB");
+
+	    	// Authenticate
+	    	// boolean auth = db.authenticate('username', 'password');	    	
+	    	
+	    	// Get collection / table from MetaDB
+	    	// if collection doesn't exists, MongoDB will create it for you
+	    	DBCollection table = db.getCollection("ComputeMetaDataTable");
+
+	    	// Insert
+	    	// create a document to store key and value
+	    	BasicDBObject document = new BasicDBObject();
+	    	document.put("ComputeHost", "localhost");
+	    	document.put("ComputePort", "4568");
+	    	
+	    	DBCursor cursorExist = table.find(document);
+	    	n = cursorExist.count();
+	    	if (0 == n) {
+	    		System.out.println("Inside 0 == n");
+		    	document.put("RegisteredDate", new Date());
+		    	document.put("Status", "Available"); // Available, Inuse, Hold, Blocked
+		    	table.insert(document);
+	    	} else if (1 == n) {
+    			System.out.println("Inside 1 == n");
+    			String s = (String) cursorExist.next().get("Status");
+    			System.out.println("Inside 1 == n update. Status " + s);
+    			if (s.equals("Available")) {
+    				System.out.println("Inside 1 == n updating");
+        			// Update
+        	    	// search document where Status="Available" and update it with new values
+        	    	BasicDBObject query = new BasicDBObject();
+        	    	query.put("Status", "Available");
+
+    	    	    BasicDBObject newDocument = new BasicDBObject();
+    	    	   	newDocument.put("Status", "Inuse");
+
+    	    	   	BasicDBObject updateObj = new BasicDBObject();
+    	    	   	updateObj.put("$set", newDocument);
+
+    	    	   	table.update(query, updateObj);
+    			}
+    			else {
+    				System.out.println("Inside 1 == n not updating");
+    			}
+    				
+	    	}  else {
+    			System.out.println("Multiple matches found");
+    		
+	    	}
+	    	
+
+	    	// Find and display
+	    	BasicDBObject searchQuery = new BasicDBObject();
+	    	searchQuery.put("Status", "Available");
+
+	    	DBCursor cursor = table.find(searchQuery);
+
+	    	while (cursor.hasNext()) {
+	    		System.out.println(cursor.next());
+	    	}
+
+
+	    	// Find and display
+	    	BasicDBObject searchQuery2 
+	    	    = new BasicDBObject().append("Status", "Inuse");
+
+	    	DBCursor cursor2 = table.find(searchQuery2);
+
+	    	while (cursor2.hasNext()) {
+	    		System.out.println(cursor2.next());
+	    	}
+
+	    	System.out.println("Done");
+
+	        } catch (MongoException e) {
+	        	e.printStackTrace();
+	        }
+	    	return 0;
+	}
+
+	/*
+	public static int testdb2() {
+		int n = 0;
+	    try {
+
+	    	// Connect to MongoDB
+	    	MongoClient mongo = new MongoClient("localhost", 27017);
+	    	DB db = mongo.getDB("MetaDB");
+	    	DComputeMetaHelper cmh = new DComputeMetaHelper(db);
+	    	// cmh.alloc();
+	    	DComputeMeta cmeta = cmh.register("localhost5", "4572");
+	    	cmeta.updateStatus("Inuse");
+	    	cmeta.remove();
+	    	
+	    	DBCollection table = db.getCollection("ComputeMetaDataTable");
+	    	// Find and display
+	    	BasicDBObject searchQuery = new BasicDBObject();
+	    	searchQuery.put("Status", "Available");
+
+	    	DBCursor cursor = table.find(searchQuery);
+
+	    	while (cursor.hasNext()) {
+	    		System.out.println(cursor.next());
+	    	}
+
+
+	    	// Find and display
+	    	BasicDBObject searchQuery2 
+	    	    = new BasicDBObject().append("Status", "Inuse");
+
+	    	DBCursor cursor2 = table.find(searchQuery2);
+
+	    	while (cursor2.hasNext()) {
+	    		System.out.println(cursor2.next());
+	    	}
+
+	    	//DBCursor cursor3 = table.find(searchQuery2);
+
+	    	//while (cursor3.hasNext()) {
+	   			// Update
+	    	    BasicDBObject newDocument = new BasicDBObject();
+	    	   	newDocument.put("Status", "Available"); // Available, Inuse, Hold, Blocked
+
+	    	   	BasicDBObject updateObj = new BasicDBObject();
+	    	   	updateObj.put("$set", newDocument);
+
+	    	   	// table.update(searchQuery2, updateObj);
+	    	   	table.updateMulti(searchQuery2, updateObj);
+	    	//}
+    	
+	    	
+	    	System.out.println("Done");
+
+	        } catch (MongoException e) {
+	        	e.printStackTrace();
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
+	    	return 0;
+	}
+	*/
+	
+	public static int testgridfs() {
+		
+		try {
+
+			MongoClient mongo = new MongoClient("localhost", 27017);
+			DB db = mongo.getDB("JFileDB");
+			
+			// TODO JFileMetaDataTable should be in MetaDB database
+			DBCollection collection = db.getCollection("JFileMetaDataTable");
+
+			String newFileName = "com.dilmus.scabi.testdata.in.App.class";
+
+			File jFile = new File("/home/anees/workspace/testdata/in/App.class");
+
+			// create a JFileTable namespace
+			GridFS gfsj = new GridFS(db, "JFileTable");
+
+			// get file from local drive
+			GridFSInputFile gfsFile = gfsj.createFile(jFile);
+
+			// set a new filename for identify purpose
+			gfsFile.setFilename(newFileName);
+			gfsFile.setContentType("class"); // jar, zip, war
+			// save the image file into mongoDB
+			gfsFile.save();
+			
+			
+			// Let's create a new JSON document with some "metadata" information
+			BasicDBObject info = new BasicDBObject();
+	    	info.put("DBHost", "localhost");
+	    	info.put("DBPort", "27017");
+	    	info.put("JFileName", newFileName);
+	    	info.put("JFileID", gfsFile.getId());
+	    	info.put("JFileMD5", gfsFile.getMD5());
+	    	collection.insert(info, WriteConcern.SAFE);
+	    	
+			// print the result
+			DBCursor cursor = gfsj.getFileList();
+			while (cursor.hasNext()) {
+				System.out.println(cursor.next());
+			}
+
+	    	DBCursor cursor2 = collection.find();
+
+	    	while (cursor2.hasNext()) {
+	    		System.out.println(cursor2.next());
+	    	}
+
+			
+			// get file by it's filename
+			GridFSDBFile jForOutput = gfsj.findOne(newFileName);
+
+			// save it into a new image file
+			jForOutput.writeTo("/home/anees/workspace/testdata/out/AppOut.class");
+
+			// remove the file from mongoDB
+			// gfsj.remove(gfsj.findOne(newFileName));
+
+			System.out.println("Done");
+
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (MongoException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}		
+		
+		return 0;
+	}
+	
+	public static int testjson() throws IOException {
+		
+		// InputStream fis = new StringInputStream(JSON_FILE);
+		String myString = "{\"id\":123, \"name\":\"Pankaj Kumar\", \"permanent\":true, \"address\":{ \"street\":\"El Camino Real\"," + 
+            	"\"city\":\"San Jose\", \"zipcode\":95014 }, \"phoneNumbers\":[9988664422, 1234567890]," +
+				"\"role\":\"Developer\" }";
+		InputStream fis = new ByteArrayInputStream(Charset.forName("UTF-16").encode(myString).array());
+		//create JsonReader object
+		JsonReader jsonReader = Json.createReader(fis);
+		
+		/**
+		 * We can create JsonReader from Factory also
+		JsonReaderFactory factory = Json.createReaderFactory(null);
+		jsonReader = factory.createReader(fis);
+		*/
+		
+		//get JsonObject from JsonReader
+		JsonObject jsonObject = jsonReader.readObject();
+		
+		//we can close IO resource and JsonReader now
+		jsonReader.close();
+		fis.close();
+		
+		//Retrieve data from JsonObject
+		
+		
+		System.out.println("id : " + jsonObject.getInt("id"));
+		System.out.println("name : " + jsonObject.getString("name"));
+		System.out.println("permanent : " + jsonObject.getBoolean("permanent"));
+		System.out.println("role : " + jsonObject.getString("role"));
+		
+		//reading arrays from json
+		JsonArray jsonArray = jsonObject.getJsonArray("phoneNumbers");
+		long[] numbers = new long[jsonArray.size()];
+		int index = 0;
+		for(JsonValue value : jsonArray){
+			numbers[index++] = Long.parseLong(value.toString());
+			System.out.println("index" + (index - 1) + " phone Number " + numbers[index - 1]);
+		}
+		
+		
+		//reading inner object from json object
+		JsonObject innerJsonObject = jsonObject.getJsonObject("address");
+		System.out.println("street : " + innerJsonObject.getString("street"));
+		System.out.println("city : " + innerJsonObject.getString("city"));
+		System.out.println("zipcode : " + innerJsonObject.getInt("zipcode"));
+		
+		return 0;
+	}
+	
+}

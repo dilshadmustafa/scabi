@@ -1,0 +1,24 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Feb-2016
+ * File Name : CU.java
+ */
+package com.dilmus.test;
+
+import com.dilmus.dilshad.scabi.client.DComputeUnit;
+import com.dilmus.dilshad.scabi.client.Dson;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class CU extends DComputeUnit {
+	
+	public String compute(Dson jsonInput) {
+		//System.out.println("compute() Testing 2 in remote. I'm from CU class from CNS");
+		return "CU class : sending back : " + jsonInput.toString();
+	}
+}

@@ -1,0 +1,97 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Jan-2016
+ * File Name : ScabiClient.java
+ */
+
+package com.dilmus.scabi.client;
+
+import java.io.IOException;
+
+import org.apache.http.*;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class ScabiClient {
+
+    public static void main(String[] args) {
+        System.out.println("ScabiClient");
+        CloseableHttpClient httpClient;
+
+            // use httpClient (no need to close it explicitly)
+        	try {
+        		httpClient = HttpClientBuilder.create().build();
+        	    // use httpClient (no need to close it explicitly)
+        		// specify the host, protocol, and port
+        		HttpHost target = new HttpHost("localhost", 4567, "http");
+        		
+        			// specify the get request
+        			// works HttpGet getRequest = new HttpGet("/hello");
+        			// /forecastrss?p=80020&u=f
+        			/*
+        			String myString = "{\"id\":123, \"name\":\"Pankaj Kumar\", \"permanent\":true, \"address\":{ \"street\":\"El Camino Real\"," + 
+        	            	"\"city\":\"San Jose\", \"zipcode\":95014 }, \"phoneNumbers\":[9988664422, 1234567890]," +
+        					"\"role\":\"Developer\" }";
+        			*/
+        			//String myString = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4568\" }";
+        			String myString = "";
+        			// {"id":123, "name":"Pankaj Kumar", "permanent":true, "address":{ "street":"El Camino Real","city":"San Jose", "zipcode":95014 }, "phoneNumbers":[9988664422, 1234567890],"role":"Developer" }
+        			
+        			// HttpPost postRequest = new HttpPost("/hellopost");
+        			// HttpPost postRequest = new HttpPost("/Meta/Compute/Register");
+        			HttpPost postRequest = new HttpPost("/Meta/Compute/Alloc");
+        			
+        			// StringEntity params =new StringEntity("details={\"name\":\"myname\",\"age\":\"20\"} ");
+        		    StringEntity params =new StringEntity(myString);
+        		    
+        		    // works postRequest.addHeader("content-type", "application/x-www-form-urlencoded");
+        		    postRequest.addHeader("content-type", "application/json");
+        		    postRequest.setEntity(params);
+        		            			
+        			System.out.println("executing request to " + target);
+        	
+        			// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+        			HttpResponse httpResponse = httpClient.execute(target, postRequest);
+        			HttpEntity entity = httpResponse.getEntity();
+        		
+        			System.out.println("----------------------------------------");
+        			System.out.println(httpResponse.getStatusLine());
+        			Header[] headers = httpResponse.getAllHeaders();
+        			for (int i = 0; i < headers.length; i++) {
+        			System.out.println(headers[i]);
+        			}
+        		System.out.println("----------------------------------------");
+        	
+        		if (entity != null) {
+        			System.out.println(EntityUtils.toString(entity));
+        		}
+        	
+        
+        	
+        } catch (IOException e) {
+
+            // handle
+        	e.printStackTrace();
+        }
+
+        finally {
+        // When HttpClient instance is no longer needed,
+        // shut down the connection manager to ensure
+        // immediate deallocation of all system resources
+       
+        }   
+   
+    }
+
+}

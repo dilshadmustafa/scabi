@@ -1,0 +1,174 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 26-Feb-2016
+ * File Name : RetryMonitor.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import org.apache.http.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class RetryMonitor implements Runnable {
+	private final Logger log = LoggerFactory.getLogger(RetryMonitor.class);
+	
+	private Compute m_compute = null;
+	private Meta m_meta = null;
+	private ExecutorService m_threadPool = null;
+	private List<ComputeConfig> m_cconfigList = null;
+	private List<ComputeRun> m_crunList = null;
+	private List<ComputeSync> m_csyncList = null;
+	private List<ComputeSync> m_csyncWorkingList = null;
+	
+	private List<ComputeRun> m_localCRunList = null;
+	private List<ComputeSync> m_localCSyncList = null;
+	
+	public RetryMonitor(Compute compute, Meta meta) {
+		m_compute = compute;
+		m_meta = meta;
+		
+		m_cconfigList = compute.getCConfigList();
+		m_crunList = compute.getCRunList();
+		m_csyncList = compute.getCSyncList();
+		m_threadPool = compute.getExecutorService();
+		
+		m_csyncWorkingList = new ArrayList<ComputeSync>();
+		
+		m_localCRunList = new ArrayList<ComputeRun>();
+		m_localCSyncList = new ArrayList<ComputeSync>();
+		
+	}
+	
+	public int doRetry() throws ParseException, IOException, ScabiClientException {
+		int fcTotal = 0;
+		int csyncWorkingTotal = 0;
+		boolean firstTime = true;
+		boolean isAllRunOnce = true;
+		
+		// RetryMonitor is started only after all ComputeRun and ComputeSync are created in Compute class
+		// copy m_crunList, m_csyncList to local copy
+		synchronized(m_compute) {
+			for (ComputeRun crun : m_crunList) {
+				if (false == m_localCRunList.contains(crun))
+					m_localCRunList.add(crun);
+			}
+			for (ComputeSync csync : m_csyncList) {
+				if (false == m_localCSyncList.contains(csync))
+					m_localCSyncList.add(csync);
+			}
+		}
+		
+		while(true) {
+			
+		
+		isAllRunOnce = true;
+		for (ComputeRun crun : m_crunList) {
+			if (false == crun.isRunOnce())
+				isAllRunOnce = false;
+			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
+					&& true == crun.isError() && true == crun.isDone() 
+					&& false == crun.isRetrySubmitted()) {
+				fcTotal = fcTotal + 1;
+			}
+		}
+		//log.debug("doRetry() isAllRunOnce : {}", isAllRunOnce);
+		if (0 == fcTotal && true == isAllRunOnce) {
+			log.debug("doRetry() fcTotal : {}", fcTotal);
+			return 0;
+		}
+		for (ComputeSync csync : m_csyncList) {
+			if (false == csync.isFaulty()) {
+				csyncWorkingTotal = csyncWorkingTotal + 1;
+			}
+		}
+		if (fcTotal > csyncWorkingTotal) {
+			ComputeSync csynca[] = m_meta.getComputeManyMayExclude(fcTotal - csyncWorkingTotal);
+			if(csynca != null) {
+				for (ComputeSync csync : csynca) {
+					m_csyncWorkingList.add(csync);
+				}
+			}
+		}
+		if (firstTime) {
+			m_csyncWorkingList.addAll(m_csyncList);
+			firstTime = false;
+		}
+		for (ComputeSync csync : m_csyncWorkingList) {
+			if (csync.isFaulty()) {
+				m_csyncWorkingList.remove(csync);
+			}
+		}
+
+		int k = 0;
+		for (ComputeRun crun : m_crunList) {
+			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
+					&& true == crun.isError() && true == crun.isDone() 
+					&& false == crun.isRetrySubmitted()) {
+				log.debug("Inside split for loop");
+				if (k >= m_csyncWorkingList.size())
+					k = 0;
+				ComputeSync csync = m_csyncWorkingList.get(k);
+	            /* Not used	
+				synchronized(csync) {
+					csync.setTU(crun.getTU());
+					csync.setSU(crun.getSU());
+				}
+				*/
+				crun.setComputeSync(csync);
+				k++;
+				crun.setRetrySubmitStatus(true);
+				
+				synchronized(m_compute) {
+					
+				// In Compute class, initialize() method, after thread pool shutdown, m_threadPool is set to null
+				if (null == m_compute.getExecutorService()) {
+					return 0;
+				}
+
+				// works m_threadPool.execute(crun);
+				Future<?> f = m_threadPool.submit(crun);
+				m_compute.addToFutureList(f);
+				m_compute.putFutureCRunMap(f, crun);
+				
+				}
+			}
+			
+		}
+		
+		} // End While
+		
+		// return 0;
+	}
+	
+	public void run() {
+		try {
+			doRetry();
+		}
+		catch (Error | RuntimeException e) {
+			e.printStackTrace();
+			throw e;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new RuntimeException(e);
+	    } catch (Throwable e) {
+	    	e.printStackTrace();
+	        throw new RuntimeException(e);
+	    }
+
+	}
+}

@@ -1,0 +1,32 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 02-Mar-2016
+ * File Name : DFutureCallback.java
+ */
+package com.dilmus.dilshad.scabi.client.async;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DFutureCallback<HttpResponse> {
+
+    public void completed(final HttpResponse response) {
+        latch.countDown();
+        System.out.println(requests[0].getRequestLine() + "->" + response.getStatusLine());
+    }
+
+    public void failed(final Exception ex) {
+        latch.countDown();
+        System.out.println(requests[0].getRequestLine() + "->" + ex);
+    }
+
+    public void cancelled() {
+        latch.countDown();
+        System.out.println(requests[0].getRequestLine() + " cancelled");
+    }
+
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DilshadDCS_Core"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/bson-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpasyncclient-4.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpclient-4.5.2.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpcore-4.4.4.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpcore-nio-4.4.4.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/javassist-3.20.0-GA.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/mongodb-driver-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/mongodb-driver-core-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-api-1.7.16.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-simple-1.7.16.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

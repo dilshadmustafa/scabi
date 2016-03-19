@@ -1,0 +1,88 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 28-Jan-2016
+ * File Name : DDAOHelper.java
+ */
+package com.dilmus.dilshad.scabi.common;
+
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.dilshad.scabi.db.DDB;
+import com.dilmus.dilshad.scabi.db.DTable;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DMDaoHelper {
+
+	final static Logger log = LoggerFactory.getLogger(DMDaoHelper.class);
+	private DDB m_ddb = null;
+	
+	public DMDaoHelper(String dbHost, String dbPort, String dbName) {
+		m_ddb = new DDB(dbHost, dbPort, dbName);
+	}
+	
+	public DMDaoHelper(DDB ddb) {
+		m_ddb = ddb;
+	}
+	
+	public DMDaoHelper() {
+		m_ddb = null;
+	}
+
+	
+	public int open(String dbHost, String dbPort, String dbName) {
+		m_ddb = new DDB(dbHost, dbPort, dbName);
+		return 0;
+	}
+
+	public int close() {
+		if (m_ddb != null)
+			m_ddb.close();
+		return 0;
+	}
+
+	
+	public DMDao createDAO() {
+		return new DMDao(m_ddb);
+	}
+	
+	public DTable getTable(String tableName) throws DScabiException {
+		if (null == tableName) {
+			throw new DScabiException("Table name is null", "DDH.GTE.1");
+		}
+		return m_ddb.getTable(tableName);
+	}
+
+	public DTable createTable(String tableName) throws DScabiException {
+		if (null == tableName) {
+			throw new DScabiException("Table name is null", "DDH.CTE.1");
+		}
+		return m_ddb.createTable(tableName);
+	}
+	
+	/*
+	public ArrayList<String> fieldNames(DTable table) throws DScabiException {
+		if (null == table) {
+			throw new DScabiException("Table is null", "DDH.FNS.1");
+		}
+		return m_ddb.fieldNamesUsingFindOne(table);
+	}
+	*/
+	
+	public boolean isEmpty(ArrayList<String> fieldList) {
+		if (null == fieldList)
+			return true;
+		if (fieldList.isEmpty())
+			return true;
+		return false;
+	}
+	
+}

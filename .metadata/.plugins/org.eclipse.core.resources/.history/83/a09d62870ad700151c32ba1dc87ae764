@@ -1,0 +1,482 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 11-Feb-2016
+ * File Name : DBackCollection.java
+ */
+package com.dilmus.scabi.common;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+
+import org.bson.BasicBSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.MapReduceCommand;
+import com.mongodb.MapReduceOutput;
+import com.mongodb.WriteResult;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DBackTable {
+
+	final static Logger log = LoggerFactory.getLogger(DBackTable.class);
+	
+	private DBackDB ddb = null;
+	private DBCollection table = null;
+	
+	private String tableName;
+	private boolean firstTime;
+	private ArrayList<String> fieldNames;
+	
+	private DBackCursor dcursor = null;
+	
+	public DBackTable(DBackDB ddb, DBCollection table) {
+		this.ddb = ddb;
+		this.table = table;
+		tableName = table.getName();
+		firstTime = true;
+		fieldNames = null;
+		
+		dcursor = new DBackCursor();
+		
+	}
+
+	public DBackTable(DBackDB ddb, String tableName) throws DScabiException {
+		this.ddb = null;
+		table = null;
+		this.tableName = null;
+		firstTime = true;
+		fieldNames = null;
+		
+		DB db = ddb.getDB();
+		if (db.collectionExists(tableName) == false) {
+			throw new DScabiException("Table name doesn't exist : " + tableName, "DBT.DBT.1");
+		}
+		table = db.getCollection(tableName);
+		this.tableName = tableName;
+		this.ddb = ddb;
+
+		dcursor = new DBackCursor();
+
+	}
+	
+	public DBackTable(DBackDB ddb) {
+		this.ddb = ddb;
+		table = null;
+		tableName = null;
+		firstTime = true;
+		fieldNames = null;
+
+		dcursor = new DBackCursor();
+
+	}
+	
+	public int setTableName(String tableName) throws DScabiException {
+		this.tableName = null;
+		firstTime = true;
+		fieldNames = null;
+		table = null;
+		
+		DB db = ddb.getDB();
+		if (db.collectionExists(tableName) == false) {
+			throw new DScabiException("Table name doesn't exist : " + tableName, "DBT.STN.1");
+		}
+		table = db.getCollection(tableName);
+		this.tableName = tableName;
+		return 0;
+	}
+	
+	public long count() {
+		return table.count();
+	}
+
+	public ArrayList<String> fieldNames() throws DScabiException {
+		if (null == tableName) {
+			throw new DScabiException("Table name is null", "DBT.FNS.1");
+		}
+		if (null == table) {
+			throw new DScabiException("Table is null", "DBT.FNS.2");
+		}
+		log.debug("fieldNames() firstTime is {}", firstTime);
+		if (table.count() <= 0) {
+			log.debug("fieldNames() table.count() is {}", table.count());
+			return null;
+		}
+		if (firstTime) {
+			String map = "function() { for (var key in this) { emit(key, null); } }";
+			String reduce = "function(key, stuff) { return null; }";
+			
+			MapReduceCommand cmd = new MapReduceCommand(table, map, reduce,
+					   	     null, MapReduceCommand.OutputType.INLINE, null);
+			MapReduceOutput out = table.mapReduce(cmd);
+			//if 4th param output collection name is used above, String s = out.getOutputCollection().distinct("_id").toString();
+			//if 4th param output collection name is used above, System.out.println("out.getOutputCollection().distinct " + s);
+			fieldNames = new ArrayList<String>();
+			for (DBObject o : out.results()) {
+			    log.debug("fieldNames() Key, value is : {}", o.toString());
+			    log.debug("fieldNames() Key name is : {}", o.get("_id").toString());
+			    if (o.get("_id").toString().equals("_id") == false)
+			    	fieldNames.add(o.get("_id").toString());
+			}			
+			firstTime = false;
+			return fieldNames;
+		}
+		return fieldNames;
+	}
+
+	public ArrayList<String> fieldNamesUsingFindOne() throws DScabiException {
+		if (null == tableName) {
+			throw new DScabiException("Table name is null", "DBT.FNS.1");
+		}
+		if (null == table) {
+			throw new DScabiException("Table is null", "DBT.FNS.2");
+		}
+		log.debug("fieldNames() firstTime is {}", firstTime);
+		if (table.count() <= 0) {
+			log.debug("fieldNames() table.count() is {}", table.count());
+			return null;
+		}
+		if (firstTime) {
+			DBObject out = table.findOne();
+			//if 4th param output collection name is used above, String s = out.getOutputCollection().distinct("_id").toString();
+			//if 4th param output collection name is used above, System.out.println("out.getOutputCollection().distinct " + s);
+			fieldNames = new ArrayList<String>();
+			Set<String> st = out.keySet();
+			for (String s : st) {
+			    log.debug("fieldNames() value is : {}", out.get(s));
+			    log.debug("fieldNames() Key name is : {}", s);
+			    if (s.equals("_id") == false)
+			    	fieldNames.add(s);
+			}			
+			firstTime = false;
+			return fieldNames;
+		}
+		return fieldNames;
+	}
+
+	public DBCollection getCollection() {
+		return table;
+	}
+
+	public DBackCursor find(DBackObject document) {
+		DBCursor cursor = table.find(document.getDocument());
+		dcursor.set(cursor);
+		return dcursor;
+	}
+	
+	public DBackCursor findDirect(DBackObject document) {
+		return new DBackCursor(table.find(document.getDocument()));
+	}
+
+	public DBackObject findOne(DBackObject document) {
+		DBObject ob = table.findOne(document.getDocument());
+		return new DBackObject(ob);
+	}
+	
+	public int insert(DBackObject dob) throws DScabiException {
+		WriteResult result = table.insert(dob.getDocument());
+		log.debug("result is : {}", result.getN());
+		if (result.getN() < 0)
+			throw new DScabiException("Insert failed for DBackObject : " + dob.toString(), "DBT.INT.1");
+		return result.getN();
+	}
+
+	public int update(DBackObject dob, DBackObject updateObj) throws DScabiException {
+		WriteResult result = table.updateMulti(dob.getDocument(), updateObj.getDocument());
+		log.debug("result is : {}", result.getN());
+		if (result.getN() <= 0)
+			throw new DScabiException("Update failed for DBackObject dob : " + dob.toString() + " updateObj : " + updateObj.toString(), "DBT.UPE.1");
+		return result.getN();
+	}
+
+	public int remove(DBackObject dob) throws DScabiException {
+		WriteResult result = table.remove(dob.getDocument());
+		log.debug("result is : {}", result.getN());
+		if (result.getN() <= 0)
+			throw new DScabiException("Remove failed for DBackObject : " + dob.toString(), "DBT.REE.1");
+		return result.getN();
+	}
+	
+	private boolean isEmpty(ArrayList<String> fieldList) {
+		
+		if (null == fieldList)
+			return true;
+		if (fieldList.isEmpty())
+			return true;
+		return false;
+	}
+
+	public int insertRow(String jsonRow, String jsonCheck) throws DScabiException, IOException {
+
+		log.debug("insertRow() firstTime is {}", firstTime);
+		ArrayList<String> fieldList = fieldNames();
+		DJson djson = new DJson(jsonRow);
+		Set<String> st = djson.keySet();
+		BasicDBObject document = new BasicDBObject();
+		int n = 0;
+		WriteResult result = null;
+		
+		DJson djsonCheck = new DJson(jsonCheck);
+		Set<String> stCheck = djsonCheck.keySet();
+		BasicDBObject documentCheck = new BasicDBObject();
+		
+		if (false == isEmpty(fieldList)) {
+			if (false == fieldList.containsAll(st)) {
+		   		throw new DScabiException("One or more field name in jsonRow doesn't exist in fieldNames list. jsonRow : " + jsonRow + " Field Names list : " + fieldList, "DDO.IRW.7");
+			}
+			if (false == fieldList.containsAll(stCheck)) {
+	    		throw new DScabiException("One or more field name in jsonCheck doesn't exist in fieldNames list. jsonCheck : " + jsonCheck + " Field Names list : " + fieldList, "DDO.IRW.8");				
+	    	}
+			if (false == st.containsAll(fieldList)) {
+		   		throw new DScabiException("One or more field name in fieldNames doesn't exist in jsonRow key set. jsonRow : " + jsonRow + " Field Names list : " + fieldList, "DDO.IRW.10");
+			}
+			if (fieldList.size() != st.size()) {
+	    		throw new DScabiException("Fields count doesn't match. fieldNames : " + fieldList.toString() + " with jsonRow : " + jsonRow, "DDO.IRW.1");
+			}
+		}
+		
+		if (false == isEmpty(fieldList)) {
+			for (String fieldName : st) {
+		    	// create a document to store key and value
+				String f = djson.getString(fieldName);
+				if (null == f) {
+		    		throw new DScabiException("Field name " + fieldName + " doesn't exist in jsonRow : " + jsonRow + " Field Names list : " + fieldList, "DDO.IRW.2");
+				}
+		    	document.put(fieldName, f);
+			}
+
+			for (String keyCheck : stCheck) {
+		    	// create a document to store key and value				
+				String f2 = djsonCheck.getString(keyCheck);
+				if (null == f2) {
+		    		throw new DScabiException("Field name " + keyCheck + " doesn't exist in jsonCheck : " + jsonCheck, "DDO.IRW.9");
+				}
+		    	documentCheck.put(keyCheck, f2);
+			}
+			
+	    	DBCursor cursorExist = table.find(documentCheck);
+	    	n = cursorExist.count();
+	    	if (0 == n) {
+	    		log.debug("insertRow() Inside 0 == n");
+	    		result = table.insert(document);
+	    		log.debug("result is : {}", result.getN());
+	    		if (result.getN() < 0)
+	    			throw new DScabiException("Insert failed for document : " + document.toString(), "DBT.IRW.10");
+	    	} else if (1 == n) {
+	    		throw new DScabiException("Row already exists. jsonCheck : " + jsonCheck, "DDO.IRW.3"); // already found
+	    	} else {
+	    		throw new DScabiException("Row already exists, multiple matches. jsonCheck : " + jsonCheck, "DDO.IRW.4"); // already found
+	    	}
+		} else {
+			for (String key : st) {
+		    	// create a document to store key and value
+				String f3 = djson.getString(key);
+				if (null == f3) {
+		    		throw new DScabiException("Field name " + key + " doesn't exist in jsonRow : " + jsonRow, "DDO.IRW.11");
+				}
+				document.put(key, djson.getString(key));
+			}
+			
+			for (String keyCheck : stCheck) {
+		    	// create a document to store key and value				
+				String f4 = djsonCheck.getString(keyCheck);
+				if (null == f4) {
+		    		throw new DScabiException("Field name " + keyCheck + " doesn't exist in jsonCheck : " + jsonCheck, "DDO.IRW.10");
+				}
+		    	documentCheck.put(keyCheck, djsonCheck.getString(keyCheck));
+			}
+			
+	    	DBCursor cursorExist = table.find(documentCheck);
+	    	n = cursorExist.count();
+	    	if (0 == n) {
+	    		log.debug("insertRow() Inside 0 == n");
+		    	result = table.insert(document);
+	    		log.debug("result is : {}", result.getN());
+	    		if (result.getN() < 0)
+	    			throw new DScabiException("Insert failed for document : " + document.toString(), "DBT.IRW.11");
+	    	} else if (1 == n) {
+	    		throw new DScabiException("Row already exists. jsonCheck : " + jsonCheck, "DDO.IRW.5"); // already found
+	    	} else {
+	    		throw new DScabiException("Row already exists, multiple matches. jsonCheck : " + jsonCheck, "DDO.IRW.6"); // already found
+	    	}
+		}
+		return result.getN();
+	}
+
+	public String executeQuery(String jsonQuery) throws DScabiException, IOException {
+		ArrayList<String> fieldList = fieldNames();
+		DJson djson = new DJson(jsonQuery);
+		Set<String> st = djson.keySet();
+		BasicDBObject document = new BasicDBObject();
+		ArrayList<String> finalList = new ArrayList<String>();
+		HashMap<String, String> hmap = new HashMap<String, String>();
+		DJson djson3 = null;
+		
+		if (false == isEmpty(fieldList)) {
+			if (false == fieldList.containsAll(st)) {
+		   		throw new DScabiException("One or more field name in jsonQuery doesn't exist in fieldNames list. jsonQuery : " + jsonQuery + " Field Names list : " + fieldList, "DDO.EQY.3");
+			}
+			
+		}
+	
+		for (String key : st) {
+		   	// create a document to store key and value
+		   	document.put(key, djson.getString(key));
+		}
+	    DBCursor cursorExist = table.find(document);
+	    	
+	    while (cursorExist.hasNext()) {
+	    		
+	    	hmap.clear();
+	    	DBObject ob = cursorExist.next();
+	    	Set<String> obkeys = ob.keySet();
+			obkeys.remove("_id"); // exclude _id field
+	    	//log.debug("executeQuery() result from ob {}", ob.toString());
+			if (false == isEmpty(fieldList)) {
+				if (false == obkeys.containsAll(fieldList)) {
+			   		throw new DScabiException("One or more field name in fieldList doesn't exist in obkeys key set. obkeys : " + obkeys + " Field Names list : " + fieldList, "DDO.EQY.4");
+				}
+				for (String field : obkeys) {
+					//if (field.equals("_id"))
+					//	continue;
+					String f = (String) ((BasicBSONObject) ob).getString(field);
+					if (null == f) {
+			    		throw new DScabiException("Field name " + field + " doesn't exist in dbobject in dbcursor. jsonQuery : " + jsonQuery + " Field Names list : " + fieldList, "DDO.EQY.1");
+					}
+					//log.debug("executeQuery() field is {}", field);
+					//log.debug("executeQuery() f is {}", f);
+					hmap.put(field, f);
+				}
+			} else {
+		   		for (String key : obkeys) {
+					//if (key.equals("_id"))
+					//	continue;
+		   			String f2 = (String) ((BasicBSONObject) ob).getString(key);
+					if (null == f2) {
+			    		throw new DScabiException("Field name " + key + " doesn't exist in dbobject in dbcursor. jsonQuery : " + jsonQuery, "DDO.EQY.2");
+					}
+					//log.debug("executeQuery() key is {}", key);
+					//log.debug("executeQuery() f2 is {}", f2);
+					hmap.put(key, f2);
+				}
+			}
+			DJson djson2 = null;
+			//if (false == fieldList.isEmpty())
+			//	djson2 = DJson.createDJsonList(hmap, fieldList);
+			//else if (false == st.isEmpty())
+			//	djson2 = DJson.createDJsonSet(hmap, st);
+			if (false == obkeys.isEmpty())
+				djson2 = DJson.createDJsonSet(hmap, obkeys);
+			if (null == djson2) {
+	    		throw new DScabiException("djson2 is null. jsonQuery : " + jsonQuery, "DDO.EQY.3");
+			}
+			finalList.add(djson2.toString());
+	    }
+	    djson3 = DJson.createDJsonWithCount(finalList);
+		
+		return djson3.toString();
+	}
+
+	public DBackCursor executeQueryCursorResult(String jsonQuery) throws IOException, DScabiException {
+		ArrayList<String> fieldList = fieldNames();
+		DJson djson = new DJson(jsonQuery);
+		Set<String> st = djson.keySet();
+		BasicDBObject document = new BasicDBObject();
+
+		if (false == isEmpty(fieldList)) {
+			if (false == fieldList.containsAll(st)) {
+		   		throw new DScabiException("One or more field name in jsonQuery doesn't exist in fieldNames list. jsonQuery : " + jsonQuery + " Field Names list : " + fieldList, "DDO.EQC.1");
+			}
+		}
+
+		for (String key : st) {
+		    	// create a document to store key and value
+		    	document.put(key, djson.getString(key));
+		}
+	    DBCursor cursorExist = table.find(document);
+	   	return new DBackCursor(cursorExist);
+	}
+
+	public int executeUpdate(String jsonUpdate, String jsonWhere) throws IOException, DScabiException {
+		ArrayList<String> fieldList = fieldNames();
+		DJson djsonWhere = new DJson(jsonWhere);
+		Set<String> stWhere = djsonWhere.keySet();
+		BasicDBObject documentWhere = new BasicDBObject();
+		
+		DJson djsonUpdate = new DJson(jsonUpdate);
+		Set<String> stUpdate = djsonUpdate.keySet();
+		BasicDBObject documentUpdate = new BasicDBObject();
+
+		if (false == isEmpty(fieldList)) {
+			if (false == fieldList.containsAll(stWhere)) {
+		   		throw new DScabiException("One or more field name in jsonWhere doesn't exist in fieldNames list. jsonWhere : " + jsonWhere + " Field Names list : " + fieldList, "DDO.EUE.1");
+			}
+			if (false == fieldList.containsAll(stUpdate)) {
+	    		throw new DScabiException("One or more field name in jsonUpdate doesn't exist in fieldNames list. jsonUpdate : " + jsonUpdate + " Field Names list : " + fieldList, "DDO.EUE.2");				
+	    	}
+		}
+		
+		for (String keyWhere : stWhere) {
+		    	// create a document to store key and value
+		    	documentWhere.put(keyWhere, djsonWhere.getString(keyWhere));
+		}
+
+		for (String keyUpdate : stUpdate) {
+	    	// create a document to store key and value
+	    	documentUpdate.put(keyUpdate, djsonUpdate.getString(keyUpdate));
+		}
+	
+	   	BasicDBObject updateObj = new BasicDBObject();
+	   	updateObj.put("$set", documentUpdate);
+
+	   	WriteResult result = table.updateMulti(documentWhere, updateObj);
+		log.debug("result is : {}", result.getN());
+	   	if (result.getN() <= 0)
+			throw new DScabiException("Update failed for documentWhere : " + documentWhere.toString() + " updateObj : " + updateObj.toString(), "DBT.EUE.3");
+  	
+		return result.getN();
+	
+	}
+
+	public int executeRemove(String jsonWhere) throws IOException, DScabiException {
+		ArrayList<String> fieldList = fieldNames();
+		DJson djsonWhere = new DJson(jsonWhere);
+		Set<String> stWhere = djsonWhere.keySet();
+		BasicDBObject documentWhere = new BasicDBObject();
+		
+		if (false == isEmpty(fieldList)) {
+			if (false == fieldList.containsAll(stWhere)) {
+		   		throw new DScabiException("One or more field name in jsonWhere doesn't exist in fieldNames list. jsonWhere : " + jsonWhere + " Field Names list : " + fieldList, "DDO.ERE.1");
+			}
+		}
+		
+		for (String keyWhere : stWhere) {
+		    	// create a document to store key and value
+		    	documentWhere.put(keyWhere, djsonWhere.getString(keyWhere));
+		}
+
+	   	// DBObject result = table.findAndRemove(documentWhere);
+	   	WriteResult result = table.remove(documentWhere);
+		log.debug("result is : {}", result.getN());
+	   	if (result.getN() <= 0)
+			throw new DScabiException("Remove failed for documentWhere : " + documentWhere.toString(), "DBT.ERE.3");
+
+	   	return result.getN();
+	
+	}
+
+	
+}

@@ -1,0 +1,139 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 06-Mar-2016
+ * File Name : DDBObject.java
+ */
+package com.dilmus.dilshad.scabi.common;
+
+import java.util.Date;
+import java.util.Set;
+
+import org.bson.BasicBSONObject;
+import org.bson.BsonDocument;
+import org.bson.Document;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+
+
+public class DDocument {
+
+	private Document m_document = null;
+	
+	public DDocument() {
+		m_document = new Document();
+	}
+	
+	public DDocument(Document document) {
+		m_document = document;
+	}
+	
+	public int set(Document document) {
+		m_document = document;
+		return 0;
+	}
+	
+	public int put(String key, String value) {
+		m_document.put(key, value);
+		return 0;
+	}
+	
+	public int put(String key, int value) {
+		m_document.put(key, value);
+		return 0;
+	}
+
+	public int put(String key, long value) {
+		m_document.put(key, value);
+		return 0;
+	}
+
+	public int put(String key, float value) {
+		m_document.put(key, value);
+		return 0;
+	}
+
+	public int put(String key, double value) {
+		m_document.put(key, value);
+		return 0;
+	}
+
+	public int put(String key, Date value) {
+		m_document.put(key, value);
+		return 0;
+	}
+
+	public int put(String key, Document value) {
+		m_document.put(key, value);
+		return 0;
+	}
+	
+	public int put(String key, DDocument value) {
+		m_document.put(key, value.getDocument());
+		return 0;
+	}
+	
+	public DDocument append(String key, String value) {
+		m_document.put(key, value);
+		return this;
+	}
+	
+	public DDocument append(String key, int value) {
+		m_document.put(key, value);
+		return this;
+	}
+
+	public DDocument append(String key, long value) {
+		m_document.put(key, value);
+		return this;
+	}
+
+	public DDocument append(String key, float value) {
+		m_document.put(key, value);
+		return this;
+	}
+
+	public DDocument append(String key, double value) {
+		m_document.put(key, value);
+		return this;
+	}
+
+	public DDocument append(String key, Date value) {
+		m_document.put(key, value);
+		return this;
+	}
+
+	public DDocument append(String key, Document value) {
+		m_document.put(key, value);
+		return this;
+	}
+	
+	public String getString(String key) {
+		return m_document.getString(key);
+	}
+	
+	public Object get(String key) {
+		return m_document.get(key);
+	}
+	
+	public Set<String> keySet() {
+		return m_document.keySet();
+	}
+	
+	public Document getDocument() {
+		return m_document;
+	}
+	
+	public String toString() {
+		return m_document.toString();
+	}
+}
+

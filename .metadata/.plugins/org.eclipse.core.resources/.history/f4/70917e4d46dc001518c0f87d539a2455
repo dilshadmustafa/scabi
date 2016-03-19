@@ -1,0 +1,524 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 27-Jan-2016
+ * File Name : Compute.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
+import java.util.zip.GZIPOutputStream;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.ParseException;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.clientapp.CU;
+import com.dilmus.dilshad.scabi.common.DClassLoader;
+import com.dilmus.dilshad.scabi.common.DJson;
+import com.dilmus.dilshad.scabi.common.DJsonHelper;
+import com.dilmus.dilshad.scabi.common.DUtil;
+
+import javax.json.JsonObject;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class ComputeSync {
+
+	private final Logger log = LoggerFactory.getLogger(ComputeSync.class);
+	private CloseableHttpClient m_httpClient = null;
+	private String m_jsonString = null;
+	private HttpHost m_target = null;
+	private String m_computeHost = null;
+	private String m_computePort = null;
+	private DJson m_djson = null;
+	private String m_jsonInput = null;
+	private HttpHost m_metaTarget = null;
+	private Meta m_meta = null;
+	private int m_TU = 1;
+	private int m_SU = 1;
+	private boolean m_isFaulty = false;
+	
+	public ComputeSync(String jsonString) throws IOException {
+
+		m_djson = new DJson(jsonString);
+		m_computeHost = m_djson.getString("ComputeHost");
+		m_computePort = m_djson.getString("ComputePort");
+
+		try {
+			m_httpClient = HttpClientBuilder.create().build();
+			m_target = new HttpHost(m_computeHost, Integer.parseInt(m_computePort), "http");
+    	} catch (Exception e) {
+			e.printStackTrace();
+    		if (null != m_httpClient) 
+    			m_httpClient.close();
+    		throw e;
+    	}
+
+		m_jsonString = jsonString;
+		m_jsonInput = DJsonHelper.empty();
+		
+		m_isFaulty = false;
+	}
+	
+	public ComputeSync(Meta meta) throws IOException {
+		
+		String jsonCompute = null;
+		try {
+			m_httpClient = HttpClientBuilder.create().build();
+			jsonCompute = computeAlloc(meta);
+			m_djson = new DJson(jsonCompute);
+			m_computeHost = m_djson.getString("ComputeHost");
+			m_computePort = m_djson.getString("ComputePort");
+			m_target = new HttpHost(m_computeHost, Integer.parseInt(m_computePort), "http");
+			m_jsonString = jsonCompute;
+			m_meta = meta;
+			m_jsonInput = DJsonHelper.empty();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (null != m_httpClient) 
+				m_httpClient.close();
+			throw e;
+		}
+		
+		m_isFaulty = false;
+	}
+	
+	public int setFaulty(boolean isFaulty) {
+		m_isFaulty = isFaulty;
+		return 0;
+	}
+	
+	public boolean isFaulty() {
+		return m_isFaulty;
+	}
+	
+	private String computeAlloc(Meta meta) throws ParseException, IOException {
+		
+		m_metaTarget = new HttpHost(meta.getHost(), Integer.parseInt(meta.getPort()), "http");
+		
+		HttpPost postRequest = new HttpPost("/Meta/Compute/Alloc");
+		String myString = "";
+	    StringEntity params =new StringEntity(myString);
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("computeAlloc() executing request to " + m_metaTarget + "/Meta/Compute/Alloc");
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_metaTarget, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("computeAlloc()----------------------------------------");
+		log.debug("computeAlloc() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("computeAlloc() {}", headers[i]);
+		}
+		log.debug("computeAlloc()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("computeAlloc() {}", jsonString);
+		}
+		return jsonString;
+	}
+
+	
+	public String toString() {
+		return m_jsonString;
+	}
+	
+	public int setInput(String jsonInput) {
+		m_jsonInput = jsonInput;
+		return 0;
+	}
+
+	public int setTU(int tu) {
+		m_TU = tu;
+		return 0;
+	}
+
+	public int setSU(int su) {
+		m_SU = su;
+		return 0;
+	}
+	
+	public int getTU() {
+		return m_TU;
+	}
+
+	public int setSU(int su) {
+		m_SU = su;
+		return 0;
+	}
+
+	/*
+	public void execute() throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute");
+		
+	    StringEntity params = new StringEntity(m_jsonInput);
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("execute() executing request to " + m_target);
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("execute()----------------------------------------");
+		log.debug("execute() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("execute() {}", headers[i]);
+		}
+		log.debug("execute()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("execute() {}", jsonString);
+		}
+
+	}
+	*/
+	
+	public void executeCode(String bshSource) throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute/BshCode");
+
+		//String jsonBshScript = "{ \"" + bshScript +"\" : \"1\" }";
+		//DJson djson1 = new DJson(jsonBshScript);
+		//DJson djson1 = new DJson(jsonInput);
+		//DJson djson2 = djson1.add(bshScript, "1");
+		//StringEntity params = new StringEntity(djson2.toString());
+
+        //String action = "DDAO dao = database.createDAO();" +
+        	//	"dao.setTableName(\\\"ComputeMetaDataTable\\\");";
+        
+		// works finally
+		/* works
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\\\"ComputeMetaDataTable\\\");" +
+				"String jsonQuery = \\\"{ \\\\\\\"Status\\\\\\\":\\\\\\\"Available\\\\\\\" }\\\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+        // Result { "bshsource" : "DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = \"{ \"Status\":\"Available\" }\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;" }
+		// Error fails in json parsing
+		/* Error fails in json parsing
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = \"{ \\\"Status\\\":\\\"Available\\\" }\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+		//String jsonBshScript = "{ \"bshsource\" : \"" + action +"\" }";
+		//DJson djson1 = new DJson(jsonBshScript);
+		//StringEntity params = new StringEntity(djson1.toString());
+		//StringEntity params = new StringEntity(jsonBshScript);
+		
+		
+		// works finally
+        /* works
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = \"{ \\\"Status\\\":\\\"Available\\\" }\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+        */
+        // Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\\\"ComputeMetaDataTable\\\");String jsonQuery = \\\"{ \\\"Status\\\":\\\"Available\\\" }\\\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+       // works
+       /* works 
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = json.json(\"{ <<<Status>>> : <<<Available>>> }\");" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+		// Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = json.json(\"{ [Status] : [Available] }\");String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+		/* works
+		FileInputStream fis = new FileInputStream("/home/anees/workspace/testdata/in/testbsh1.bsh");
+		InputStreamReader isr = new InputStreamReader(fis);
+		BufferedReader bf = new BufferedReader(isr);
+		String s2 = null;
+		String s3 = "";
+		while (null != (s2 = bf.readLine())) {
+			s3 = s3 + s2;
+			
+		}
+		String action = s3;
+		log.debug("Action from file : {}", action);
+		*/
+		// String action = "{ \"Empty\" : \"1\" }";
+		// DJson djson1 = new DJson("bshsource", action);
+
+		DJson djson1 = new DJson("TotalComputeUnit", 1);
+		DJson djson2 = djson1.add("SplitComputeUnit", 1);
+		DJson djson3 = djson2.add("JsonInput", m_jsonInput);
+		DJson djson4 = djson3.add("BshSource", bshSource);
+
+		StringEntity params = new StringEntity(djson4.toString());
+		
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("executeBshSource() executing request to " + m_target + "/Compute/Execute");
+
+		// works HttpResponse httpResponse = httpClient.execute(m_target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("executeBshSource()----------------------------------------");
+		log.debug("executeBshSource() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("executeBshSource() {}", headers[i]);
+		}
+		log.debug("executeBshSource()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("executeBshSource() {}", jsonString);
+		}
+
+	}
+
+	public void executeClass(Class<? extends ComputeUnit> cls) throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute/Class");
+        
+    	Class<? extends ComputeUnit> p = cls;
+   		
+    	String className = p.getName();
+    	log.debug("executeClass() className  : {}", className);
+  		String classAsPath = className.replace('.', '/') + ".class";
+    	log.debug("executeClass() classAsPath  : {}", classAsPath);
+
+  		InputStream in = p.getClassLoader().getResourceAsStream(classAsPath);
+  		byte b[] = DUtil.toBytesFromInStreamForJavaFiles(in);
+  		in.close();
+  		log.debug("executeClass() b[] s : {}", b.toString());
+  		String hexStr = DUtil.toHexString(b);
+  		log.debug("executeClass() Hex string is : {}", hexStr);
+  		
+  		/* server side code
+  		byte b2[] = DUtil.toBytesFromHexStr(hexStr);
+  		log.debug("executeClass() to bytes  : {}", b2.toString());
+  		
+  		for (int i = 0; i < b.length; i++) {
+  			//log.debug("executeClass() b : {}, b2 : {}", b[i], b2[i]);
+  			if (b[i] != b2[i]) {
+  				log.debug("executeClass() b and b2 are not same");
+  				break;
+  			}
+  		}
+  		log.debug("executeClass() b and b2 are same");
+  		
+  		ClassLoader cl = ClassLoader.getSystemClassLoader() ;
+  		Class<?> df = (new DClassLoader()).findClass(className, b2);
+  		ComputeUnit cuu = (ComputeUnit) df.newInstance();
+  		Dson dson = new Dson("input", "1");
+  		cuu.compute(dson);
+		*/
+		
+		DJson djson1 = new DJson("TotalComputeUnit", 1);
+		DJson djson2 = djson1.add("SplitComputeUnit", 1);
+		DJson djson3 = djson2.add("JsonInput", m_jsonInput);
+		DJson djson4 = djson3.add("ClassName", className);
+		DJson djson5 = djson4.add("ClassBytes", hexStr);
+
+		StringEntity params = new StringEntity(djson5.toString());
+		
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("executeClass() executing request to " + m_target + "/Compute/Execute/Class");
+
+		// works HttpResponse httpResponse = httpClient.execute(m_target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("executeClass()----------------------------------------");
+		log.debug("executeClass() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("executeClass() {}", headers[i]);
+		}
+		log.debug("executeClass()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("executeClass() {}", jsonString);
+		}
+
+	}
+
+	public String executeObject(ComputeUnit obj) throws ClientProtocolException, IOException {
+		HttpPost postRequest = new HttpPost("/Compute/Execute/FromObject");
+		
+    	Class<? extends ComputeUnit> p = obj.getClass();
+    	String className = p.getName();
+    	log.debug("executeObject() className  : {}", className);
+  		String classAsPath = className.replace('.', '/') + ".class";
+    	log.debug("executeObject() classAsPath  : {}", classAsPath);
+
+  		InputStream in = p.getClassLoader().getResourceAsStream(classAsPath);
+  		byte b[] = DUtil.toBytesFromInStreamForJavaFiles(in);
+  		in.close();
+  		log.debug("executeObject() b[] s : {}", b.toString());
+  		String hexStr = DUtil.toHexString(b);
+  		log.debug("executeObject() Hex string is : {}", hexStr);
+  		
+  		/*
+  		byte b2[] = DUtil.toBytesFromHexStr(hexStr);
+  		log.debug("executeObject() to bytes  : {}", b2.toString());
+  		for (int i = 0; i < b.length; i++) {
+  			//log.debug("executeObject() b : {}, b2 : {}", b[i], b2[i]);
+  			if (b[i] != b2[i]) {
+  				log.debug("executeObject() b and b2 are not same");
+  				break;
+  			}
+  		}
+  		log.debug("executeObject() b and b2 are same");
+		
+  		//ClassLoader cl = ClassLoader.getSystemClassLoader() ;
+  		boolean proceed = false;
+  		ComputeUnit cuu = null;
+  		try {
+	  		Class<?> df = (new DClassLoader()).findClass(className, b2);
+	  		cuu = (ComputeUnit) df.newInstance();
+	  		proceed = true;
+  		} catch (SecurityException | InstantiationException | IllegalAccessException e) {
+  			//e.printStackTrace();
+  			proceed = false;
+  		} catch (ClassCastException e) {
+  			//return e.getMessage();
+  		}
+  		
+  		if (proceed) {
+  			log.debug("executeObject() ComputeUnit cast is working ok for this object");
+	  		Dson dson = new Dson("input", "1");
+	  		String result = cuu.compute(dson);
+	  		//return "" + result;
+  		} else {
+  			log.debug("executeObject() ComputeUnit cast is not working for this object. So proceeding with Class copy.");
+  			InputStream fis = new ByteArrayInputStream(b2);
+	
+			ClassPool pool = ClassPool.getDefault();
+			pool.appendSystemPath();
+			//pool.appendClassPath(new LoaderClassPath(_extraLoader));
+			pool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+			//pool.importPackage("com.dilmus.dilshad.scabi.client.Dson");
+			CtClass cr = pool.makeClass(fis);
+	  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
+	  		log.debug("executeObject() modifiers : {}", cr.getModifiers());
+	  		
+	  		//CtClass ct = pool.getAndRename("com.dilmus.test.ComputeTemplate", "CT" + System.nanoTime());
+	  		CtClass ct = pool.getAndRename(ComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime());
+	  		
+	  		// works
+	  		//CtMethod amethod = cr.getDeclaredMethod("compute");
+		    //CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+		    //log.debug("executeObject() bmethod.getDeclaringClass() : {}", bmethod.getDeclaringClass()); 
+		    //ca1.addMethod(bmethod);
+		    
+		    CtMethod amethods[] = cr.getDeclaredMethods();
+		    for (CtMethod amethod : amethods) {
+		    	CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+			    ct.addMethod(bmethod);
+		    }
+		    
+		    CtField afields[] = cr.getDeclaredFields();
+		    for (CtField afield : afields) {
+		    	CtField bfield = new CtField(afield, ct);
+			    ct.addField(bfield);
+		    }
+		    
+	  		Class<?> df2 = ct.toClass();
+	  		Object ob = df2.newInstance();
+	  		Method m = df2.getMethod("compute", Dson.class);
+	
+	  		Dson dson = new Dson("input", "1");
+	 		String s = (String) m.invoke(ob, dson);
+	
+	  		log.debug("s : {}", s);
+  		}
+  		*/
+		
+		DJson djson1 = new DJson("TotalComputeUnit", m_TU);
+		DJson djson2 = djson1.add("SplitComputeUnit", m_SU);
+		DJson djson3 = djson2.add("JsonInput", m_jsonInput);
+		DJson djson4 = djson3.add("ClassName", className);
+		DJson djson5 = djson4.add("ClassBytes", hexStr);
+
+		//works StringEntity params = new StringEntity(djson5.toString());
+		
+	    //works postRequest.addHeader("content-type", "application/json");
+	    postRequest.addHeader("Content-Encoding", "gzip");
+	    postRequest.addHeader("Accept-Encoding", "gzip");
+	    
+	    //works postRequest.setEntity(params);
+	            	
+	    //=====================================================================
+	    ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+	    try (GZIPOutputStream gzipstream = new GZIPOutputStream(bytestream)) {
+	        gzipstream.write(djson5.toString().getBytes("UTF-8"));
+	    }
+	    byte[] gzipBytes = bytestream.toByteArray();
+	    ByteArrayEntity byteEntity = new ByteArrayEntity(gzipBytes);
+	    postRequest.setEntity(byteEntity);
+	    //======================================================================
+	    
+		log.debug("executeObject() executing request to " + m_target + "/Compute/Execute/Class/FromObject");
+
+		// works HttpResponse httpResponse = httpClient.execute(m_target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("executeObject()----------------------------------------");
+		log.debug("executeObject() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("executeObject() {}", headers[i]);
+		}
+		log.debug("executeObject()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("executeObject() {}", jsonString);
+		}
+		return jsonString;
+	}
+	
+}

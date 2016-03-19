@@ -1,0 +1,211 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 28-Jan-2016
+ * File Name : Test2.java
+ */
+package com.dilmus.test;
+
+import java.io.IOException;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.scabi.common.DDAO;
+import com.dilmus.scabi.common.DJson;
+import com.dilmus.scabi.common.DJsonHelper;
+import com.dilmus.scabi.common.DScabiException;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.MapReduceCommand;
+import com.mongodb.MapReduceOutput;
+import com.mongodb.MongoClient;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Test2 {
+
+	static Logger log;
+	
+	public static void main(String args[]) throws DScabiException, IOException {
+        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+        System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+        System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+  		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+
+		final Logger log = LoggerFactory.getLogger(Test2.class);
+		Test2.log = log;
+		
+		
+		
+	}
+	
+	public void test() {
+		MongoClient mongo = new MongoClient("localhost", 27017);
+		DB db = mongo.getDB("MetaDB");
+		
+		/*
+		String map = "function() { for (var key in this) { emit(key, null); } }";
+		String reduce = "function(key, stuff) { return null; }";
+		
+		String tableName = "ComputeMetaDataTable";
+		DBCollection table = db.getCollection(tableName);
+		   MapReduceCommand cmd = new MapReduceCommand(table, map, reduce,
+				   	     null, MapReduceCommand.OutputType.INLINE, null);
+				   	   MapReduceOutput out = table.mapReduce(cmd);
+				   	   //String s = out.getOutputCollection().distinct("_id").toString();
+				   	//System.out.println("out.getOutputCollection().distinct " + s);
+				   	   for (DBObject o : out.results()) {
+				   	    System.out.println(o.toString());
+				   	 System.out.println("Key name is : " + o.get("_id").toString());
+				   	   }			
+		*/
+		
+		DDAO dao = new DDAO(db);
+		dao.setTableName("ComputeMetaDataTable");
+		dao.fieldNames();
+		
+		// Insert
+		// works
+		//String jsonRow = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4573\", \"RegisteredDate\" : \"28 Jan 2016 11:18 PM IST\", \"Status\" : \"Available\" }";
+		//String jsonCheck = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4573\" }";
+		//dao.insertRow(jsonRow, jsonCheck);
+		
+		// Query
+		// works
+		String jsonQuery = "{ \"Status\" : \"Available\" }";
+		//String jsonQuery = "{ \"Status\" : \"Inuse\" }";
+		String jsonResult = dao.executeQuery(jsonQuery);
+		log.debug("jsonResult : {}, result string length : {}", jsonResult, jsonResult.length());
+		log.debug("================================================================");
+
+		// works
+		DJson djson = new DJson(jsonResult);
+		Set<String> st = djson.keySet();
+		for (String s : st) {
+			log.debug("s : {}", s);
+			System.out.println("from sysout s : " + s);
+			DJson djsontemp = new DJson(s);
+			Set<String> sttemp = djsontemp.keySet();
+			for (String stemp : sttemp) {
+				log.debug("stemp : {}", stemp);
+				System.out.println("from sysout stemp : " + stemp);
+			}
+		}
+		log.debug("================================================================");
+		
+		/*
+		{ "_id" : { "$oid" : "56a5ea6552aeac08b01f8a6e"} , "ComputeHost" : "localhost" , "ComputePort" : "4568" , "RegisteredDate" : { "$date" : "2016-01-25T09:27:01.031Z"} , "Status" : "Available"}
+		{ "_id" : { "$oid" : "56a72c1552aeac0b109f37b4"} , "ComputeHost" : "localhost2" , "ComputePort" : "4569" , "RegisteredDate" : { "$date" : "2016-01-26T08:19:33.133Z"} , "Status" : "Available"}
+		{ "_id" : { "$oid" : "56a7a5a352aeac08ebe4a626"} , "ComputeHost" : "localhost3" , "ComputePort" : "4570" , "RegisteredDate" : { "$date" : "2016-01-26T16:58:11.808Z"} , "Status" : "Available"}
+		{ "_id" : { "$oid" : "56a7a60152aeac09495a4b85"} , "ComputeHost" : "localhost4" , "ComputePort" : "4571" , "RegisteredDate" : { "$date" : "2016-01-26T16:59:45.355Z"} , "Status" : "Available"}
+		{ "_id" : { "$oid" : "56a8533752aeac0a0f981c27"} , "ComputeHost" : "localhost6" , "ComputePort" : "4572" , "RegisteredDate" : { "$date" : "2016-01-27T05:18:47.368Z"} , "Status" : "Available"}
+		{ "_id" : { "$oid" : "56aa54dc52aeac17233ac3f1"} , "ComputeHost" : "localhost" , "ComputePort" : "4573" , "RegisteredDate" : "28 Jan 2016 11:18 PM IST" , "Status" : "Available"}		
+		*/
+		
+		// Update
+		// works
+		//String jsonUpdate = "{ \"Status\" : \"Available\" }";
+		//String jsonWhere = "{ \"Status\" : \"Inuse\" }";
+		// works
+		//String jsonWhere = "{ \"Status\" : \"Available\" }";
+		//String jsonUpdate = "{ \"Status\" : \"Inuse\" }";
+		// works
+		//String jsonUpdate = "{ \"RegisteredDate\" : \"28 Jan 2016 11:18 PM IST\" }";
+		//String jsonWhere = "{ \"ComputeHost\" : \"localhost\" }";
+		//works
+		//String jsonUpdate = "{ \"ComputeHost\" : \"localhost6\" }";
+		//String jsonWhere = "{ \"ComputeHost\" : \"localhost\", \"ComputePort\" : \"4573\" }";
+		//works
+		//String jsonUpdate = "{ \"ComputeHost\" : \"localhost\" }";
+		//String jsonWhere = "{ \"ComputeHost\" : \"localhost6\" }";
+	
+		//dao.executeUpdate(jsonUpdate, jsonWhere);
+		//log.debug("================================================================");
+		
+		// Delete
+		// works
+		//String jsonWhere = "{ \"ComputePort\" : \"4573\" }";
+		//dao.executeRemove(jsonWhere);
+		//log.debug("================================================================");
+		
+    	DBCollection table = db.getCollection("ComputeMetaDataTable");
+    	// Find and display
+    	BasicDBObject searchQuery = new BasicDBObject();
+    	searchQuery.put("Status", "Available");
+
+    	DBCursor cursor = table.find(searchQuery);
+
+    	while (cursor.hasNext()) {
+    		System.out.println(cursor.next());
+    	}
+
+
+    	// Find and display
+    	BasicDBObject searchQuery2 
+    	    = new BasicDBObject().append("Status", "Inuse");
+
+    	DBCursor cursor2 = table.find(searchQuery2);
+
+    	while (cursor2.hasNext()) {
+    		System.out.println(cursor2.next());
+    	}
+
+    	String s = DJsonHelper.json("{ [Status] : [Available] }");
+		System.out.println("json is : " + s);
+		
+		
+		
+		
+		
+		
+	}
+	
+	public void test2() {
+		String jsonInput ="{ \"Empty\" : \"1\" }";	
+		// works
+		/*
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\\\"ComputeMetaDataTable\\\");" +
+				"String jsonQuery = \\\"{ \\\"Status\\\":\\\"Available\\\" }\\\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		// Result { "bshsource" : "DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = \"{ \"Status\":\"Available\" }\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;" }
+		String jsonBshScript = "{ \"bshsource\" : \"" + action +"\" }";
+		DJson djson1 = new DJson(jsonBshScript);
+		StringEntity params = new StringEntity(djson1.toString());
+		*/
+		
+		// works
+        String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\\\"ComputeMetaDataTable\\\");" +
+				"String jsonQuery = \\\"{ \\\"Status\\\":\\\"Available\\\" }\\\";" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+        // Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\\\"ComputeMetaDataTable\\\");String jsonQuery = \\\"{ \\\"Status\\\":\\\"Available\\\" }\\\";String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+       // works
+        /*
+		String action ="DDAO dao = database.createDAO();" +
+				"dao.setTableName(\"ComputeMetaDataTable\");" +
+				"String jsonQuery = json.json(\"{ [Status] : [Available] }\");" +
+		   		"String jsonResult = dao.executeQuery(jsonQuery);" +
+				"return jsonResult;";
+		*/
+		// Result {"bshsource":"DDAO dao = database.createDAO();dao.setTableName(\"ComputeMetaDataTable\");String jsonQuery = json.json(\"{ [Status] : [Available] }\");String jsonResult = dao.executeQuery(jsonQuery);return jsonResult;","jsoninput":"{ \"Empty\" : \"1\" }"}
+
+        DJson djson1 = new DJson("bshsource", action);
+		DJson djson2 = djson1.add("jsoninput", jsonInput);
+		System.out.println("djson2 : " + djson2.toString());
+
+	}
+}

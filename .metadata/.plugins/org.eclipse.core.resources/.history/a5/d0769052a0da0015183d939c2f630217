@@ -1,0 +1,29 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 07-Feb-2016
+ * File Name : ComputePool.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class ComputePool {
+
+	public ComputePool() {
+		
+		// e.g. cp.executeBshSource(String bsh, StringBuffer sbuff)
+		//        .executeBshSource(String bsh, String jsonInput, StringBuffer sbuff)
+		//        .executeJarFile(String namespace, String jarFileName, StringBuffer sbuff)
+		//        .executeJarFile(String namespace, String jarFileName, String classFileName, StringBuffer sbuff)
+		//        .executeClassFile(String namespace, String classFileName, StringBuffer sbuff)
+	
+		// all are execute concurrently using SwingWorker
+		
+	}
+	
+}

@@ -1,0 +1,25 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 21-Feb-2016
+ * File Name : PrimeNumber.java
+ */
+package com.dilmus.test;
+
+import com.dilmus.dilshad.scabi.client.Dson;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class PrimeNumber {
+
+	public static Dson compute(Dson jsonInput) {
+		System.out.println("compute() I'm from Prime Number class");
+		Dson dson = new Dson("Ok", "1");
+		return dson;
+	}
+	
+}

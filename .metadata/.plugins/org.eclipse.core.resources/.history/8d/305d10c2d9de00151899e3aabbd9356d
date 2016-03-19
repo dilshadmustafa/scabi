@@ -1,0 +1,36 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 29-Feb-2016
+ * File Name : DRangeRunner.java
+ */
+package com.dilmus.dilshad.scabi.client.async;
+
+import com.dilmus.dilshad.scabi.client.DComputeRun;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DRangeRunner {
+
+	private DComputeAsync m_compute = null;
+	m_localCRunList
+	public DRangeRunner(DComputAsync compute, int start, int end) {
+		m_compute = compute;
+		
+		synchronized(m_compute) {
+			for (DComputeRun crun : m_crunList) {
+				if (false == m_localCRunList.contains(crun))
+					m_localCRunList.add(crun);
+			}
+		}
+		
+		
+	}
+	
+	
+	
+}

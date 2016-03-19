@@ -1,0 +1,137 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 29-Jan-2016
+ * File Name : DJsonHelper.java
+ */
+package com.dilmus.dilshad.scabi.common;
+
+import java.io.IOException;
+import java.util.Set;
+
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class DMJsonHelper {
+
+	public DMJsonHelper() { }
+	
+	public static String computeHostPort(String computeHost, String computePort) {
+		return "{ \"ComputeHost\" : \"" + computeHost + "\", \"ComputePort\" : \"" + computePort + "\" }";
+	}
+	
+	public static String computeRegisterOk(String computeHost, String computePort) {
+		return "{ \"Register\" : \"ok\", \"ComputeHost\" : \"" + computeHost + "\", \"ComputePort\" : \"" + computePort + "\" }";
+	}
+
+	public static String computeRegisterOk() {
+		return "{ \"Register\" : \"ok\" }";
+	}
+	
+	public static String ok() {
+		return "{ \"Ok\" : \"1\" }";
+	}
+
+	public static String empty() {
+		return "{ \"Empty\" : \"1\" }";
+	}
+
+	
+	public static String error(String errorMessage) {
+		return "{ \"Error\" : \"" + errorMessage + "\" }";
+	}
+	
+	
+	public static String create(String... as) {
+		
+		String jsonString = "{ ";
+		boolean first = true;
+		for (String s : as) {
+				if (first) {
+					jsonString = jsonString + s;
+					first = false;
+				}
+				jsonString = jsonString + " : " + s;
+		
+		}
+		jsonString = jsonString + " }";
+		return jsonString;
+	}
+	
+	public static String json(String s) {
+
+		// import org.eclipse.jetty.util.StringUtil;
+		// String s1 = StringUtil.replace(s, "<<<", "\"");
+		// String s2 = StringUtil.replace(s1, ">>>", "\"");
+		
+		CharSequence cs1 = "<<<";
+		CharSequence cs2 = ">>>";
+		String s1 = s.replace(cs1, "\"");
+		String s2 = s1.replace(cs2, "\"");
+		
+		return s2;
+		
+	}
+
+
+	
+	public static boolean isOk(String jsonString) throws IOException {
+		
+		DMJson dson = new DMJson(jsonString);
+		Set<String> st = dson.keySet();
+		
+		if (1 == st.size() && st.contains("Ok"))
+			return true;
+		else
+			return false;
+	}
+
+	public static boolean isError(String jsonString) throws IOException {
+		
+		DMJson dson = new DMJson(jsonString);
+		Set<String> st = dson.keySet();
+		
+		if (1 == st.size() && st.contains("Error"))
+			return true;
+		else
+			return false;
+	}
+
+	public static boolean isTrue(String jsonString) throws IOException {
+		
+		DMJson dson = new DMJson(jsonString);
+		Set<String> st = dson.keySet();
+		
+		if (1 == st.size() && st.contains("True"))
+			return true;
+		else
+			return false;
+	}
+
+	public static boolean isFalse(String jsonString) throws IOException {
+		
+		DMJson dson = new DMJson(jsonString);
+		Set<String> st = dson.keySet();
+		
+		if (1 == st.size() && st.contains("False"))
+			return true;
+		else
+			return false;
+	}
+
+	public static boolean isResult(String jsonString) throws IOException {
+		
+		DMJson dson = new DMJson(jsonString);
+		Set<String> st = dson.keySet();
+		
+		if (1 == st.size() && st.contains("Result"))
+			return true;
+		else
+			return false;
+	}
+
+}

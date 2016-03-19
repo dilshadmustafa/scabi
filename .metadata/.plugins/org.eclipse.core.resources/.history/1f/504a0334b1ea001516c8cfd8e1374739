@@ -1,0 +1,69 @@
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
+
+import org.apache.http.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.dilshad.scabi.client.DFile;
+import com.dilmus.dilshad.scabi.client.DMeta;
+import com.dilmus.dilshad.scabi.client.DScabiClientException;
+import com.dilmus.dilshad.scabi.common.DMUtil;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 07-Mar-2016
+ * File Name : Example2.java
+ */
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Test2 {
+
+	public static void main(String args[]) throws IOException, ParseException, DScabiClientException, DScabiException, java.text.ParseException {
+        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+        System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
+        System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
+        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
+  		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");		
+  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
+  		//System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
+    	//System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+  		final Logger log = LoggerFactory.getLogger(Test2.class);
+		System.out.println("Test2");
+
+		DMeta meta = new DMeta("localhost", "5000");
+		
+        DFile f = new DFile(meta);
+        f.setNamespace("MyOrg.MyFiles");
+        Date date = new Date();
+          
+        f.put("scabi:MyOrg.MyFiles:App16.class", "/home/anees/testdata/in/App9.class");
+        f.put("App16.class", "/home/anees/testdata/in/App9.class");
+
+		f.copy("scabi:MyOrg.MyFiles:App17.class", "scabi:MyOrg.MyFiles:App16.class");
+		f.copy("App17.class", "scabi:MyOrg.MyFiles:App16.class");
+        
+        f.get("scabi:MyOrg.MyFiles:App16.class", "/home/anees/testdata/out/App16.class" + "_" + date.toString());
+        f.get("App17.class", "/home/anees/testdata/out/App17.class" + "_" + date.toString());
+        
+        FileOutputStream fos = new FileOutputStream("/home/anees/testdata/out/App18.class" + "_" + date.toString());
+        f.get("scabi:MyOrg.MyFiles:App16.class", fos);
+        fos.close();
+        
+        FileOutputStream fos2 = new FileOutputStream("/home/anees/testdata/out/App19.class" + "_" + date.toString());
+        f.get("App17.class", fos2);
+        fos2.close();
+
+        f.close();
+        meta.close();
+	}
+}

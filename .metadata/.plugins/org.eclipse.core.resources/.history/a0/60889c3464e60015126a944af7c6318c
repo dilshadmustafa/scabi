@@ -1,0 +1,116 @@
+/**
+ * @author Dilshad Mustafa
+ * (c) Dilshad Mustafa
+ * All Rights Reserved.
+ * @version 1.0
+ * @since 09-Mar-2016
+ * File Name : Dao.java
+ */
+package com.dilmus.dilshad.scabi.client;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dilmus.dilshad.scabi.common.DDB;
+import com.dilmus.dilshad.scabi.common.DMUtil;
+import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.common.DTable;
+
+/**
+ * @author Dilshad Mustafa
+ *
+ */
+public class Dao {
+
+
+
+	final static Logger log = LoggerFactory.getLogger(Dao2.class);
+	private String m_tableName = null;
+	private boolean m_firstTime = true;
+		
+	private DDB m_ddb = null;
+	private DTable m_table = null;
+	private DNamespace m_namespace = null;
+	
+	private DMeta m_meta = null;
+	private HashMap<String, DDB> m_mapNamespaceStrDDB = null;
+	
+	public Dao(DMeta meta) throws IOException, ParseException, DScabiClientException, DScabiException {
+		m_meta = meta;
+		
+		m_mapNamespaceStrDDB = new HashMap<String, DDB>();
+		m_tableName = null;
+		m_firstTime = true;
+		m_ddb = null;
+		m_table = null;
+		m_namespace = null;
+	}
+	
+	public int close() {
+		if (m_ddb != null)
+			m_ddb.close();
+		m_ddb = null;
+		return 0;
+		
+	}
+
+	
+	public int setNamespace(String strNamespace) throws DScabiException, IOException {
+		DNamespace namespace = new DNamespace(strNamespace);
+		if (false == namespace.getType().equals("AppTable")) {
+			close();
+			
+			m_tableName = null;
+			m_firstTime = true;
+			m_ddb = null;
+			m_table = null;
+			m_namespace = null;
+
+			throw new DScabiException("Namespace type is not AppTable", "DAO.SDE.1");
+		}
+		close();
+		
+		m_tableName = null;
+		m_firstTime = true;
+		m_ddb = null;
+		m_table = null;
+		m_namespace = null;
+
+		m_ddb = new DDB(namespace.getHost(), namespace.getPort(), namespace.getSystemSpecificName());
+		m_namespace = namespace;
+		return 0;
+	}
+
+	public DTable getTable(String tableName) throws DScabiException {
+		
+		if (DMUtil.isNamespaceURLStr(tableName)) {
+			
+			
+			
+			
+		}
+		
+		
+		
+		
+		m_tableName = null;
+		m_firstTime = true;
+		m_table = null;
+		if (false == m_ddb.tableExists(tableName)) {
+			throw new DScabiException("Table name doesn't exist : " + tableName, "DDO.STN.1");
+		}
+		m_table = m_ddb.getTable(tableName);
+		m_tableName = tableName;
+		return m_table;
+	}
+
+
+	
+
+	
+}
