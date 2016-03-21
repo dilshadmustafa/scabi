@@ -13,7 +13,7 @@ HOW TO QUICKLY RUN SCABI:-
 (1) Install Oracle Java 8 Java SE 1.8.0_66
 (2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
 (3) Create data folder for MongoDB, /home/<username>/data/db
-(4) Start MongoDB server, sudo mongod --dbpath /home/anees/data/db
+(4) Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
 (5) Download scabiv0.2.tar.gz from Download folder in Scabi’s GitHub project
 (6) Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
 (7) Start Meta Server, 
