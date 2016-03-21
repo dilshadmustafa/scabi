@@ -1,6 +1,10 @@
 How to run:
 
-Install MongoDB v3.2.1 with default settings, without enabling login password
+1. Install MongoDB v3.2.1 with default settings, without enabling login password
+2. Create data folder for MongoDB, /home/<username>/data/db
+3. Start MongoDB server, sudo mongod --dbpath /home/anees/data/db
+4. Download scabiv0.2.tar.gz from Download folder in Scabis GitHub project
+5. Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
 -------------------------------------------------
 Starting servers:
 
@@ -22,4 +26,8 @@ Usage : <MetaServer_Port> <Database_HostName> <Database_Port> [debug]
 ./start_compute.sh
 
 Usage : <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]]
+-------------------------------------------------
+To run Meta Server and Compute Server from Windows, use the .bat files in Download folder in GitHub,
+	start_meta.bat
+	start_compute.bat 5001 localhost 5000 1000
 

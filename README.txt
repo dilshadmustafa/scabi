@@ -12,20 +12,23 @@ HOW TO QUICKLY RUN SCABI:-
 
 (1) Install Oracle Java 8 Java SE 1.8.0_66
 (2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
-(3) Download scabiv0.2.tgz from Download folder in Scabi’s GitHub project
-(4) Unzip scabiv0.2.tgz to a folder /home/<username>/scabi
-(5) Start Meta Server, 
-		./start_meta.sh &
-(6) Start Compute Servers,
-		./start_compute.sh 5001 localhost 5000 1000 &
+(3) Create data folder for MongoDB, /home/<username>/data/db
+(4) Start MongoDB server, sudo mongod --dbpath /home/anees/data/db
+(5) Download scabiv0.2.tar.gz from Download folder in Scabi’s GitHub project
+(6) Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
+(7) Start Meta Server, 
+	./start_meta.sh &
+(8) Start Compute Servers,
+	./start_compute.sh 5001 localhost 5000 1000 &
 	./start_compute.sh 5002 localhost 5000 1000 &
 
       To start Compute Servers in other machines, enter command as below,
-	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> 				  <MetaServer_Port> [<NoOfThreads> [debug]] &
+	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]] &
 	
-7. Run example code inside the examples folder in /home/<username>/scabi,
-	cd examples
-	java -cp "../dependency-jars/*":"../*":. Example1
+(9) Run example code inside the examples folder in /home/<username>/scabi,
+
+cd examples
+java -cp "../dependency-jars/*":"../*":. Example1
 java -cp "../dependency-jars/*":"../*":. Example1_2
 java -cp "../dependency-jars/*":"../*":. Example1_3
 java -cp "../dependency-jars/*":"../*":. Example1_4
@@ -33,6 +36,10 @@ java -cp "../dependency-jars/*":"../*":. Example2
 java -cp "../dependency-jars/*":"../*":. Example3
 java -cp "../dependency-jars/*":"../*":. Example4
 java -cp "../dependency-jars/*":"../*":. Example5
+
+(10) To run Meta Server and Compute Server from Windows, use the .bat files in Download folder in GitHub,
+	start_meta.bat
+	start_compute.bat 5001 localhost 5000 1000
 
 HOW TO QUICKLY BUILD SCABI:-
 
@@ -77,4 +84,14 @@ Build Scabi Compute Server scabi_compute.jar
 7. Include scabi_core.jar in java classpath before running Compute Server
 8. Run below command to run Compute Server, (Meta Server should be started already)
 	java –jar scabi_compute.jar 5001 localhost 5000 1000
+
+To compile examples,
+
+1. Include scabi_core.jar in java classpath before compiling
+2. cd examples
+2. javac -cp "../dependency-jars/*":"../*":. Example1
+   from local download folder
+3. Or javac -cp "DilshadDCS_Examples/target/dependency-jars/*":. Example1
+   from local git clone folder
+
 
