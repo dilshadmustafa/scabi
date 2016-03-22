@@ -16,16 +16,17 @@ HOW TO QUICKLY RUN SCABI:-
 (4) Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
 (5) Download scabiv0.2.tar.gz from Download folder in Scabi’s GitHub project
 (6) Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
-(7) Start Meta Server, 
+(7) cd /home/<username>/scabi
+(8) Start Meta Server, 
 	./start_meta.sh &
-(8) Start Compute Servers,
+(9) Start Compute Servers,
 	./start_compute.sh 5001 localhost 5000 1000 &
 	./start_compute.sh 5002 localhost 5000 1000 &
 
       To start Compute Servers in other machines, enter command as below,
 	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]] &
 	
-(9) Run example code inside the examples folder in /home/<username>/scabi,
+(10) Run example code inside the examples folder in /home/<username>/scabi,
 
 cd examples
 java -cp "../dependency-jars/*":"../*":. Example1
@@ -37,7 +38,7 @@ java -cp "../dependency-jars/*":"../*":. Example3
 java -cp "../dependency-jars/*":"../*":. Example4
 java -cp "../dependency-jars/*":"../*":. Example5
 
-(10) To run Meta Server and Compute Server from Windows, use the .bat files in Download folder in GitHub,
+(11) To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
 	start_compute.bat 5001 localhost 5000 1000
 
@@ -51,7 +52,7 @@ Initial Setup
 (4) Create folder /home/<username>/scabi
 (5) cd to scabi folder
 (6) Run command
-git clone <scabi project github url>
+	git clone https://www.github.com/dilshadmustafa/scabi.git
 
 Build Scabi Core scabi_core.jar
 1. cd to DilshadDCS_Core folder in /home/<username>/scabi
@@ -70,7 +71,7 @@ Build Scabi Meta Server scabi_meta.jar
 6. cd to target folder
 7. Include scabi_core.jar in java classpath before running Meta Server
 8. Run below command to run Meta Server with default settings (MongoDB should be installed already)
-	java –jar scabi_meta.jar
+	java -jar scabi_meta.jar
 
 Build Scabi Compute Server scabi_compute.jar
 
@@ -83,7 +84,7 @@ Build Scabi Compute Server scabi_compute.jar
 6. cd to target folder
 7. Include scabi_core.jar in java classpath before running Compute Server
 8. Run below command to run Compute Server, (Meta Server should be started already)
-	java –jar scabi_compute.jar 5001 localhost 5000 1000
+	java -jar scabi_compute.jar 5001 localhost 5000 1000
 
 To compile examples,
 

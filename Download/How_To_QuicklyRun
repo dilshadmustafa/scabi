@@ -8,6 +8,7 @@ How to run:
 -------------------------------------------------
 Starting servers:
 
+cd /home/<username>/scabi
 ./start_meta.sh &
 ./start_compute.sh 5001 localhost 5000 1000 &
 ./start_compute.sh 5002 localhost 5000 1000 &
@@ -27,7 +28,7 @@ Usage : <MetaServer_Port> <Database_HostName> <Database_Port> [debug]
 
 Usage : <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]]
 -------------------------------------------------
-To run Meta Server and Compute Server from Windows, use the .bat files in Download folder in GitHub,
+To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
 	start_compute.bat 5001 localhost 5000 1000
 

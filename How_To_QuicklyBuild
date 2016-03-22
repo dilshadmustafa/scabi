@@ -25,7 +25,7 @@ Build Scabi Meta Server scabi_meta.jar
 6. cd to target folder
 7. Include scabi_core.jar in java classpath before running Meta Server
 8. Run below command to run Meta Server with default settings (MongoDB should be installed already)
-	java jar scabi_meta.jar
+	java -jar scabi_meta.jar
 
 Build Scabi Compute Server scabi_compute.jar
 
@@ -38,7 +38,7 @@ Build Scabi Compute Server scabi_compute.jar
 6. cd to target folder
 7. Include scabi_core.jar in java classpath before running Compute Server
 8. Run below command to run Compute Server, (Meta Server should be started already)
-	java jar scabi_compute.jar 5001 localhost 5000 1000
+	java -jar scabi_compute.jar 5001 localhost 5000 1000
 
 To compile examples,
 
