@@ -14,9 +14,8 @@ User and Developer License
 
 1. You can use this Software for both Personal use as well as Commercial use, 
 with or without paying fee to Dilshad Mustafa. Please read fully below for the 
-terms and conditions. You may use this Software or any of its file contents, 
-either partially or fully, only if you comply fully with all the terms and 
-conditions of this License. 
+terms and conditions. You may use this Software only if you comply fully with 
+all the terms and conditions of this License. 
 
 2. If you want to redistribute this Software, you should redistribute only the 
 original source code from Dilshad Mustafa's project and/or the compiled object 
