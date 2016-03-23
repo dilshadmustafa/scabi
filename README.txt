@@ -14,18 +14,24 @@ HOW TO QUICKLY RUN SCABI:-
 (2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
 (3) Create data folder for MongoDB, /home/<username>/data/db
 (4) Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
-(5) Download scabiv0.2.tar.gz from Download folder in Scabi’s GitHub project
+(5) Download scabiv0.2.tar.gz from Download folder in Scabi's GitHub project
 (6) Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
 (7) cd /home/<username>/scabi
+
 (8) Start Meta Server, 
 	./start_meta.sh &
+
 (9) Start Compute Servers,
 	./start_compute.sh 5001 localhost 5000 1000 &
 	./start_compute.sh 5002 localhost 5000 1000 &
 
-      To start Compute Servers in other machines, enter command as below,
+   	To start Compute Servers in other machines, enter command as below,
 	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]] &
 	
+	To run Meta Server and Compute Server from Windows, use the .bat files,
+	start_meta.bat
+	start_compute.bat 5001 localhost 5000 1000
+
 (10) Run example code inside the examples folder in /home/<username>/scabi,
 
 cd examples
@@ -38,9 +44,6 @@ java -cp "../dependency-jars/*":"../*":. Example3
 java -cp "../dependency-jars/*":"../*":. Example4
 java -cp "../dependency-jars/*":"../*":. Example5
 
-(11) To run Meta Server and Compute Server from Windows, use the .bat files,
-	start_meta.bat
-	start_compute.bat 5001 localhost 5000 1000
 
 HOW TO QUICKLY BUILD SCABI:-
 
@@ -55,6 +58,7 @@ Initial Setup
 	git clone https://www.github.com/dilshadmustafa/scabi.git
 
 Build Scabi Core scabi_core.jar
+
 1. cd to DilshadDCS_Core folder in /home/<username>/scabi
 2. Run command
 	mvn package
@@ -88,11 +92,20 @@ Build Scabi Compute Server scabi_compute.jar
 
 To compile examples,
 
-1. Include scabi_core.jar in java classpath before compiling
+To compile from local download folder:-
+
+1. cd /home/<username>/scabi or your local download extract folder
 2. cd examples
-2. javac -cp "../dependency-jars/*":"../*":. Example1
-   from local download folder
-3. Or javac -cp "DilshadDCS_Examples/target/dependency-jars/*":. Example1
-   from local git clone folder
+3. Include scabi_core.jar in java classpath before compiling
+4. javac -cp "../dependency-jars/*":"../*":. Example1
+
+Or to compile from local git clone folder, follow steps as below:-
+
+1. cd /home/<username>/scabi/ or your local git clone folder
+2. cd DilshadDCS_Examples
+3. mvn package, scabi_core.jar file and dependency-jars folder will be created
+4. cd target/classes
+5. javac -cp "../dependency-jars/*":"../*":. Example1
+   
 
 

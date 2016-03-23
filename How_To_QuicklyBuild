@@ -42,10 +42,19 @@ Build Scabi Compute Server scabi_compute.jar
 
 To compile examples,
 
-1. Include scabi_core.jar in java classpath before compiling
+To compile from local download folder:-
+
+1. cd /home/<username>/scabi or your local download extract folder
 2. cd examples
-2. javac -cp "../dependency-jars/*":"../*":. Example1
-   from local download folder
-3. Or javac -cp "DilshadDCS_Examples/target/dependency-jars/*":. Example1
-   from local git clone folder
+3. Include scabi_core.jar in java classpath before compiling
+4. javac -cp "../dependency-jars/*":"../*":. Example1
+
+Or to compile from local git clone folder, follow steps as below:-
+
+1. cd /home/<username>/scabi/ or your local git clone folder
+2. cd DilshadDCS_Examples
+3. mvn package, scabi_core.jar file and dependency-jars folder will be created
+4. cd target/classes
+5. javac -cp "../dependency-jars/*":"../*":. Example1
+   
 
