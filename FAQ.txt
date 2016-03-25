@@ -1,0 +1,80 @@
+FREQUENTLY ASKED QUESTIONS
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question: Is Scabi available to use free of cost?
+
+Yes. Scabi is available to use free of cost. You can use it for free for both Personal as well as Commercial use.
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question : Can we use other storage systems like Amazon S3, Google Cloud Storage, Open Stack Swift, other file systems, databases (Oracle, DB2, Cassandra, CouchDB, etc.)
+
+Yes. A Scabi client program and Compute Units are just like any other Java program. We need to include the jar files in the program to start using the API of specific storage systems (like S3, Google Cloud Storage), other file systems, databases (Oracle, DB2, Cassandra, CouchDB, etc.). To access these systems from inside a compute Unit, add the jar files using the .addJar() method before submitting the Compute Units for execution using the .perform() method in DComputeAsync class.
+
+If you are submitting Compute Units from within another Compute Unit (e.g. A), use the .addComputeUnitJars() method available in the DComputeAsync class. This will automatically add all the jar files of the Compute Unit A, added by the User earlier using the .addJar() method when submitting this Compute Unit A. This is because the jar file paths inside the User's client system will not be valid inside a Compute Server inside which a Compute Unit will be run. So we cannot use .addJar() method to add Jar files from inside a Compute Unit (Compute Unit A in this case).
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question : Can we use DFile class and Dao class inside Compute Unit?
+
+Yes. A Scabi client program and Compute Units are just like any other Java program. You can use any Java class by adding the required jar files to the Compute Unit using the .addJar() method available in the DComputeAsync class.
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question: How to do Map/Reduce on Petabytes of data?
+
+Scabi micro framework can be used to implement solutions to many different kinds of problems including Map/Reduce problems. In this case, divide the Petabytes of data into multiple MongoDB databases just to speedup map/reduce data computations and assign to different Scabi Namespaces (DataSet1, ..., DataSetN). Then submit multiple compute units to Scabi Cluster. In each compute unit, get a table from an assigned Scabi Namespace and access the Mongo Collection using MongoCollection c = table.getCollection(). Then directly do Map/Reduce on the Mongo Collection natively using c.mapReduce(map, reduce) (refer Example5). This way actual data will not be moved around in the network.
+
+Please refer the following links for more details on Petabyte implementations and Map/Reduce optimizations:-
+
+Building an Inexpensive Petabyte Database with MongoDB and Amazon Web Services:-
+https://www.mongodb.com/blog/post/building-inexpensive-petabyte-database-mongodb-and-amazon-web-services-part-1
+https://www.mongodb.com/blog/post/building-inexpensive-petabyte-database-mongodb-and-amazon-web-services-part-2
+
+How to speed up MongoDB Map Reduce by 20x:-
+http://edgystuff.tumblr.com/post/54709368492/how-to-speed-up-mongodb-map-reduce-by-20x
+
+Optimizing Map/Reduce with MongoDB:-
+http://edgystuff.tumblr.com/post/7624019777/optimizing-mapreduce-with-mongodb
+
+https://docs.mongodb.org/manual/core/map-reduce-concurrency/
+http://pauldone.blogspot.in/2014/03/mongoparallelaggregation.html
+https://sysdig.com/blog/mongodb-showdown-aggregate-vs-map-reduce/
+http://www.mikitamanko.com/blog/tag/mongodb-performance/
+http://blog.appsignal.com/blog/2014/01/07/realtime-mongodb-with-aggregations.html
+https://dzone.com/articles/how-speed-mongodb-mapreduce
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question: Can we implement iterative and recursive algorithms in Scabi?
+
+Yes. A Scabi client program and Compute Units are just like any other Java program. Both iterative and recursive algorithms can be implemented using the Scabi micro framework.
+
+The following algorithm shows a sample iterative approach for Prime Number Check problem:-
+
+long m = 1000000000L;
+BigInt N = new BigInt(/*Enter million digits number*/);
+
+BigInt root = sqrt(N);
+BigInt rootByM = root.div(m);
+DComputeAsync c = new DComputeAsync(meta);
+
+for (long i = 0; i < m; i++) {
+	BigInt start = rootByM.multiply(i);
+	BigInt end = rootByM.multiply(i + 1);
+	Dson jsonInput = new Dson();
+	jsonInput.add("NumberToCheck", N.toString());
+	jsonInput.add("start", start.toString());
+	jsonInput.add("end", end.toString());
+	
+	// modify MyPrimeCheckUnit class to use retrieve and use values of "start" and "end" in jsonInput
+	// this also reduces size of work of each Compute Unit
+	c.executeClass(MyPrimeCheckUnit.class).split(m).input(jsonInput).output(map);
+	c.perform();
+	c.finish();
+	if (isDivisibleTrueInResult(map))
+		break;
+	map.clear();
+}
+------------------------------------------------------------------------------------------------------------------------------------------------
+Question: There are various kinds of Software like Scabi, Apache Spark, Hadoop Map/Reduce, Solr, HDFS, Storm, MPI, etc. Does one Software address all kinds of problems?
+
+Ideally, if we have enough CPUs / CPU cores to handle all the concurrency and enough memory to load all the data, we can do all the computations and data processing in a single hardware. But practically this is not the case due to technology limitations and cost restrictions. But these factors keep changing over a period of time. 
+
+To handle these technology limitations and cost restrictions, we've different software built around different design philosophies, Cluster Computing & Storage framework (Scabi), In-memory data computations that require dedicated physical machines with huge memory (Apache Spark), Distributed disk-based storage and Map/Reduce that require specialized network topology (Hadoop), Distributed memory-based storage (Tachyon), Full text search engine (Solr), etc. to address specific set of problems. 
+
+These different design philosophies come with its own hardware, memory and network requirements. It comes down to choosing a Software that addresses the User's problems with ease of use and with existing resources within cost and budget constraints. Considering all these factors, there is not really one software that addresses all kinds of problems better than all other software.
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+
