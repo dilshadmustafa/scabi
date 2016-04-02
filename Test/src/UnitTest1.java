@@ -37,26 +37,27 @@ compiled object binary form with any changes, additions, enhancements, updates o
 modifications, any modified works of this Software, any straight forward translation 
 to another programming language and embedded modified versions of this Software source 
 code and/or its compiled object binary in any form, both within as well as outside your 
-organization, company, legal entity and/or individual. You should not embed any 
-modification of this Software source code and/or its compiled object binary in any form, 
-either partially or fully.
+organization, company, legal entity and/or individual. 
 
-6. You should not redistribute this Software, including its source code and/or its 
+6. You should not embed any modification of this Software source code and/or its compiled 
+object binary form in any way, either partially or fully.
+
+7. You should not redistribute this Software, including its source code and/or its 
 compiled object binary form, under differently named or renamed software. You should 
 not publish this Software, including its source code and/or its compiled object binary 
 form, modified or original, under your name or your company name or your product name. 
 You should not sell this Software to any party, organization, company, legal entity 
 and/or individual.
 
-7. You agree fully to the terms and conditions of this License of this software product, 
+8. You agree fully to the terms and conditions of this License of this software product, 
 under same software name and/or if it is renamed in future.
 
-8. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
+9. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
 or do any activity that will violate Dilshad's copyright of this software and all its 
 source code.
 
-9. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+10. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER
