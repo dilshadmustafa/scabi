@@ -1,12 +1,12 @@
 Copyright (c) Dilshad Mustafa 2016. All Rights Reserved.
 
-Scabi is a simple, light-weight Distributed Computing & Storage micro framework with a Cluster system written purely in Java. 
+Scabi is a simple, light-weight Cluster Computing & Storage micro framework for BigData processing written purely in Java. 
 
 Scabi provides high performance computing and storage with ease of use. Users can get started on using Scabi within a few minutes.
 
 Scabi is free of cost to use. Please refer the License.txt file for complete details on the license and terms and conditions.
 
-Please refer the Scabiv0.2.pptx to get started on using Scabi.
+Please refer the Scabi.pptx in Documentation folder to get started on using Scabi.
 
 HOW TO QUICKLY RUN SCABI:-
 
@@ -14,8 +14,8 @@ HOW TO QUICKLY RUN SCABI:-
 (2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
 (3) Create data folder for MongoDB, /home/<username>/data/db
 (4) Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
-(5) Download scabiv0.2.tar.gz from Download folder in Scabi's GitHub project
-(6) Unzip scabiv0.2.tar.gz to a folder /home/<username>/scabi
+(5) Download scabi.tar.gz from Download folder in Scabi's GitHub project
+(6) Unzip scabi.tar.gz to a folder /home/<username>/scabi
 (7) cd /home/<username>/scabi
 
 (8) Start Meta Server, 
