@@ -34,19 +34,19 @@ form in any way.
 5. You should not redistribute any modified source code of this Software and/or its 
 compiled object binary form with any changes, additions, enhancements, updates or 
 modifications, any modified works of this Software, any straight forward translation 
-to another programming language and embedded modified versions of this Software source 
-code and/or its compiled object binary in any form, both within as well as outside your 
-organization, company, legal entity and/or individual. 
+and/or implementation to same and/or another programming language and embedded modified 
+versions of this Software source code and/or its compiled object binary in any form, 
+both within as well as outside your organization, company, legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
 
-7. You should not redistribute this Software, including its source code and/or its 
-compiled object binary form, under differently named or renamed software. You should 
-not publish this Software, including its source code and/or its compiled object binary 
-form, modified or original, under your name or your company name or your product name. 
-You should not sell this Software to any party, organization, company, legal entity 
-and/or individual.
+7. You should not redistribute this Software and/or any modified works of this 
+Software, including its source code and/or its compiled object binary form, under 
+differently named or renamed software. You should not publish this Software, including 
+its source code and/or its compiled object binary form, modified or original, under 
+your name or your company name or your product name. You should not sell this Software 
+to any party, organization, company, legal entity and/or individual.
 
 8. You agree fully to the terms and conditions of this License of this software product, 
 under same software name and/or if it is renamed in future.
@@ -56,7 +56,10 @@ copyright for this Software and all its source code. You agree that you will not
 or do any activity that will violate Dilshad's copyright of this software and all its 
 source code.
 
-10. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+10. The Copyright holder of this Software reserves the right to change the terms 
+and conditions of this license without giving prior notice.
+
+11. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER
