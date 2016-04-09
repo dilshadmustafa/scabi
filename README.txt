@@ -106,6 +106,13 @@ Or to compile from local git clone folder, follow steps as below:-
 3. mvn package, scabi_core.jar file and dependency-jars folder will be created
 4. cd target/classes
 5. javac -cp "../dependency-jars/*":"../*":. Example1
-   
 
+Dilshad Mustafa is the creator and programmer of Scabi micro framework and Cluster. 
+He is also Author of Book titled “Tech Job 9 to 9”. He is a Senior Software Architect 
+with 16+ years experience in Information Technology industry. He has experience across 
+various domains, Banking, Retail, Materials & Supply Chain.
+
+He completed his B.E. in Computer Science & Engineering from Annamalai University, India 
+and completed his M.Sc. In Communication & Network Systems from Nanyang Technological 
+University, Singapore.
 
