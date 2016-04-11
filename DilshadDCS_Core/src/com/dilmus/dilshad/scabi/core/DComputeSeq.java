@@ -48,18 +48,21 @@ its source code and/or its compiled object binary form, modified or original, un
 your name or your company name or your product name. You should not sell this Software 
 to any party, organization, company, legal entity and/or individual.
 
-8. You agree fully to the terms and conditions of this License of this software product, 
+8. You agree to use the original source code from Dilshad Mustafa's project only
+and/or the compiled object binary form of the original source code.
+
+9. You agree fully to the terms and conditions of this License of this software product, 
 under same software name and/or if it is renamed in future.
 
-9. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
+10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
 or do any activity that will violate Dilshad's copyright of this software and all its 
 source code.
 
-10. The Copyright holder of this Software reserves the right to change the terms 
+11. The Copyright holder of this Software reserves the right to change the terms 
 and conditions of this license without giving prior notice.
 
-11. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+12. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER

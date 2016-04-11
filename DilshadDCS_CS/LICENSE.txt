@@ -41,7 +41,7 @@ original, under your name or your company name or your product name. You should
 not sell this Software to any party, organization, company, legal entity and/or 
 individual.
 
-8. You agree to use only the original source code from Dilshad Mustafa's project 
+8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
 9. You agree fully to the terms and conditions of this License of this software 
