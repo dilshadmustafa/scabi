@@ -42,12 +42,11 @@ both within as well as outside your organization, company, legal entity and/or i
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
 
-7. You should not redistribute this Software and/or any modified works of this 
-Software, including its source code and/or its compiled object binary form, under 
-differently named or renamed software. You should not publish this Software, including 
-its source code and/or its compiled object binary form, modified or original, under 
-your name or your company name or your product name. You should not sell this Software 
-to any party, organization, company, legal entity and/or individual.
+7. Under differently named or renamed software, you should not redistribute this 
+Software and/or any modified works of this Software, including its source code 
+and/or its compiled object binary form. Under your name or your company name or 
+your product name, you should not publish this Software, including its source code 
+and/or its compiled object binary form, modified or original. 
 
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
