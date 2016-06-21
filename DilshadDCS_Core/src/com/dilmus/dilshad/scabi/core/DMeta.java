@@ -76,6 +76,7 @@ package com.dilmus.dilshad.scabi.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -83,7 +84,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
+//import org.apache.http.ParseException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -97,6 +98,7 @@ import com.dilmus.dilshad.scabi.common.DMJsonHelper;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DScabiClientException;
 import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
+import com.dilmus.dilshad.scabi.core.sync.DComputeBlock;
 
 /**
  * @author Dilshad Mustafa
@@ -219,7 +221,7 @@ public class DMeta {
 	}
 	
 	
-	public DComputeSync computeAlloc() throws ParseException, IOException, DScabiClientException {
+	public DComputeBlock computeAlloc() throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/Alloc");
 		String myString = "";
@@ -253,11 +255,11 @@ public class DMeta {
 		if (DMJsonHelper.isError(jsonString)) {
 			throw new DScabiClientException("Unable to alloc compute unit. Error message : " + jsonString, "MEA.CAC.2");
 		}
-		return new DComputeSync(jsonString);
+		return new DComputeBlock(jsonString);
 	}
 	
 	
-	public int computeRegister(String computeHost, String computePort, String maxCSThreads) throws ParseException, IOException, DScabiClientException {
+	public int computeRegister(String computeHost, String computePort, String maxCSThreads) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/Register");
 		String myString = "{ \"ComputeHost\" : \"" + computeHost + "\", \"ComputePort\" : \"" + computePort + "\", \"MAXCSTHREADS\" : \"" +  maxCSThreads + "\" }";
@@ -297,7 +299,7 @@ public class DMeta {
 		return 0;
 	}
 
-	/*
+	/* Reference - single object return
 	public DComputeSync getCompute() throws ParseException, IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/GetOne");
@@ -336,19 +338,17 @@ public class DMeta {
 	}
 	*/
 	
-	public List<DComputeSync> getComputeManyMayExclude(int howMany, List<DComputeSync> exclude) throws ParseException, IOException, DScabiClientException {
+	public List<DComputeBlock> getComputeManyMayExclude(int howMany, List<DComputeBlock> exclude) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/GetManyMayExclude");
-		//String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
-		
 		DMJson dmjson = new DMJson("GetComputeMany", "" + howMany);
 		DMJson dmjsonExclude = null;
 		int k = 1;
-		for (DComputeSync csync : exclude) {
+		for (DComputeBlock cb : exclude) {
 			if (null == dmjsonExclude) {
-				dmjsonExclude = new DMJson("" + k, csync.toString());
+				dmjsonExclude = new DMJson("" + k, cb.toString());
 			} else {
-				dmjsonExclude = dmjsonExclude.add("" + k, csync.toString());
+				dmjsonExclude = dmjsonExclude.add("" + k, cb.toString());
 			}
 		}
 		dmjson = dmjson.add("ComputeExclude", dmjsonExclude.toString());
@@ -384,26 +384,22 @@ public class DMeta {
 			throw new DScabiClientException("Unable to get compute unit. Error message : " + jsonString, "MEA.CAC.2");
 		}
 		DMJson djson = new DMJson(jsonString);
-		int count = djson.getCount();
+		long count = djson.getCount();
 		Set<String> st = djson.keySet();
 		// st.remove("Count"); // UnsupportedOperationException, Unmodifiable
 		if (0 == count)
 			return null;
-		List<DComputeSync> csa = new ArrayList<DComputeSync>();
-		//DComputeSync csa[] = new DComputeSync[count];
-		//int i = 0;
+		List<DComputeBlock> cba = new LinkedList<DComputeBlock>();
 		for (String s : st) {
 			if (s.equals("Count"))
 				continue;
-			csa.add(new DComputeSync(djson.getString(s)));
-			//csa[i] = new DComputeSync(djson.getString(s));
-			//i++;
+			cba.add(new DComputeBlock(djson.getString(s)));
 		}
 		
-		return csa;
+		return cba;
 	}
 	
-	public List<DComputeSync> getComputeMany(int howMany) throws ParseException, IOException, DScabiClientException {
+	public List<DComputeBlock> getComputeMany(int howMany) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/GetMany");
 		String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
@@ -438,26 +434,26 @@ public class DMeta {
 			throw new DScabiClientException("Unable to get compute unit. Error message : " + jsonString, "MEA.CAC.2");
 		}
 		DMJson djson = new DMJson(jsonString);
-		int count = djson.getCount();
+		long count = djson.getCount();
 		Set<String> st = djson.keySet();
 		// st.remove("Count"); // UnsupportedOperationException, Unmodifiable
 		if (0 == count)
 			return null;
-		List<DComputeSync> csa = new ArrayList<DComputeSync>();
-		//DComputeSync csa[] = new DComputeSync[count];
+		List<DComputeBlock> cba = new LinkedList<DComputeBlock>();
+		//DComputeBlock cba[] = new DComputeBlock[count];
 		//int i = 0;
 		for (String s : st) {
 			if (s.equals("Count"))
 				continue;
-			csa.add(new DComputeSync(djson.getString(s)));
-			//csa[i] = new DComputeSync(djson.getString(s));
+			cba.add(new DComputeBlock(djson.getString(s)));
+			//cba[i] = new DComputeBlock(djson.getString(s));
 			//i++;
 		}
 		
-		return csa;
+		return cba;
 	}
-	
-	public List<DComputeNoBlock> getComputeNoBlockMany(int howMany) throws ParseException, IOException, DScabiClientException {
+
+	public String getComputeManyJsonStr(long howMany) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/GetMany");
 		String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
@@ -466,24 +462,62 @@ public class DMeta {
 	    postRequest.addHeader("content-type", "application/json");
 	    postRequest.setEntity(params);
 	            			
-		log.debug("getComputeMany() executing request to " + m_target + "/Meta/Compute/GetMany");
+		log.debug("getComputeManyJsonStr() executing request to " + m_target + "/Meta/Compute/GetMany");
 
 		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
 		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
 		HttpEntity entity = httpResponse.getEntity();
 	
-		log.debug("getComputeMany()----------------------------------------");
-		log.debug("getComputeMany() {}",httpResponse.getStatusLine());
+		log.debug("getComputeManyJsonStr()----------------------------------------");
+		log.debug("getComputeManyJsonStr() {}",httpResponse.getStatusLine());
 		Header[] headers = httpResponse.getAllHeaders();
 		for (int i = 0; i < headers.length; i++) {
-			log.debug("getComputeMany() {}", headers[i]);
+			log.debug("getComputeManyJsonStr() {}", headers[i]);
 		}
-		log.debug("getComputeMany()----------------------------------------");
+		log.debug("getComputeManyJsonStr()----------------------------------------");
 
 		String jsonString = null;
 		if (entity != null) {
 			jsonString = EntityUtils.toString(entity);
-			log.debug("getComputeMany() {}", jsonString);
+			log.debug("getComputeManyJsonStr() {}", jsonString);
+		}
+		if (null == jsonString) {
+			throw new DScabiClientException("Response is null for getCompute(int howmany)", "MEA.CAC.1");
+		}
+		if (DMJsonHelper.isError(jsonString)) {
+			throw new DScabiClientException("Unable to get compute unit. Error message : " + jsonString, "MEA.CAC.2");
+		}
+		
+		return jsonString;
+	}
+	
+	public List<DComputeNoBlock> getComputeNoBlockMany(int howMany) throws /*ParseException,*/ IOException, DScabiClientException {
+		open();
+		HttpPost postRequest = new HttpPost("/Meta/Compute/GetMany");
+		String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
+	    StringEntity params =new StringEntity(myString);
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("getComputeNoBlockMany() executing request to " + m_target + "/Meta/Compute/GetMany");
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("getComputeNoBlockMany()----------------------------------------");
+		log.debug("getComputeNoBlockMany() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("getComputeNoBlockMany() {}", headers[i]);
+		}
+		log.debug("getComputeNoBlockMany()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("getComputeNoBlockMany() {}", jsonString);
 		}
 		if (null == jsonString) {
 			throw new DScabiClientException("Response is null for getCompute(int howmany)", "MEA.CAC.1");
@@ -492,12 +526,12 @@ public class DMeta {
 			throw new DScabiClientException("Unable to get compute unit. Error message : " + jsonString, "MEA.CAC.2");
 		}
 		DMJson djson = new DMJson(jsonString);
-		int count = djson.getCount();
+		long count = djson.getCount();
 		Set<String> st = djson.keySet();
 		// st.remove("Count"); // UnsupportedOperationException, Unmodifiable
 		if (0 == count)
 			return null;
-		List<DComputeNoBlock> csa = new ArrayList<DComputeNoBlock>();
+		List<DComputeNoBlock> csa = new LinkedList<DComputeNoBlock>();
 		//DComputeNoBlock csa[] = new DComputeNoBlock[count];
 		//int i = 0;
 		for (String s : st) {
@@ -511,11 +545,47 @@ public class DMeta {
 		return csa;
 	}
 
-	public List<DComputeNoBlock> getComputeNoBlockManyMayExclude(int howMany, List<DComputeNoBlock> exclude) throws ParseException, IOException, DScabiClientException {
+	public String getComputeNoBlockManyJsonStr(long howMany) throws /*ParseException,*/ IOException, DScabiClientException {
+		open();
+		HttpPost postRequest = new HttpPost("/Meta/Compute/GetMany");
+		String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
+	    StringEntity params =new StringEntity(myString);
+	    
+	    postRequest.addHeader("content-type", "application/json");
+	    postRequest.setEntity(params);
+	            			
+		log.debug("getComputeNoBlockManyJsonStr() executing request to " + m_target + "/Meta/Compute/GetMany");
+
+		// works HttpResponse httpResponse = httpClient.execute(target, getRequest);
+		HttpResponse httpResponse = m_httpClient.execute(m_target, postRequest);
+		HttpEntity entity = httpResponse.getEntity();
+	
+		log.debug("getComputeNoBlockManyJsonStr()----------------------------------------");
+		log.debug("getComputeNoBlockManyJsonStr() {}",httpResponse.getStatusLine());
+		Header[] headers = httpResponse.getAllHeaders();
+		for (int i = 0; i < headers.length; i++) {
+			log.debug("getComputeNoBlockManyJsonStr() {}", headers[i]);
+		}
+		log.debug("getComputeNoBlockManyJsonStr()----------------------------------------");
+
+		String jsonString = null;
+		if (entity != null) {
+			jsonString = EntityUtils.toString(entity);
+			log.debug("getComputeNoBlockManyJsonStr() {}", jsonString);
+		}
+		if (null == jsonString) {
+			throw new DScabiClientException("Response is null for getCompute(int howmany)", "MEA.CAC.1");
+		}
+		if (DMJsonHelper.isError(jsonString)) {
+			throw new DScabiClientException("Unable to get Compute Server details. Error message : " + jsonString, "MEA.CAC.2");
+		}
+		
+		return jsonString;
+	}
+
+	public List<DComputeNoBlock> getComputeNoBlockManyMayExclude(int howMany, List<DComputeNoBlock> exclude) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Compute/GetManyMayExclude");
-		//String myString = "{ \"GetComputeMany\" : \"" + howMany + "\" }";
-		
 		DMJson dmjson = new DMJson("GetComputeMany", "" + howMany);
 		DMJson dmjsonExclude = null;
 		int k = 1;
@@ -559,26 +629,22 @@ public class DMeta {
 			throw new DScabiClientException("Unable to get compute unit. Error message : " + jsonString, "MEA.CAC.2");
 		}
 		DMJson djson = new DMJson(jsonString);
-		int count = djson.getCount();
+		long count = djson.getCount();
 		Set<String> st = djson.keySet();
 		// st.remove("Count"); // UnsupportedOperationException, Unmodifiable
 		if (0 == count)
 			return null;
-		List<DComputeNoBlock> csa = new ArrayList<DComputeNoBlock>();
-		//DComputeNoBlock csa[] = new DComputeNoBlock[count];
-		//int i = 0;
+		List<DComputeNoBlock> csa = new LinkedList<DComputeNoBlock>();
 		for (String s : st) {
 			if (s.equals("Count"))
 				continue;
 			csa.add(new DComputeNoBlock(djson.getString(s)));
-			//csa[i] = new DComputeNoBlock(djson.getString(s));
-			//i++;
 		}
 		
 		return csa;
 	}
 
-	public String namespaceRegister(Dson dson) throws ParseException, IOException, DScabiClientException {
+	public String namespaceRegister(Dson dson) throws /*ParseException,*/ IOException, DScabiClientException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Namespace/Register");
 		String myString = dson.toString();
@@ -618,7 +684,7 @@ public class DMeta {
 		return jsonString;
 	}
 
-	public boolean namespaceExists(String strNamespace) throws ParseException, IOException, DScabiClientException, DScabiException {
+	public boolean namespaceExists(String strNamespace) throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Namespace/isExist");
 		String myString = "{ \"Namespace\" : \"" + strNamespace + "\" }";
@@ -661,7 +727,7 @@ public class DMeta {
 		
 	}
 
-	public DNamespace getNamespace(String strNamespace) throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace getNamespace(String strNamespace) throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Namespace/Get");
 		String myString = "{ \"Namespace\" : \"" + strNamespace + "\" }";
@@ -700,7 +766,7 @@ public class DMeta {
 		
 	}
 
-	public DNamespace getNamespace(String strNamespace, String metaType) throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace getNamespace(String strNamespace, String metaType) throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Namespace/GetByQuery");
 		
@@ -743,7 +809,7 @@ public class DMeta {
 	
 	}
 	
-	private DNamespace findOneNamespace(String metaType) throws ParseException, IOException, DScabiClientException, DScabiException {
+	private DNamespace findOneNamespace(String metaType) throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		open();
 		HttpPost postRequest = new HttpPost("/Meta/Namespace/FindOne");
 		String myString = "{ \"Type\" : \"" +  metaType + "\" }";
@@ -782,23 +848,23 @@ public class DMeta {
 		
 	}
 
-	public DNamespace findOneMetaThisNS() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace findOneMetaThisNS() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		return findOneNamespace("MetaThis");
 	}
 	
-	public DNamespace findOneMetaRemoteNS() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace findOneMetaRemoteNS() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		return findOneNamespace("MetaRemote");
 	}
 
-	public DNamespace findOneAppTableNS() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace findOneAppTableNS() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		return findOneNamespace("AppTable");
 	}
 	
-	public DNamespace findOneJavaFileNS() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace findOneJavaFileNS() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		return findOneNamespace("JavaFile");
 	}
 	
-	public DNamespace findOneFileNS() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace findOneFileNS() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		return findOneNamespace("File");
 	}
 	

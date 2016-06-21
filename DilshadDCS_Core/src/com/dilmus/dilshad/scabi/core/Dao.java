@@ -75,7 +75,7 @@ and conditions of this license without giving prior notice.
 package com.dilmus.dilshad.scabi.core;
 
 import java.io.IOException;
-import java.text.ParseException;
+//import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -109,7 +109,7 @@ public class Dao {
 	private DMeta m_meta = null;
 	private HashMap<String, DDB> m_mapNamespaceStrDDB = null;
 	
-	public Dao(DMeta meta) throws IOException, ParseException, DScabiClientException, DScabiException {
+	public Dao(DMeta meta) throws IOException, /*ParseException,*/ DScabiClientException, DScabiException {
 		m_meta = meta;
 		
 		m_mapNamespaceStrDDB = new HashMap<String, DDB>();
@@ -131,7 +131,7 @@ public class Dao {
 	}
 	
 	public int setNamespace(String strNamespace) throws DScabiException, IOException, DScabiClientException {
-		
+		// TODO check if namespace already exists in map
 		m_namespace = null;
 		m_strNamespace = null;
 		
@@ -152,7 +152,7 @@ public class Dao {
 	}
 	
 	public int setNamespace(DNamespace namespace) throws DScabiException, IOException, DScabiClientException {
-		
+		// TODO check if namespace already exists in map
 		m_namespace = null;
 		m_strNamespace = null;
 		
@@ -175,7 +175,7 @@ public class Dao {
 	}
 
 
-	public DTable getTable(String tableName) throws DScabiException, org.apache.http.ParseException, IOException, DScabiClientException {
+	public DTable getTable(String tableName) throws DScabiException, /*org.apache.http.ParseException,*/ IOException, DScabiClientException {
 		if (null == tableName) {
 			throw new DScabiClientException("tableName is null", "DFE.SNE2.1");
 		}
@@ -208,7 +208,7 @@ public class Dao {
 	
 	}
 
-	public boolean tableExists(String tableName) throws DScabiException, org.apache.http.ParseException, IOException, DScabiClientException {
+	public boolean tableExists(String tableName) throws DScabiException, /*org.apache.http.ParseException,*/ IOException, DScabiClientException {
 		if (null == tableName) {
 			throw new DScabiClientException("tableName is null", "DFE.SNE2.1");
 		}
@@ -241,7 +241,7 @@ public class Dao {
 	
 	}
 
-	public DTable createTable(String tableName) throws DScabiException, org.apache.http.ParseException, IOException, DScabiClientException {
+	public DTable createTable(String tableName) throws DScabiException, /*org.apache.http.ParseException,*/ IOException, DScabiClientException {
 		if (null == tableName) {
 			throw new DScabiClientException("tableName is null", "DFE.SNE2.1");
 		}

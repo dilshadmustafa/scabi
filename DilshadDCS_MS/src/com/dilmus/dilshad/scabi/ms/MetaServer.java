@@ -76,6 +76,7 @@ package com.dilmus.dilshad.scabi.ms;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -202,26 +203,32 @@ public class MetaServer extends Application {
    @POST
    @Path("/Meta/Compute/GetMany")
    public String getComputeMany(String request) throws DScabiException {
-	   	//DMComputeServer cma[];
-	   	List<DMComputeServer> cma = null;
+	   	LinkedList<DMComputeServer> cma = null;
 	   	DMJson djson = null;
-	   	DMJson djsonResponse = null;
-	   	int howMany = 0;
+	   	// Previous works DMJson djsonResponse = null;
+	   	long howMany = 0;
+	   	String result = null;
 	   	try {
 	   		djson = new DMJson(request);
-	   		howMany = Integer.parseInt(djson.getString("GetComputeMany"));
+	   		howMany = Long.parseLong(djson.getString("GetComputeMany"));
 	   	
 		   	synchronized(m_cmh) {
-		   		cma = m_cmh.getMany(howMany);
+		   		// Previous works cma = m_cmh.getMany(howMany);
+		   		result = m_cmh.getMany(howMany);
 		   		// status update request for each Compute Server should come from Compute server only
 		   	}
-		   	djsonResponse = new DMJson("Count", "" + cma.size());
+		   	
+		   	// Previous works djsonResponse = new DMJson("Count", "" + cma.size());
+		   	/* Previous works
+		   	djsonResponse = new DMJson();
 		   	int k = 1;
 		   	for (DMComputeServer cm : cma) {
 		   		log.debug("cm.toString() : {}", cm.toString());
 		   		djsonResponse = djsonResponse.add("" + k, cm.toString());
 		   		k++;
 		   	}
+		   	djsonResponse.add("Count", "" + (k - 1));
+		   	*/
 	   	} catch (Error | RuntimeException e) {
 	   		return DMJson.error(DMUtil.serverErrMsg(e));
 		} catch (Exception e) {
@@ -229,35 +236,43 @@ public class MetaServer extends Application {
 		} catch (Throwable e) {
 			return DMJson.error(DMUtil.serverErrMsg(e));
 		}
-	   	log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
-	   	return djsonResponse.toString();
-   
+	   	// Previous works log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
+	   	// Previous works return djsonResponse.toString();
+	   	
+	   	log.debug("getComputeMany() result : {}", result);
+	   	return result;
    }
 
    @POST
    @Path("/Meta/Compute/GetManyMayExclude")
    public String getComputeManyMayExclude(String request) throws DScabiException {
-	   	//DMComputeServer cma[];
-	   	List<DMComputeServer> cma = null;
+	   	LinkedList<DMComputeServer> cma = null;
 	   	DMJson djson = null;
-	   	DMJson djsonResponse = null;
-	   	int howMany = 0;
+	   	// Previous works DMJson djsonResponse = null;
+	   	long howMany = 0;
 	   	String jsonStrExclude = null;
+	   	String result = null;
 	   	try {
 	   		djson = new DMJson(request);
-	   		howMany = Integer.parseInt(djson.getString("GetComputeMany"));
+	   		howMany = Long.parseLong(djson.getString("GetComputeMany"));
 	   		jsonStrExclude = djson.getString("ComputeExclude");
 		   	synchronized(m_cmh) {
-		   		cma = m_cmh.getManyMayExclude(howMany, jsonStrExclude);
+		   		// Previous works cma = m_cmh.getManyMayExclude(howMany, jsonStrExclude);
+		   		result = m_cmh.getManyMayExclude(howMany, jsonStrExclude);
 		   		// status update request for each Compute Server should come from Compute server only
 		   	}
-		   	djsonResponse = new DMJson("Count", "" + cma.size());
+		   	
+		   	// Previous works djsonResponse = new DMJson("Count", "" + cma.size());
+		   	/* Previous works
+		   	djsonResponse = new DMJson();
 		   	int k = 1;
 		   	for (DMComputeServer cm : cma) {
 		   		log.debug("cm.toString() : {}", cm.toString());
 		   		djsonResponse = djsonResponse.add("" + k, cm.toString());
 		   		k++;
 		   	}
+		   	djsonResponse.add("Count", "" + (k - 1));
+		   	*/
 	   	} catch (Error | RuntimeException e) {
 	   		return DMJson.error(DMUtil.serverErrMsg(e));
 		} catch (Exception e) {
@@ -265,9 +280,11 @@ public class MetaServer extends Application {
 		} catch (Throwable e) {
 			return DMJson.error(DMUtil.serverErrMsg(e));
 		}
-	   	log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
-	   	return djsonResponse.toString();
-   
+	   	// Previous works log.debug("djsonResponse.toString() : {}", djsonResponse.toString());
+	   	// Previous works return djsonResponse.toString();
+
+	   	log.debug("getComputeManyMayExclude() result : {}", result);
+	   	return result;
    }
    
    @POST
@@ -459,7 +476,8 @@ public class MetaServer extends Application {
        createTablesIfAbsent();
        populateDataIfAbsent();
        initialize();
-       m_cmh.removeAll();
+       // works m_cmh.removeAll();
+	   m_cmh.checkIfRunningAndRemove();
        
        ServletHolder sh = new ServletHolder(HttpServletDispatcher.class);
        sh.setInitParameter("javax.ws.rs.Application", MetaServer.class.getCanonicalName()); 

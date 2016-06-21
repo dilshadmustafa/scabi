@@ -77,6 +77,8 @@ package com.dilmus.dilshad.scabi.ms;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -163,20 +165,21 @@ public class DMComputeServerHelper {
 	}
 	
 	
-	public List<DMComputeServer> getMany(int howMany) throws DScabiException {
+	public String getMany(long howMany) throws DScabiException {
     	
     	DDocument document = new DDocument();
     	document.put("Status", "Available");
-    	
-    	DResultSet cursorExist = m_table.find(document);
     	if (0 == m_table.count(document))
     		throw new DScabiException("Zero ComputeHost with status as Available", "CMH.GMY.2");
+    	DResultSet cursorExist = m_table.find(document);    	
     	if (null == cursorExist)
     		throw new DScabiException("result set is null. No ComputeHost with status as Available", "CMH.GMY.1");
-    	int k = 0;
-    	//DMComputeServer cma[] = new DMComputeServer[howMany];
-    	List<DMComputeServer> cma = new ArrayList<DMComputeServer>();
-	    while (cursorExist.hasNext()) {
+    	
+    	long k = 0;
+    	LinkedList<DMComputeServer> cma = new LinkedList<DMComputeServer>();
+	   	DMJson djsonResponse = new DMJson();
+    	
+    	while (cursorExist.hasNext()) {
 	    	if (k >= howMany) {
 	    		break;
 	    	}
@@ -199,25 +202,15 @@ public class DMComputeServerHelper {
 			}
 	    	log.debug("getMany() MAXCSTHREADS : {}", f3);
 
-	    	//cma[k] = new DMComputeServer(m_ddb, f, f2);
-	    	cma.add(new DMComputeServer(m_ddb, f, f2, f3));
+	    	// Previous works cma.add(new DMComputeServer(m_ddb, f, f2, f3));
+	   		djsonResponse = djsonResponse.add("" + (k + 1), new DMComputeServer(m_ddb, f, f2, f3).toString());
 	    	k++;
 	    }
-	    /*
-	    DMComputeServer cma2[] = new DMComputeServer[k];
-    	for (int i = 0; i < k; i++) {
-    		cma2[i] = cma[i];
-    		log.debug("getMany() cma i={} : {}", cma[i]); 
-    		log.debug("getMany() cma2 i={} : {}", cma2[i]); 
-    		
-    		
-    	}
-	    return cma2; 
-	    */
-	    return cma;
+	   	djsonResponse.add("Count", "" + k);
+	    return djsonResponse.toString();
 	}
 
-	public List<DMComputeServer> getManyMayExclude(int howMany, String jsonStrExclude) throws DScabiException, IOException {
+	public String getManyMayExclude(long howMany, String jsonStrExclude) throws DScabiException, IOException {
 		
     	DDocument document = new DDocument();
     	document.put("Status", "Available");
@@ -227,49 +220,58 @@ public class DMComputeServerHelper {
     		throw new DScabiException("Zero ComputeHost with status as Available", "CMH.GMY.2");
     	if (null == cursorExist)
     		throw new DScabiException("result set is null. No ComputeHost with status as Available", "CMH.GMY.1");
-    	int k = 0;
-    	long n = m_table.count(document);
-    	//DMComputeServer cma[] = new DMComputeServer[(int)n];
-    	List<DMComputeServer> cma = new ArrayList<DMComputeServer>();
+    	
+    	long k = 0;
+    	List<DMComputeServer> cma = new LinkedList<DMComputeServer>();
+	   	DMJson djsonResponse = new DMJson();
+		DMJson dmjson = new DMJson(jsonStrExclude);
+		
 	    while (cursorExist.hasNext()) {
+	    	if (k >= howMany)
+	    		break;
 	    	DDocument ob = cursorExist.next();
-	    	log.debug("getMany() result from ob {}", ob.toString());
+	    	log.debug("getManyMayExclude() result from ob {}", ob.toString());
 			String f = ob.getString("ComputeHost");
 			if (null == f) {
 	    		throw new DScabiException("Field name " + "ComputeHost" + " doesn't exist in dbobject in dbcursor.", "CMH.GMY.3");
 			}
-	    	log.debug("getMany() ComputeHost : {}", f);
+	    	log.debug("getManyMayExclude() ComputeHost : {}", f);
 			String f2 = ob.getString("ComputePort");
 			if (null == f2) {
 	    		throw new DScabiException("Field name " + "ComputePort" + " doesn't exist in dbobject in dbcursor.", "CMH.GMY.4");
 			}
-	    	log.debug("getMany() ComputePort : {}", f2);
+	    	log.debug("getManyMayExclude() ComputePort : {}", f2);
 			String f3 = ob.getString("MAXCSTHREADS");
 			if (null == f3) {
 	    		throw new DScabiException("Field name " + "MAXCSTHREADS" + " doesn't exist in dbobject in dbcursor.", "CMH.GMY.5");
 			}
-	    	log.debug("getMany() MAXCSTHREADS : {}", f3);
+	    	log.debug("getManyMayExclude() MAXCSTHREADS : {}", f3);
 
-	    	//cma[k] = new DMComputeServer(m_ddb, f, f2);
-	    	cma.add(new DMComputeServer(m_ddb, f, f2, f3));
+	    	DMComputeServer cm = new DMComputeServer(m_ddb, f, f2, f3);
+	   		log.debug("getManyMayExclude() cm.toString() : {}", cm.toString());
+			Iterator<String> itr = dmjson.fieldNames();
+			boolean isMatches = false;
+			while (itr.hasNext()) {
+				String s = itr.next();
+				if (cm.toString().equals(dmjson.getString(s))) {
+					log.debug("getManyMayExclude() dmjson.getString(s) : {}", dmjson.getString(s));
+					isMatches = true;
+					break;
+				}
+			} // End for
+
+			if (isMatches)
+				continue;
+			
+	    	// Previous works cma.add(cm);
+	   		djsonResponse = djsonResponse.add("" + (k + 1), cm.toString());
 	    	k++;
 	    }
-	    exclude(cma, jsonStrExclude);
-	    while (cma.size() > howMany) {
-	    	cma.remove(cma.size() - 1);
-	    }
-	    /*
-	    DMComputeServer cma2[] = new DMComputeServer[k];
-    	for (int i = 0; i < k; i++) {
-    		cma2[i] = cma[i];
-    		log.debug("getMany() cma i={} : {}", cma[i]); 
-    		log.debug("getMany() cma2 i={} : {}", cma2[i]); 
-    		
-    		
-    	}
-	    return cma2; 
-	    */
-	    return cma;
+	    
+	    // Previous works exclude(cma, jsonStrExclude);
+
+	   	djsonResponse.add("Count", "" + k);
+	    return djsonResponse.toString();
 	}
 	
 	public List<DMComputeServer> getAllAvailable() throws DScabiException {
@@ -283,12 +285,9 @@ public class DMComputeServerHelper {
     		throw new DScabiException("Zero ComputeHost with status as Available", "CMH.GMY.2");
     	if (null == cursorExist)
     		throw new DScabiException("result set is null. No Compute Host with status as Available", "CMH.GMY.1");
-    	int k = 0;
-    	long n = 0;
-    	n = m_table.count(document);
-    	log.debug("n : {}", n);
-    	//DMComputeServer cma[] = new DMComputeServer[(int)n];
-    	List<DMComputeServer> cma = new ArrayList<DMComputeServer>();
+
+    	long k = 0;
+    	List<DMComputeServer> cma = new LinkedList<DMComputeServer>();
 	    while (cursorExist.hasNext()) {
 	    	DDocument ob = cursorExist.next();
 	    	log.debug("getMany() result from ob {}", ob.toString());
@@ -308,21 +307,9 @@ public class DMComputeServerHelper {
 			}
 	    	log.debug("getMany() MAXCSTHREADS : {}", f3);
 
-	    	//cma[k] = new DMComputeServer(m_ddb, f, f2);
 	    	cma.add(new DMComputeServer(m_ddb, f, f2, f3));
 	    	k++;
 	    }
-	    /*
-	    DMComputeServer cma2[] = new DMComputeServer[k];
-    	for (int i = 0; i < k; i++) {
-    		cma2[i] = cma[i];
-    		log.debug("getMany() cma i={} : {}", cma[i]); 
-    		log.debug("getMany() cma2 i={} : {}", cma2[i]); 
-    		
-    		
-    	}
-	    return cma2; 
-	    */
 	    return cma;
 	}
 

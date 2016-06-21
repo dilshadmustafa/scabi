@@ -80,9 +80,12 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.Map.Entry;
 
+/* Previous works
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -90,14 +93,439 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
+*/
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author Dilshad Mustafa
  *
  */
+public class Dson {
+
+	private static final Logger log = LoggerFactory.getLogger(Dson.class);
+	private static final HashMap<String, ObjectMapper> m_mapThreadIdOM = new HashMap<String, ObjectMapper>();
+	private ObjectMapper m_objectMapper = null;
+	private ObjectNode m_root = null;
+	private boolean m_isChanged = true;
+	
+	private String m_jsonString = null;
+	private boolean m_isDsonEmpty = false;
+	
+	public Dson(String jsonString) throws IOException {
+		m_jsonString = jsonString;
+		
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+		m_root = (ObjectNode) m_objectMapper.readTree(jsonString);
+	}
+	
+	public Dson() {
+		
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_isDsonEmpty = true;
+	}
+
+	public Dson(String key, String value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+	
+	public Dson(String key, int value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+	
+	public Dson(String key, long value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+	
+	public Dson(String key, float value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public Dson(String key, double value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public Dson(String key, boolean value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public String getString(String field) {
+		return m_root.get(field).asText();
+	}
+	
+	public int getInt(String field) {
+		return m_root.get(field).asInt();
+	}
+
+	public long getLong(String field) {
+		return m_root.get(field).asLong();
+	}
+
+	public double getDouble(String field) {
+		return m_root.get(field).asDouble();
+	}
+
+	public boolean getBoolean(String field) {
+		return m_root.get(field).asBoolean();
+	}
+	
+	public Iterator<String> fieldNames() {
+		return m_root.fieldNames();
+	}
+	
+	public String toString() {
+		if (m_isChanged) {
+			try {
+				m_jsonString = m_objectMapper.writeValueAsString(m_root);
+				m_isChanged = false;
+			} catch (JsonProcessingException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		//log.debug("toString() jsonString : {}", m_jsonString);
+		return m_jsonString;
+	}
+	
+	public Dson add(String key, String value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, int value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, long value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	public Dson add(String key, float value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	public Dson add(String key, double value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public Dson add(String key, boolean value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	private static Dson createDsonList(HashMap<String, String> hmap, LinkedList<String> fieldNames) {
+	    Dson job = new Dson();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == fieldNames.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : fieldNames) {
+	    	//System.out.println("createDsonList() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDsonList() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, hmap.get(field));
+	    }
+		
+		return job;
+		
+	}
+	
+	private static Dson createDsonSet(HashMap<String, String> hmap, Set<String> st) {
+	    Dson job = new Dson();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == st.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : st) {
+	    	//System.out.println("createDsonSet() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDsonSet() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, hmap.get(field));
+	    }
+		
+		return job;
+		
+	}
+		
+	private static Dson createDson(LinkedList<String> arrayofDJsons) {
+	    Dson job = new Dson();
+	    long n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDson() jsonString : {}", s);
+	        //System.out.println("createDson() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+		
+		return job;
+		
+	}
+	
+	private static Dson createDsonWithCount(LinkedList<String> arrayofDJsons) {
+	    Dson job = new Dson();
+
+	    // Previous works String count = "" + arrayofDJsons.size();
+	    // Previous works job.add("Count", "" + count);
+	    long n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDsonWithCount() jsonString : {}", s);
+	        //System.out.println("createDsonWithCount() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+	    String sCount = "" + (n - 1);
+	    job.add("Count", sCount);
+	    
+		return job;
+		
+	}
+	
+	public static String ok() {
+		return "{ \"Ok\" : \"1\" }";
+	}
+
+	public static String empty() {
+		return "{ \"Empty\" : \"1\" }";
+	}
+
+	public static String asTrue() {
+		return "{ \"True\" : \"1\" }";
+	}
+
+	public static String asFalse() {
+		return "{ \"False\" : \"1\" }";
+	}
+
+	public boolean isTrue() throws IOException {
+		if (1 == m_root.size() && m_root.has("True"))
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isFalse() throws IOException {
+		if (1 == m_root.size() && m_root.has("False"))
+			return true;
+		else
+			return false;
+	}
+	
+	public static String error(String errorMessage) {
+		//return "{ \"Error\" : \"" + errorMessage + "\" }";
+		return (new Dson("Error", errorMessage)).toString();
+	}
+	
+	public static String result(String result) {
+		//return "{ \"Result\" : \"" + result + "\" }";
+		return (new Dson("Result", result)).toString();
+	}
+
+	public boolean isOk() throws IOException {
+		if (1 == m_root.size() && m_root.has("Ok"))
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isError() throws IOException {
+		if (1 == m_root.size() && m_root.has("Error"))
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isEmpty() throws IOException {
+		if (1 == m_root.size() && m_root.has("Empty"))
+			return true;
+		else if (true == m_isDsonEmpty)
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isResult() throws IOException {
+		if (1 == m_root.size() && m_root.has("Result"))
+			return true;
+		else
+			return false;
+	}
+
+	public int getTU() {
+		return getIntOf("TotalComputeUnit");
+	}
+
+	public int getCU() {
+		return getIntOf("SplitComputeUnit");
+	}
+	
+	public int getIntOf(String field) {
+		return Integer.parseInt(getString(field));
+	}
+	
+	public long getLongOf(String field) {
+		return Long.parseLong(getString(field));
+	}
+
+	public float getFloatOf(String field) {
+		return Float.parseFloat(getString(field));
+	}
+
+	public double getDoubleOf(String field) {
+		return Double.parseDouble(getString(field));
+	}
+
+	public boolean getBooleanOf(String field) {
+		return Boolean.parseBoolean(getString(field));
+	}
+	
+	public Dson getInput() throws IOException {
+		return new Dson(getString("JsonInput"));
+	}
+	
+	public Dson getResult() throws IOException {
+		return new Dson(getString("Result"));
+	}
+
+	public int getCount() throws IOException {
+		return Integer.parseInt(getString("Count"));
+	}
+
+	public boolean contains(String key) {
+		return m_root.has(key);
+	}
+	
+	public static Dson dummyDson() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "1");
+		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+		Dson dson3 = dson2.add("JsonInput", Dson.empty());
+
+		return dson3;
+	}
+
+	public static String dummy() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "1");
+		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+		Dson dson3 = dson2.add("JsonInput", Dson.empty());
+
+		return dson3.toString();
+	}
+
+}
+
+
+//==============================
+
+/* Previous works
 public class Dson {
 
 	private static final Logger log = LoggerFactory.getLogger(Dson.class);
@@ -111,10 +539,10 @@ public class Dson {
 		
 		JsonReader jsonReader = Json.createReader(fis);
 		
-		/* Reference - create using factory
-		JsonReaderFactory factory = Json.createReaderFactory(null);
-		jsonReader = factory.createReader(fis);
-		*/
+		//Reference - create using factory
+		//JsonReaderFactory factory = Json.createReaderFactory(null);
+		//jsonReader = factory.createReader(fis);
+		
 		
 		m_jsonObject = jsonReader.readObject();
 		
@@ -563,3 +991,5 @@ public class Dson {
 	}
 
 }
+*/
+

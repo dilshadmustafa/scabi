@@ -78,11 +78,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dilmus.dilshad.scabi.core.DCompute;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DComputeAsync;
+import com.dilmus.dilshad.scabi.core.async.DCompute;
+import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
 
 /**
  * @author Dilshad Mustafa
@@ -106,7 +106,7 @@ public class Test1_4 {
 	    	System.out.println("Test1_4");
 
 	    	DMeta meta = new DMeta("localhost", "5000");
-	     	DCompute c = new DCompute(meta);
+	     	DComputeSync c = new DComputeSync(meta);
 	     	
 	     	// The below example show how to add additional Java libraries, jar files
 	     	// and shows how to use the classes inside the Compute Unit
@@ -140,7 +140,7 @@ public class Test1_4 {
 	     		public String compute(Dson jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
-		    	     	DComputeAsync c = new DComputeAsync(meta);
+		    	     	DCompute c = new DCompute(meta);
 		    	     	HashMap<String, String> myout = new HashMap<String, String>();
 		    	     	//System.out.println("jsonInput.toString() : " + jsonInput.toString());
 		    	     	c.executeClass(MyPrimeCheckUnit.class).input(jsonInput.getInput()).split(1).output(myout);
@@ -176,7 +176,7 @@ public class Test1_4 {
 	     		public String compute(Dson jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
-		    	     	DCompute c = new DCompute(meta);
+		    	     	DComputeSync c = new DComputeSync(meta);
 		    	     	HashMap<String, String> myout = new HashMap<String, String>();
 		    	     	//System.out.println("jsonInput.toString() : " + jsonInput.toString());
 		    	     	

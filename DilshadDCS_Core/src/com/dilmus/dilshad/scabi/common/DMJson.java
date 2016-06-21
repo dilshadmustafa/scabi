@@ -81,9 +81,13 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Set;
 
+/* Previous works
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -91,14 +95,444 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
+*/
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author Dilshad Mustafa
  *
  */
+
+public class DMJson {
+
+	private static final Logger log = LoggerFactory.getLogger(DMJson.class);
+	private static final HashMap<String, ObjectMapper> m_mapThreadIdOM = new HashMap<String, ObjectMapper>();
+	private ObjectMapper m_objectMapper = null;
+	private ObjectNode m_root = null;
+	private boolean m_isChanged = true;
+
+	private String m_jsonString = null;
+	private boolean m_isDsonEmpty = false;
+	
+	public DMJson(String jsonString) throws IOException {
+		m_jsonString = jsonString;
+		
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+		m_root = (ObjectNode) m_objectMapper.readTree(jsonString);
+	}
+	
+	public DMJson() {
+		
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_isDsonEmpty = true;
+	}
+
+	public DMJson(String key, String value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+	
+	public DMJson(String key, int value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+	
+	public DMJson(String key, long value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public DMJson(String key, float value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public DMJson(String key, double value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public DMJson(String key, boolean value) {
+		long thisThreadId = Thread.currentThread().getId();
+		synchronized(m_mapThreadIdOM) {
+			if (m_mapThreadIdOM.containsKey("" + thisThreadId))
+				m_objectMapper = m_mapThreadIdOM.get("" + thisThreadId);
+			else {
+				m_objectMapper = new ObjectMapper();
+				m_mapThreadIdOM.put("" + thisThreadId, m_objectMapper);
+			}
+		}
+
+		m_root = m_objectMapper.createObjectNode();
+		m_root.put(key, value);
+	}
+
+	public String getString(String field) {
+		return m_root.get(field).asText();
+	}
+	
+	public int getInt(String field) {
+		return m_root.get(field).asInt();
+	}
+	
+	public long getLong(String field) {
+		return m_root.get(field).asLong();
+	}
+
+	public double getDouble(String field) {
+		return m_root.get(field).asDouble();
+	}
+	
+	public boolean getBoolean(String field) {
+		return m_root.get(field).asBoolean();
+	}
+	
+	public Set<String> keySet() {
+		Set<String> st = new HashSet<String>();
+		Iterator<String> itr = m_root.fieldNames();
+		while (itr.hasNext()) {
+			st.add(itr.next());
+		}
+		return st;
+	}
+	
+	public Iterator<String> fieldNames() {
+		return m_root.fieldNames();
+	}
+	
+	public String toString() {
+		if (m_isChanged) {
+			try {
+				m_jsonString = m_objectMapper.writeValueAsString(m_root);
+				m_isChanged = false;
+			} catch (JsonProcessingException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		//log.debug("toString() jsonString : {}", m_jsonString);
+		return m_jsonString;
+	}
+	
+	public DMJson add(String key, String value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public DMJson add(String key, int value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public DMJson add(String key, long value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+	
+	public DMJson add(String key, float value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	public DMJson add(String key, double value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	public DMJson add(String key, boolean value) {
+		m_root.put(key, value);
+		m_isChanged = true;
+		m_isDsonEmpty = false;
+		return this;
+	}
+
+	public static DMJson createDJsonList(HashMap<String, String> hmap, LinkedList<String> fieldNames) {
+	    DMJson job = new DMJson();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == fieldNames.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : fieldNames) {
+	    	//System.out.println("createDMJsonList() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDMJsonList() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, hmap.get(field));
+	    }
+		
+		return job;
+	}
+	
+	public static DMJson createDJsonSet(HashMap<String, String> hmap, Set<String> st) {
+	    DMJson job = new DMJson();
+
+	    if (true == hmap.isEmpty()) {
+	    	return null;
+	    }
+	    if (true == st.isEmpty()) {
+	    	return null;
+	    }
+	    for (String field : st) {
+	    	//System.out.println("createDMJsonSet() from hmap {}" + hmap.get(field) + " field " + field);
+	    	//log.debug("createDMJsonSet() from hmap {} field {}", hmap.get(field), field);
+
+	    	job.add(field, hmap.get(field));
+	    }
+		
+		return job;
+	}
+		
+	public static DMJson createDJson(LinkedList<String> arrayofDJsons) {
+	    DMJson job = new DMJson();
+	    long n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDMJson() jsonString : {}", s);
+	        //System.out.println("createDMJson() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+		
+		return job;
+	}
+	
+	public static DMJson createDJsonWithCount(LinkedList<String> arrayofDJsons) {
+	    DMJson job = new DMJson();
+
+	    // Previous works String count = "" + arrayofDJsons.size();
+	    // Previous works job.add("Count", "" + count);
+	    long n = 1;
+	    for (String s : arrayofDJsons) {
+	    	//log.debug("createDMJsonWithCount() jsonString : {}", s);
+	        //System.out.println("createDMJsonWithCount() jsonString : " + s);
+	    	job.add("" + n, s);
+	    	n++;
+	    }
+	    String sCount = "" + (n - 1);
+	    job.add("Count", sCount);
+	    
+		return job;
+	}
+	
+	public static String ok() {
+		return "{ \"Ok\" : \"1\" }";
+	}
+
+	public static String empty() {
+		return "{ \"Empty\" : \"1\" }";
+	}
+	
+	public static String asTrue() {
+		return "{ \"True\" : \"1\" }";
+	}
+
+	public static String asFalse() {
+		return "{ \"False\" : \"1\" }";
+	}
+
+	public boolean isTrue() throws IOException {
+		if (1 == m_root.size() && m_root.has("True"))
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isFalse() throws IOException {
+		if (1 == m_root.size() && m_root.has("False"))
+			return true;
+		else
+			return false;
+	}
+
+	public static String error(String errorMessage) {
+		//return "{ \"Error\" : \"" + errorMessage + "\" }";
+		return (new DMJson("Error", errorMessage)).toString();
+	}
+
+	public static String result(String result) {
+		//return "{ \"Result\" : \"" + result + "\" }";
+		return (new DMJson("Result", result)).toString();
+	}
+
+	public boolean isOk() throws IOException {
+		if (1 == m_root.size() && m_root.has("Ok"))
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isError() throws IOException {
+		if (1 == m_root.size() && m_root.has("Error"))
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isEmpty() throws IOException {
+		if (1 == m_root.size() && m_root.has("Empty"))
+			return true;
+		else if (true == m_isDsonEmpty)
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isResult() throws IOException {
+		if (1 == m_root.size() && m_root.has("Result"))
+			return true;
+		else
+			return false;
+	}
+
+	public int getTU() {
+		return getIntOf("TotalComputeUnit");
+	}
+
+	public int getCU() {
+		return getIntOf("SplitComputeUnit");
+	}
+	
+	public int getIntOf(String field) {
+		return Integer.parseInt(getString(field));
+	}
+
+	public long getLongOf(String field) {
+		return Long.parseLong(getString(field));
+	}
+
+	public float getFloatOf(String field) {
+		return Float.parseFloat(getString(field));
+	}
+
+	public double getDoubleOf(String field) {
+		return Double.parseDouble(getString(field));
+	}
+
+	public boolean getBooleanOf(String field) {
+		return Boolean.parseBoolean(getString(field));
+	}
+
+	public DMJson getInput() throws IOException {
+		return new DMJson(getString("JsonInput"));
+	}
+
+	public DMJson getResult() throws IOException {
+		return new DMJson(getString("Result"));
+	}
+
+	public long getCount() throws IOException {
+		return Long.parseLong(getString("Count"));
+	}
+
+	public boolean contains(String key) {
+		return m_root.has(key);
+	}
+	
+	public static DMJson dummyDson() throws IOException {
+		DMJson dson1 = new DMJson("TotalComputeUnit", "1");
+		DMJson dson2 = dson1.add("SplitComputeUnit", "1");
+		DMJson dson3 = dson2.add("JsonInput", DMJson.empty());
+
+		return dson3;
+	}
+
+	public static String dummy() throws IOException {
+		DMJson dson1 = new DMJson("TotalComputeUnit", "1");
+		DMJson dson2 = dson1.add("SplitComputeUnit", "1");
+		DMJson dson3 = dson2.add("JsonInput", DMJson.empty());
+
+		return dson3.toString();
+	}
+
+}
+
+//============================
+
+/* Previous works
 public class DMJson {
 
 	private static final Logger log = LoggerFactory.getLogger(DMJson.class);
@@ -111,10 +545,10 @@ public class DMJson {
 		//create JsonReader object
 		JsonReader jsonReader = Json.createReader(fis);
 		
-		/* To create JsonReader from factory
-		JsonReaderFactory factory = Json.createReaderFactory(null);
-		jsonReader = factory.createReader(fis);
-		*/
+		// To create JsonReader from factory
+		// JsonReaderFactory factory = Json.createReaderFactory(null);
+		// jsonReader = factory.createReader(fis);
+		
 		
 		// get JsonObject from JsonReader
 		m_jsonObject = jsonReader.readObject();
@@ -495,8 +929,8 @@ public class DMJson {
 		return new DMJson(getString("Result"));
 	}
 
-	public int getCount() throws IOException {
-		return Integer.parseInt(getString("Count"));
+	public long getCount() throws IOException {
+		return Long.parseLong(getString("Count"));
 	}
 
 	public boolean contains(String key) {
@@ -520,4 +954,4 @@ public class DMJson {
 	}
 
 }
-
+*/

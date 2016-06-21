@@ -112,8 +112,8 @@ public class DComputeAsyncRun implements Runnable {
 	
 	private boolean m_isExecutionError = false;
 	
-	private int m_TU = 0;
-	private int m_SU = 0;
+	private long m_TU = 0;
+	private long m_SU = 0;
 	private int m_retriesTillNow = 0;
 	private int m_maxRetry = 0;
 	
@@ -133,12 +133,12 @@ public class DComputeAsyncRun implements Runnable {
 		m_futureHttpResponse = null;
 	}
 	
-	public int setTU(int totalUnits) {
+	public int setTU(long totalUnits) {
 		m_TU = totalUnits;
 		return 0;
 	}
 
-	public int setSU(int splitno) {
+	public int setSU(long splitno) {
 		m_SU = splitno;
 		return 0;
 	}
@@ -148,11 +148,11 @@ public class DComputeAsyncRun implements Runnable {
 		return 0;
 	}
 
-	public int getTU() {
+	public long getTU() {
 		return m_TU;
 	}
 
-	public int getSU() {
+	public long getSU() {
 		return m_SU;
 	}
 	
@@ -245,27 +245,47 @@ public class DComputeAsyncRun implements Runnable {
 	}
 	
 	public void doRun() throws IOException, DScabiException {
+
+		log.debug("doRun() m_SU : {}", m_SU);
 		
 		if (null == m_config) {
 			// Not used throw new DScabiException("config is not set", "CRN.RUN.1");
-			log.debug("doRun() config is not set");
+			log.debug("doRun() m_config is not set");
 			return;
 		}
 		if (null == m_computeNB) {
 			// Not used throw new DScabiException("computeSync is not set", "CRN.RUN.1");
-			log.debug("doRun() computeSync is not set");
+			log.debug("doRun() m_computeNB is not set");
 			return;
 		}
 		
-		int splitno = m_SU;
-		log.debug("doRun() splitno : {}", splitno);
+		// Previous works long splitno = m_SU;
 		m_futureHttpResponse = null;
+		
+		if (m_computeNB.isFaulty()) {
+			log.debug("doRun() m_computeNB is marked as faulty. crun m_SU : {}", m_SU);
+			String errorJsonStr = DMJson.error("m_computeNB is marked as faulty. crun m_SU : " + m_SU);
+			synchronized (m_config) {
+				m_config.setResult(m_SU, errorJsonStr);
+			}
+			m_isError = true; 
+			
+			m_isDone = true;
+			m_isRetrySubmitted = false;
+			if (false == m_isRunOnce) {
+				m_isRunOnce = true;
+			}
+			return;
+		}
+		
 		try {
 			if (m_config.isJarFilePathListSet()) {
 				log.debug("doRun() isJarFilePathSet() is true");
 				m_computeNB.setJarFilePathFromList(m_config.getJarFilePathList());
 			}
 			m_computeNB.setInput(m_config.getInput());
+			m_computeNB.setJobId(m_config.getJobId());
+			m_computeNB.setTaskId(m_config.getTaskId());
 			if (m_config.isComputeUnitJarsSet()) {
 				log.debug("doRun() isComputeUnitJarsSet() is true");
 				m_computeNB.setComputeUnitJars(m_config.getComputeUnitJars());
@@ -294,9 +314,9 @@ public class DComputeAsyncRun implements Runnable {
 			log.debug("doRun() Exception : {}", e.toString());
 			// m_computeNB is faulty only in the case of ClientProtocolException/NetworkException
 			m_computeNB.setFaulty(true);
-			String errorJson = DMJson.error(DMUtil.clientErrMsg(e));
+			String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 			synchronized (m_config) {
-				m_config.setResult(splitno, errorJson);
+				m_config.setResult(m_SU, errorJsonStr);
 			}
 			// m_isError is set only in the case of network exception
 			// only in this case retry has to be attempted if maxRetry > 0 is set by User
@@ -313,10 +333,14 @@ public class DComputeAsyncRun implements Runnable {
 	}
 
 	public void run() {
+
+		log.debug("run() m_SU : {}", m_SU);
+		
 		m_isDone = false;
 		if (true == m_isError)
 			m_retriesTillNow = m_retriesTillNow + 1;
 		m_isError = false;
+
 		synchronized (m_computeNB) {
 			try {
 				m_computeNB.setTU(m_TU);
@@ -329,10 +353,9 @@ public class DComputeAsyncRun implements Runnable {
 				// is already handled in doRun() method
 				// // // m_computeNB.setFaulty(true);
 				
-				log.debug("run() m_SU : {}", m_SU);
-				String errorJson = DMJson.error(DMUtil.clientErrMsg(e));
+				String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 				synchronized (m_config) {
-					m_config.setResult(m_SU, errorJson);
+					m_config.setResult(m_SU, errorJsonStr);
 				}
 				m_isDone = true;
 				m_isRetrySubmitted = false;
@@ -351,12 +374,20 @@ public class DComputeAsyncRun implements Runnable {
 		HttpResponse httpResponse = null;
 		String result = null;
 		
+		log.debug("get() m_SU : {}", m_SU);
+		
+		// if m_isError is already set to true by doRun(), just return
+		if (true == m_isError) {
+			log.debug("get() m_isError is true for crun m_SU : {}", m_SU);
+			return;
+		}
+		
 		if (m_futureHttpResponse != null) {
 
 			try {
 				httpResponse = DComputeNoBlock.get(m_futureHttpResponse);
 				result = DComputeNoBlock.getResult(httpResponse);
-				log.debug("get() result : {}", result);
+				log.debug("get() splitno m_SU : {}, result : {}", m_SU, result);
 				
 				m_computeNB.decCountRequests();
 	
@@ -377,7 +408,8 @@ public class DComputeAsyncRun implements Runnable {
 						log.debug("get() Exception : {}", e.toString());
 						// computeNB is faulty only in the case of Network Exception/ConnectException
 						m_computeNB.setFaulty(true);
-						result = DMJson.error(DMUtil.clientErrMsg(e));
+
+						String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 						// m_isError is set only in the case of network exception
 						// only in this case retry has to be attempted if maxRetry > 0 is set by User
 						m_isError = true; 
@@ -385,7 +417,7 @@ public class DComputeAsyncRun implements Runnable {
 						m_computeNB.decCountRequests();
 		
 						synchronized (m_config) {
-							m_config.appendResult(m_SU, result);
+							m_config.appendResult(m_SU, errorJsonStr);
 						}
 		
 						m_futureHttpResponse = null;
@@ -396,13 +428,12 @@ public class DComputeAsyncRun implements Runnable {
 						// is already handled above
 						// // // m_computeNB.setFaulty(true);
 						
-						log.debug("run() m_SU : {}", m_SU);
-						String errorJson = DMJson.error(DMUtil.clientErrMsg(e));
+						String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 						
 						m_computeNB.decCountRequests();
 
 						synchronized (m_config) {
-							m_config.appendResult(m_SU, errorJson);
+							m_config.appendResult(m_SU, errorJsonStr);
 						}
 
 						m_futureHttpResponse = null;
@@ -414,13 +445,12 @@ public class DComputeAsyncRun implements Runnable {
 					// is already handled above
 					// // // m_computeNB.setFaulty(true);
 					
-					log.debug("run() m_SU : {}", m_SU);
-					String errorJson = DMJson.error(DMUtil.clientErrMsg(e));
+					String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 					
 					m_computeNB.decCountRequests();
 
 					synchronized (m_config) {
-						m_config.appendResult(m_SU, errorJson);
+						m_config.appendResult(m_SU, errorJsonStr);
 					}
 
 					m_futureHttpResponse = null;
@@ -435,13 +465,12 @@ public class DComputeAsyncRun implements Runnable {
 				// is already handled above
 				// // // m_computeNB.setFaulty(true);
 				
-				log.debug("run() m_SU : {}", m_SU);
-				result = DMJson.error(DMUtil.clientErrMsg(e));
+				String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 				
 				m_computeNB.decCountRequests();
 		
 				synchronized (m_config) {
-					m_config.appendResult(m_SU, result);
+					m_config.appendResult(m_SU, errorJsonStr);
 				}
 		
 				m_futureHttpResponse = null;
@@ -450,13 +479,13 @@ public class DComputeAsyncRun implements Runnable {
 		
 		} else {
 			//log.debug("get() Inside else block (null == futureHttpResponse)");
-			result = DMJson.error("DComputeAsyncRun:get() Client Side Issue : get() crun futureHttpResponse is null. Split no. : " + m_SU);
+			String errorJsonStr = DMJson.error("DComputeAsyncRun:get() Client Side Issue : get() crun futureHttpResponse is null. Split no. : " + m_SU);
 			
 			m_computeNB.decCountRequests();
 			
 			synchronized (m_config) {
 				//if (false == config.isResultSet(crun.getSU()))
-					m_config.appendResult(m_SU, result);
+					m_config.appendResult(m_SU, errorJsonStr);
 			}
 			// if futureHttpResponse is null, exception should have been caught in crun.run() above
 			// TODO check if setError() on crun here is needed to enable retry for this crun

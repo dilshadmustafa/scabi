@@ -76,6 +76,7 @@ package com.dilmus.dilshad.scabi.common;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,12 +89,13 @@ import com.dilmus.dilshad.scabi.db.DTable;
  * @author Dilshad Mustafa
  *
  */
+
 public class DMDao {
 
 	final static Logger log = LoggerFactory.getLogger(DMDao.class);
 	private String m_tableName = null;
 	private boolean m_firstTime = true;
-	private ArrayList<String> m_fieldNames = null;
+	private LinkedList<String> m_fieldNames = null;
 	
 	private DDB m_ddb = null;
 	private DTable m_table = null;
@@ -133,24 +135,6 @@ public class DMDao {
 		
 	}
 
-	/*
-	public Dao(Meta meta, String strNamespace) throws IOException, ParseException, ScabiClientException, DScabiException {
-		
-		Namespace namespace = meta.getNamespace(strNamespace);
-		if (false == namespace.getType().equals("AppTable")) {
-			throw new DScabiException("Namespace type is not AppTable", "DAO.SDE.1");
-		}
-		m_ddb = new DDB(namespace.getHost(), namespace.getPort(), namespace.getSystemSpecificName());
-		
-		m_tableName = null;
-		m_firstTime = true;
-		m_fieldNames = null;
-		m_table = null;
-		m_namespace = namespace;
-
-	}
-	*/
-	
 	public int close() {
 		if (m_ddb != null)
 			m_ddb.close();
@@ -241,7 +225,7 @@ public class DMDao {
 		return 0;
 	}
 
-	public ArrayList<String> fieldNames() throws DScabiException {
+	public LinkedList<String> fieldNames() throws DScabiException {
 		if (null == m_tableName) {
 			throw new DScabiException("Table name is null", "DDO.FNS.1");
 		}
@@ -266,7 +250,7 @@ public class DMDao {
 		return m_table;
 	}
 
-	public boolean isEmpty(ArrayList<String> fieldList) {
+	public boolean isEmpty(LinkedList<String> fieldList) {
 		if (null == fieldList)
 			return true;
 		if (fieldList.isEmpty())

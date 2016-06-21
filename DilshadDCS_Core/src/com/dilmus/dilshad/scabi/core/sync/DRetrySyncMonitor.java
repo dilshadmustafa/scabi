@@ -72,12 +72,14 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+package com.dilmus.dilshad.scabi.core.sync;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -86,79 +88,90 @@ import org.apache.http.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dilmus.dilshad.scabi.core.DMeta;
+import com.dilmus.dilshad.scabi.core.DScabiClientException;
+//import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
 import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public class DRetryMonitor implements Runnable {
-	private final Logger log = LoggerFactory.getLogger(DRetryMonitor.class);
+public class DRetrySyncMonitor implements Runnable {
+	private final Logger log = LoggerFactory.getLogger(DRetrySyncMonitor.class);
 	
-	private DCompute m_compute = null;
+	private DComputeSync m_compute = null;
 	private DMeta m_meta = null;
 	private ExecutorService m_threadPool = null;
-	private List<DComputeConfig> m_cconfigList = null;
-	private List<DComputeRun> m_crunList = null;
-	private List<DComputeSync> m_csyncList = null;
-	private List<DComputeSync> m_csyncWorkingList = null;
+	private LinkedList<DComputeSyncConfig> m_cconfigList = null;
+	private LinkedList<DComputeSyncRun> m_crunList = null;
+	private LinkedList<DComputeBlock> m_cbList = null;
 	
-	private List<DComputeRun> m_localCRunList = null;
-	private List<DComputeSync> m_localCSyncList = null;
+	// Previous works private LinkedList<DComputeBlock> m_cbWorkingList = null;
+	// Previous works private LinkedList<DComputeSyncRun> m_localCRunList = null;
+	// Previous works private LinkedList<DComputeBlock> m_localCBList = null;
 	
-	public DRetryMonitor(DCompute compute, DMeta meta) {
+	private long m_cbListSize = 0;
+	private long m_cbBalancedListSize = 0;
+	
+	public DRetrySyncMonitor(DComputeSync compute, DMeta meta) {
 		m_compute = compute;
 		m_meta = meta;
 		
 		m_cconfigList = compute.getCConfigList();
 		m_crunList = compute.getCRunList();
-		m_csyncList = compute.getCSyncList();
+		m_cbList = compute.getCBList();
 		m_threadPool = compute.getExecutorService();
 		
-		m_csyncWorkingList = new ArrayList<DComputeSync>();
+		// Previous works m_cbWorkingList = new LinkedList<DComputeBlock>();
+		// Previous works m_localCRunList = new LinkedList<DComputeSyncRun>();
+		// Previous works m_localCBList = new LinkedList<DComputeBlock>();
 		
-		m_localCRunList = new ArrayList<DComputeRun>();
-		m_localCSyncList = new ArrayList<DComputeSync>();
-		
+		m_cbListSize = compute.getCBListSize();
+		m_cbBalancedListSize = 0;
 	}
 	
-	List<DComputeSync> getCSyncList() {
-		return m_localCSyncList;
+	LinkedList<DComputeBlock> getCBList() {
+		return m_cbList;
+		// Previous works return m_localCBList;
 	}
 
-	private List<DComputeSync> balance(List<DComputeSync> csynca, int splitTotal) {
+	private LinkedList<DComputeBlock> balance(LinkedList<DComputeBlock> cba, int splitTotal) {
 		
 		boolean check = true;
-		int current = csynca.size();
-		List<DComputeSync> csyncaBalanced = new ArrayList<DComputeSync>();
-		DComputeSync another = null;
+		// Previous works int current = cba.size();
+		long current = m_cbListSize;
+		LinkedList<DComputeBlock> cbaBalanced = new LinkedList<DComputeBlock>();
+		DComputeBlock another = null;
 		
-		csyncaBalanced.addAll(csynca);
+		cbaBalanced.addAll(cba);
+		m_cbBalancedListSize = m_cbListSize;
 		while (check && current < splitTotal) {
 			
-			for (DComputeSync csync : csynca) {
+			for (DComputeBlock cb : cba) {
 				try {
-					another = csync.another();
+					another = cb.another();
 				} catch (Error | RuntimeException e) {
 					log.debug("balance() Client Side Error/Exception occurred");
-					log.debug("balance() returning csyncs created till now");
+					log.debug("balance() returning cbs created till now");
 					e.printStackTrace();
-					return csyncaBalanced;
+					return cbaBalanced;
 				} catch (Exception e) {
 					log.debug("balance() Client Side Error/Exception occurred");
-					log.debug("balance() returning csyncs created till now");
+					log.debug("balance() returning cbs created till now");
 					e.printStackTrace();
-					return csyncaBalanced;
+					return cbaBalanced;
 				} catch (Throwable e) {
 					log.debug("balance() Client Side Error/Exception occurred");
-					log.debug("balance() returning csyncs created till now");
+					log.debug("balance() returning cbs created till now");
 					e.printStackTrace();
-					return csyncaBalanced;
+					return cbaBalanced;
 				}
 				if (null == another)
 					continue;
-				csyncaBalanced.add(another);
+				cbaBalanced.add(another);
 				current++;
+				m_cbBalancedListSize++;
 				if (current >= splitTotal) {
 					check = true;
 					break;
@@ -169,108 +182,137 @@ public class DRetryMonitor implements Runnable {
 				break;
 			check = true;
 		}
-		return csyncaBalanced;
+		return cbaBalanced;
 	}
 
 	public int doRetry() throws ParseException, IOException, DScabiClientException {
-		int fcTotal = 0;
-		int csyncWorkingTotal = 0;
-		boolean firstTime = true;
-		boolean isAllRunOnce = true;
+		long fcTotal = 0;
+		// Previous works int cbWorkingTotal = 0;
+		// Previous works boolean firstTime = true;
+		// Previous works boolean isAllRunOnce = true;
 		
-		// RetryMonitor is started only after all ComputeRun and ComputeSync are created in Compute class
-		// copy m_crunList, m_csyncList to local copy, m_localCRunList, m_localCSyncList
+		// RetryMonitor is started only after all ComputeRun and ComputeBlock are created in Compute class
+		// copy m_crunList, m_cbList to local copy, m_localCRunList, m_localCBList
+		/* Previous works
 		synchronized(m_compute) {
-			for (DComputeRun crun : m_crunList) {
+			for (DComputeSyncRun crun : m_crunList) {
 				if (false == m_localCRunList.contains(crun))
 					m_localCRunList.add(crun);
 			}
-			for (DComputeSync csync : m_csyncList) {
-				if (false == m_localCSyncList.contains(csync))
-					m_localCSyncList.add(csync);
+			for (DComputeBlock cb : m_cbList) {
+				if (false == m_localCBList.contains(cb))
+					m_localCBList.add(cb);
 			}
 		}
+		*/
 		
 		while(true) {
 			
 		fcTotal = 0;
-		isAllRunOnce = true;
-		for (DComputeRun crun : m_localCRunList) {
+		// Previous works isAllRunOnce = true;
+		boolean isDone = true;
+		boolean isRetrySubmitted = false;
+		
+		for (DComputeSyncRun crun : m_crunList /* Previous works m_localCRunList */) {
+			/* Previous works
 			if (false == crun.isRunOnce())
 				isAllRunOnce = false;
+			*/
+			if (false == crun.isDone())
+				isDone = false;
+			if (true == crun.isRetrySubmitted())
+				isRetrySubmitted = true;
+			
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
 				fcTotal = fcTotal + 1;
 			}
 		}
-		//log.debug("doRetry() isAllRunOnce : {}", isAllRunOnce);
+		
+		//log.debug("doRetry() fcTotal : {}", fcTotal);
+		// Previous works log.debug("doRetry() isAllRunOnce : {}", isAllRunOnce);
+		//log.debug("doRetry() isDone : {}", isDone);
+		//log.debug("doRetry() isRetrySubmitted : {}", isRetrySubmitted);
+		
+		if (0 == fcTotal && true == isDone && false == isRetrySubmitted) {
+			log.debug("doRetry() fcTotal : {}", fcTotal);
+			log.debug("doRetry() isDone : {}", isDone);
+			log.debug("doRetry() isRetrySubmitted : {}", isRetrySubmitted);
+			return 0;
+		}
+
+		/* Previous works
 		if (0 == fcTotal && true == isAllRunOnce) {
 			log.debug("doRetry() fcTotal : {}", fcTotal);
 			return 0;
 		}
-
+		*/
+		
+		/* Previous works
 		if (firstTime) {
-			m_csyncWorkingList.addAll(m_localCSyncList);
+			m_cbWorkingList.addAll(m_localCBList);
 			firstTime = false;
 		}
-		csyncWorkingTotal = 0;
-		for (DComputeSync csync : m_csyncWorkingList) {
-			if (csync.isFaulty()) {
-				//m_csyncWorkingList.remove(csync);
-				//if (false == m_localCSyncList.contains(csync))
-				//		m_localCSyncList.add(csync);
+		cbWorkingTotal = 0;
+		for (DComputeBlock cb : m_cbWorkingList) {
+			if (cb.isFaulty()) {
+				//m_cbWorkingList.remove(cb);
+				//if (false == m_localCBList.contains(cb))
+				//		m_localCBList.add(cb);
 			} else {
-				csyncWorkingTotal = csyncWorkingTotal + 1;
+				cbWorkingTotal = cbWorkingTotal + 1;
 			}
 		}
 		
-		for (DComputeSync csync : m_csyncWorkingList) {
-			if (false == m_localCSyncList.contains(csync))
-				m_localCSyncList.add(csync);
+		for (DComputeBlock cb : m_cbWorkingList) {
+			if (false == m_localCBList.contains(cb))
+				m_localCBList.add(cb);
 		}
 
-		for (DComputeSync csync : m_localCSyncList) {
-			if (m_csyncWorkingList.contains(csync) && csync.isFaulty()) {
-				m_csyncWorkingList.remove(csync);
-				log.debug("removing faulty csync");
+		for (DComputeBlock cb : m_localCBList) {
+			if (m_cbWorkingList.contains(cb) && cb.isFaulty()) {
+				m_cbWorkingList.remove(cb);
+				log.debug("removing faulty cb");
 			}
 		}
-
-		//TODO make a faulty csynclist
+		*/
+		
+		//TODO make a faulty cblist
 		/*
-		if (fcTotal > csyncWorkingTotal) {
+		if (fcTotal > cbWorkingTotal) {
 			try {
-				List<DComputeSync> csyncaoriginal = m_meta.getComputeManyMayExclude(fcTotal - csyncWorkingTotal, m_csyncWorkingList);
-				List<DComputeSync> csynca = null;
-				if(csyncaoriginal != null) {
-					csynca = balance(csyncaoriginal, fcTotal - csyncWorkingTotal);
-					for (DComputeSync csync : csynca) {
-						m_csyncWorkingList.add(0, csync); // inserts at the beginning
+				List<DComputeSync> cbaoriginal = m_meta.getComputeManyMayExclude(fcTotal - cbWorkingTotal, m_cbWorkingList);
+				List<DComputeSync> cba = null;
+				if(cbaoriginal != null) {
+					cba = balance(cbaoriginal, fcTotal - cbWorkingTotal);
+					for (DComputeSync cb : cba) {
+						m_cbWorkingList.add(0, cb); // inserts at the beginning
 					}
 				}
 			} catch (Error | RuntimeException e) {
-				// continue with existing csyncs
+				// continue with existing cbs
 				log.debug("doRetry() Client Side Error/Exception occurred");
-				log.debug("doRetry() continuing with existing csyncs");
+				log.debug("doRetry() continuing with existing cbs");
 				// //throw e;
 			} catch (Exception e) {
-				// continue with existing csyncs
+				// continue with existing cbs
 				log.debug("doRetry() Client Side Error/Exception occurred");
-				log.debug("doRetry() continuing with existing csyncs");
+				log.debug("doRetry() continuing with existing cbs");
 				// //throw new RuntimeException(e);
 			} catch (Throwable e) {
-				// continue with existing csyncs
+				// continue with existing cbs
 				log.debug("doRetry() Client Side Error/Exception occurred");
-				log.debug("doRetry() continuing with existing csyncs");
+				log.debug("doRetry() continuing with existing cbs");
 				// //throw e;
 			}
 			
 		}
 		*/
 		
-		int k = 0;
-		for (DComputeRun crun : m_localCRunList) {
+		// Previous works int k = 0;
+		ListIterator<DComputeBlock> itr = m_cbList.listIterator();
+		for (DComputeSyncRun crun : m_crunList /* Previous works m_localCRunList */) {
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
@@ -280,12 +322,33 @@ public class DRetryMonitor implements Runnable {
 				log.debug("crun.isRetrySubmitted() : {}", crun.isRetrySubmitted());
 				log.debug("crun.getSU() : {}", crun.getSU());
 
-				if (k >= m_csyncWorkingList.size())
-					k = 0;
-				DComputeSync csync = m_csyncWorkingList.get(k);
-				//log.debug("csync.toString() : {}", csync.toString());
-				crun.setComputeSync(csync);
-				k++;
+				// Previous works if (k >= m_cbWorkingList.size())
+				// Previous works 	k = 0;
+				// Previous works DComputeBlock cb = m_cbWorkingList.get(k);
+				DComputeBlock cb = null;
+        		boolean check = true;
+				long count = 0;
+        		while (check) {
+	        		if (itr.hasNext()) {
+	        			cb = itr.next();
+	        			if (cb.isFaulty() == false)
+	        				check = false;
+	        		}
+	                else {
+	        			itr = m_cbList.listIterator();
+	        			cb = itr.next();
+	        			if (cb.isFaulty() == false)
+	        				check = false;
+	        		}
+	        		if (false == check)
+	        			break;
+	        		count++;
+	        		if (count >= m_cbListSize)
+	        			throw new DScabiClientException("Unable to find a working CB", "RSM.DRY.1");
+				}
+				//log.debug("cb.toString() : {}", cb.toString());
+				crun.setComputeBlock(cb);
+				// Previous works k++;
 				crun.setRetrySubmitStatus(true);
 				
 				synchronized(m_compute) {

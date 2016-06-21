@@ -101,14 +101,14 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMClassLoader;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.DCompute;
-import com.dilmus.dilshad.scabi.core.DComputeSync;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DScabiClientException;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DComputeAsync;
+import com.dilmus.dilshad.scabi.core.async.DCompute;
 import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
+import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
+import com.dilmus.dilshad.scabi.core.sync.DComputeBlock;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 
 import java.math.*;
@@ -139,7 +139,7 @@ public class UnitTest2 {
 	    	long time1 = System.currentTimeMillis();
 	     	//String primeresult = cu2.compute(Dson.dummyDson());
 	     	//String primeresult = c.executeObject(cu2);
-	     	DComputeAsync c = new DComputeAsync(meta);
+	     	DCompute c = new DCompute(meta);
 	     	
 	    	DComputeUnit cu2 = new DComputeUnit() {
 	    		

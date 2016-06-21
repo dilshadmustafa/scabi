@@ -82,6 +82,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -158,18 +159,39 @@ public class DComputeNoBlock {
 	private String m_jsonStrInput = null;
 	private HttpHost m_metaTarget = null;
 	private DMeta m_meta = null;
-	private int m_TU = 1;
-	private int m_SU = 1;
+	private long m_TU = 1;
+	private long m_SU = 1;
 	private boolean m_isFaulty = false;
 	
 	public int MAX_REQUESTS = 1000;
 	private int m_countRequests = 0;
 	private Object m_lockCountRequests = new Object();
 	
-	private List<String> m_jarFilePathList = null;
+	private LinkedList<String> m_jarFilePathList = null;
 	
 	private boolean m_isComputeUnitJarsSet = false;
 	private DMClassLoader m_dcl = null;
+	
+	private String m_jobId = null;
+	private String m_taskId = null;
+	
+	public int setJobId(String jobId) {
+		m_jobId = jobId;
+		return 0;
+	}
+	
+	public String getJobId() {
+		return m_jobId;
+	}
+	
+	public int setTaskId(String taskId) {
+		m_taskId = taskId;
+		return 0;
+	}
+	
+	public String getTaskId() {
+		return m_taskId;
+	}
 	
 	public int setComputeUnitJars(DMClassLoader dcl) {
 		m_isComputeUnitJarsSet = true;
@@ -199,7 +221,11 @@ public class DComputeNoBlock {
 		
 		m_isFaulty = false;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = DMJson.empty();
+		
 	}
 	
 	public DComputeNoBlock(DMeta meta) throws Exception {
@@ -228,7 +254,11 @@ public class DComputeNoBlock {
 		
 		m_isFaulty = false;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>(); // new ArrayList<String>();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = DMJson.empty();
+		
 	}
 	
 	public int close() throws IOException {
@@ -329,21 +359,21 @@ public class DComputeNoBlock {
 		return 0;
 	}
 
-	public int setTU(int tu) {
+	public int setTU(long tu) {
 		m_TU = tu;
 		return 0;
 	}
 
-	public int setSU(int su) {
+	public int setSU(long su) {
 		m_SU = su;
 		return 0;
 	}
 	
-	public int getTU() {
+	public long getTU() {
 		return m_TU;
 	}
 
-	public int getSU() {
+	public long getSU() {
 		return m_SU;
 	}
 
@@ -352,6 +382,8 @@ public class DComputeNoBlock {
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("BshSource", bshSource);
 
@@ -412,6 +444,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
 		DMJson djson5 = djson4.add("ClassBytes", hexStr);
@@ -472,6 +506,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
 		DMJson djson5 = djson4.add("ClassBytes", hexStr);
@@ -526,6 +562,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassNameInJar", classNameInJar);
 		DMJson djson5 = djson4.add("JarFilePath", jarFilePath);

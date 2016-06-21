@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.db.DDB;
 import com.dilmus.dilshad.scabi.db.DTable;
-import com.dilmus.dilshad.scabi.deprecated.Dao2;
+//import com.dilmus.dilshad.scabi.deprecated.Dao2;
 
 /**
  * @author Dilshad Mustafa

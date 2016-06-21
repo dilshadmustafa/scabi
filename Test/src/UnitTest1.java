@@ -101,8 +101,6 @@ import org.slf4j.LoggerFactory;
 
 import com.dilmus.dilshad.scabi.common.DMClassLoader;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.DCompute;
-import com.dilmus.dilshad.scabi.core.DComputeSync;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DFile;
 import com.dilmus.dilshad.scabi.core.DMeta;
@@ -110,6 +108,8 @@ import com.dilmus.dilshad.scabi.core.DScabiClientException;
 import com.dilmus.dilshad.scabi.core.Dao;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
+import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
+import com.dilmus.dilshad.scabi.core.sync.DComputeBlock;
 import com.dilmus.dilshad.scabi.deprecated.DComputable;
 import com.dilmus.dilshad.scabi.deprecated.DObject;
 import com.dilmus.dilshad.scabi.deprecated.DTableOld;
@@ -210,7 +210,7 @@ public class UnitTest1 {
     	long time1 = System.currentTimeMillis();
     	//String primeresult = cu2.compute(Dson.dummyDson());
     	//String primeresult = c.executeObject(cu2);
-    	DCompute c = new DCompute(meta);
+    	DComputeSync c = new DComputeSync(meta);
     	HashMap<String, String> out1 = new HashMap<String, String>();
     	HashMap<String, String> out2 = new HashMap<String, String>();
     	HashMap<String, String> out3 = new HashMap<String, String>();

@@ -131,6 +131,7 @@ import com.dilmus.dilshad.scabi.deprecated.DDBOld;
 import com.dilmus.dilshad.scabi.deprecated.Dao2;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DMComputeTemplate;
+import com.dilmus.dilshad.scabi.common.DMCounter;
 import com.mongodb.DBCollection;
 
 // for BigInteger
@@ -149,6 +150,8 @@ public class ComputeServer extends Application {
 	
 	private Set<Class<?>> st = new HashSet<Class<?>>();
 	 
+	private static final DMCounter M_DMCOUNTER = new DMCounter();
+	
 	public ComputeServer() throws DScabiException {
 		//classesSet.add(ApplicationCommandResource.class);
 		st.add(ComputeServer.class);
@@ -177,11 +180,12 @@ public class ComputeServer extends Application {
    @POST
    @Path("/Compute/Execute/BshCode")
    public String executeCode(String request) throws IOException {
-       log.debug("executeCode() request : {}", request);
 
        //Interpreter i = new Interpreter();
        String s = null;
        DMClassLoader dcl = null;
+       
+       log.debug("executeCode() request : {}", request);
        try {
        	
     	   DMJson djson = new DMJson(request);
@@ -220,7 +224,7 @@ public class ComputeServer extends Application {
            i.set("jsonInput", dson3);
            i.eval("import com.mongodb.*");
            i.eval("import com.dilmus.dilshad.scabi.common.*");
-           i.eval("import com.dilmus.dilshad.scabi.client.*");
+           i.eval("import com.dilmus.dilshad.scabi.core.*");
            
            String code = null;
            code = djson.getString("BshSource");
@@ -281,6 +285,8 @@ public class ComputeServer extends Application {
 	   DMClassLoader dcl = null;
 	   ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
 	   ClassPool pool = null;
+	   
+	   log.debug("computeExecuteClass() request : {}", request);
 	   try {
 
 		   DMJson djson = new DMJson(request);
@@ -380,7 +386,7 @@ public class ComputeServer extends Application {
 		  		
 		  		// Reference CtClass ct = pool.getAndRename("com.dilmus.test.ComputeTemplate", "CT" + System.nanoTime());
 		  		log.debug("computeExecuteClass() DMComputeTemplate.class.getCanonicalName() : {}", DMComputeTemplate.class.getCanonicalName());
-		  		CtClass ct = pool.getAndRename(DMComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime());
+		  		CtClass ct = pool.getAndRename(DMComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
 		  		   
 			    CtMethod amethods[] = cr.getDeclaredMethods();
 			    for (CtMethod amethod : amethods) {
@@ -451,6 +457,8 @@ public class ComputeServer extends Application {
 	   DMClassLoader dcl = null;
 	   ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
 	   ClassPool pool = null;
+	   
+	   log.debug("computeExecuteFromObject() request : {}", request);
 	   try {
 		   DMJson djson = new DMJson(request);
 		   
@@ -540,7 +548,7 @@ public class ComputeServer extends Application {
 		  		
 		  		// Reference CtClass ct = pool.getAndRename("com.dilmus.test.ComputeTemplate", "CT" + System.nanoTime());
 		  		log.debug("computeExecuteFromObject() DMComputeTemplate.class.getCanonicalName() : {}", DMComputeTemplate.class.getCanonicalName());
-		  		CtClass ct = pool.getAndRename(DMComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime());
+		  		CtClass ct = pool.getAndRename(DMComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
 		  		
 		  		// Reference
 		  		// CtMethod amethod = cr.getDeclaredMethod("compute");
@@ -637,6 +645,7 @@ public class ComputeServer extends Application {
 	   DMClassLoader dmcl = null;
 	   ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
 
+	   log.debug("computeExecuteClassNameInJar() request : {}", request);
 	   try {
 
 		   DMJson djson = new DMJson(request);

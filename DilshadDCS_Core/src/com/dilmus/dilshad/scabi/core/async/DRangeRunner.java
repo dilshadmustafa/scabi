@@ -76,8 +76,9 @@ package com.dilmus.dilshad.scabi.core.async;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -91,7 +92,7 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.DComputeRun;
+import com.dilmus.dilshad.scabi.core.sync.DComputeSyncRun;
 
 /**
  * @author Dilshad Mustafa
@@ -100,62 +101,94 @@ import com.dilmus.dilshad.scabi.core.DComputeRun;
 public class DRangeRunner implements Runnable {
 
 	private final Logger log = LoggerFactory.getLogger(DRangeRunner.class);
-	private DComputeAsync m_compute = null;
-	private List<DComputeAsyncRun> m_localCRunList = null;
-	private int m_startCRun = 0;
-	private int m_endCRun = 0;
+	private DCompute m_compute = null;
+	// Previous works private List<DComputeAsyncRun> m_localCRunList = null;
+	private long m_startCRun = 0;
+	private long m_endCRun = 0;
 	
-	public int getStartCRun() {
+	private LinkedList<DComputeAsyncRun> m_crunList = null;
+	private long m_crunListSize = 0;
+	
+	public long getStartCRun() {
 		return m_startCRun;
 	}
 	
-	public int getEndCRun() {
+	public long getEndCRun() {
 		return m_endCRun;
 	}
 	
-	public DRangeRunner(DComputeAsync compute, int startCRun, int endCRun) throws DScabiException {
+	public DRangeRunner(DCompute compute, long startCRun, long endCRun) throws DScabiException {
 		if (startCRun > endCRun)
 			throw new DScabiException("startCRun > endCRun", "RRR.RRR.1");
 		m_compute = compute;
 		m_startCRun = startCRun;
 		m_endCRun = endCRun;
-		m_localCRunList = new ArrayList<DComputeAsyncRun>();
+		// Previous works m_localCRunList = new ArrayList<DComputeAsyncRun>();
 		synchronized(m_compute) {
-			List<DComputeAsyncRun> crunList = compute.getCRunList();
-			m_localCRunList.addAll(crunList);
+			// Previous works List<DComputeAsyncRun> crunList = compute.getCRunList();
+			m_crunList = compute.getCRunList();
+			m_crunListSize = compute.getCRunListSize();
+			// Previous works m_localCRunList.addAll(crunList);
 		}
+		/* Previous works
 		if (startCRun >= m_localCRunList.size())
 			throw new DScabiException("startCRun >= m_localCRunList.size()", "RRR.RRR.2");
 		if (endCRun >= m_localCRunList.size())
 			throw new DScabiException("endCRun >= m_localCRunList.size()", "RRR.RRR.3");
+		*/
+		if (startCRun >= m_crunListSize)
+			throw new DScabiException("startCRun >= m_crunListSize", "RRR.RRR.2");
+		if (endCRun >= m_crunListSize)
+			throw new DScabiException("endCRun >= m_crunListSize", "RRR.RRR.3");
 		
 	}
 
 	@Override
 	public void run() {
-		String result = null;
-		List<DComputeAsyncRun> listBlockedCRun = new ArrayList<DComputeAsyncRun>();
-		List<DComputeAsyncRun> copyBlockedList = new ArrayList<DComputeAsyncRun>();
 
-		for (int i = m_startCRun; i <= m_endCRun; i++ ) {
-			DComputeAsyncRun crun = m_localCRunList.get(i);
+		LinkedList<DComputeAsyncRun> listBlockedCRun = new LinkedList<DComputeAsyncRun>();
+
+		ListIterator<DComputeAsyncRun> itr = null;
+		try {
+			itr = DMUtil.iteratorBefore(m_crunList, m_startCRun);
+		} catch (DScabiException e) {
+			throw new RuntimeException(e);
+		}
+		for (long i = m_startCRun; i <= m_endCRun; i++ ) {
+			// Previous works DComputeAsyncRun crun = m_localCRunList.get(i);
+			DComputeAsyncRun crun = null;
+			if (itr.hasNext())
+				crun = itr.next();
+			else {
+				throw new RuntimeException(new DScabiException("No more crun", "DRR.RUN.1"));
+			}
 			DComputeNoBlock cnb = crun.getComputeNB();
 			if (cnb.isAllowed())
 				crun.run();
 			else
 				listBlockedCRun.add(crun);
 		}
-				
-		HttpResponse httpResponse = null;
-		
-		for (int i = m_startCRun; i <= m_endCRun; i++ ) {
-			DComputeAsyncRun crun = m_localCRunList.get(i);
+
+		ListIterator<DComputeAsyncRun> itr2 = null;
+		try {
+			itr2 = DMUtil.iteratorBefore(m_crunList, m_startCRun);
+		} catch (DScabiException e) {
+			throw new RuntimeException(e);
+		}
+		for (long i = m_startCRun; i <= m_endCRun; i++ ) {
+			// Previous works DComputeAsyncRun crun = m_localCRunList.get(i);
+			DComputeAsyncRun crun = null;
+			if (itr2.hasNext())
+				crun = itr2.next();
+			else {
+				throw new RuntimeException(new DScabiException("No more crun", "DRR.RUN.2"));
+			}
 			if (listBlockedCRun.contains(crun))
 				continue;
 			crun.get();
 		} // End for
 		
-		List<DComputeAsyncRun> allowedCRunList = new ArrayList<DComputeAsyncRun>();
+		LinkedList<DComputeAsyncRun> allowedCRunList = new LinkedList<DComputeAsyncRun>();
 		boolean check = true;
 		while (check) {
 			

@@ -77,6 +77,9 @@ package com.dilmus.dilshad.scabi.common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * @author Dilshad Mustafa
@@ -274,5 +277,66 @@ public class DMUtil {
 	
 	}
 	
+	/*
+	public static int listSize(List<?> list) {
+		ListIterator<?> itr = list.listIterator();
+		int size = 0;
+		
+		while (itr.hasNext()) {
+			itr.next();
+			size++;
+		}
+		return size;
+	}
+	
+	public static <T> T listGet(List<T> list, int index) throws DScabiException {
+		ListIterator<T> itr = list.listIterator();
+		int i = -1;
+
+		if (index < 0)
+			throw new DScabiException("listGet() index < 0", "DMU.LGT.1");
+	
+		while (itr.hasNext()) {
+			itr.next();
+			i++;
+
+			if (i == index) {
+				itr.previous();
+				return itr.next();
+			}
+		}
+		
+		//if (index > i)
+		//	throw new DScabiException("listGet() index > size of list", "DMU.LGT.2");
+		
+		throw new DScabiException("listGet() index > size of list", "DMU.LGT.2");
+			
+	}
+	*/
+	
+	public static <T> ListIterator<T> iteratorBefore(List<T> list, long index) throws DScabiException {
+		ListIterator<T> itr = list.listIterator();
+		long i = -1;
+
+		if (index < 0)
+			throw new DScabiException("iteratorBefore() index < 0", "DMU.IBE.1");
+	
+		while (itr.hasNext()) {
+			itr.next();
+			i++;
+
+			if (i == index) {
+				itr.previous();
+				return itr;
+			}
+		}
+		
+		//if (index > i)
+		//	throw new DScabiException("iteratorBefore() index > size of list", "DMU.IBE.2");
+		
+		throw new DScabiException("iteratorBefore() index > size of list", "DMU.IBE.2");
+			
+	}
+
 	
 }

@@ -84,7 +84,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
+//import org.apache.http.ParseException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -162,7 +162,7 @@ public class DFile {
 		return 0;
 	}
 
-	public int setNamespace(String strNamespace) throws ParseException, IOException, DScabiClientException, DScabiException {
+	public int setNamespace(String strNamespace) throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		m_namespace = null;
 		m_strNamespace = null;
 		//m_firstTime = true;
@@ -317,7 +317,7 @@ public class DFile {
 	}
 	*/
 	
-	public DNamespace setOneNamespace() throws ParseException, IOException, DScabiClientException, DScabiException {
+	public DNamespace setOneNamespace() throws /*ParseException,*/ IOException, DScabiClientException, DScabiException {
 		DNamespace namespace = m_meta.findOneFileNS();
 		setNamespace(namespace);
 		return namespace;

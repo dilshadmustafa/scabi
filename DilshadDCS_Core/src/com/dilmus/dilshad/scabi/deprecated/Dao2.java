@@ -76,6 +76,7 @@ package com.dilmus.dilshad.scabi.deprecated;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import org.apache.http.ParseException;
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ public class Dao2 {
 	final static Logger log = LoggerFactory.getLogger(Dao2.class);
 	private String m_tableName = null;
 	private boolean m_firstTime = true;
-	private ArrayList<String> m_fieldNames = null;
+	private LinkedList<String> m_fieldNames = null;
 	
 	private DDB m_ddb = null;
 	private DTable m_table = null;
@@ -244,7 +245,7 @@ public class Dao2 {
 		return 0;
 	}
 
-	public ArrayList<String> fieldNames() throws DScabiException {
+	public LinkedList<String> fieldNames() throws DScabiException {
 		if (null == m_tableName) {
 			throw new DScabiException("Table name is null", "DDO.FNS.1");
 		}

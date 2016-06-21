@@ -77,6 +77,7 @@ package com.dilmus.dilshad.scabi.deprecated;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Set;
 
 import org.bson.BasicBSONObject;
@@ -395,7 +396,7 @@ public class DTableOld {
 		DMJson djson = new DMJson(jsonQuery);
 		Set<String> st = djson.keySet();
 		BasicDBObject document = new BasicDBObject();
-		ArrayList<String> finalList = new ArrayList<String>();
+		LinkedList<String> finalList = new LinkedList<String>();
 		HashMap<String, String> hmap = new HashMap<String, String>();
 		DMJson djson3 = null;
 		

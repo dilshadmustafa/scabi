@@ -96,6 +96,8 @@ public class DMNamespaceHelper {
 	private DTable m_table = null;
 	private DMDao m_ddao = null;
 	
+	private static final DMCounter M_DMCOUNTER = new DMCounter();
+	
 	public DMNamespaceHelper(DDB ddb) throws DScabiException { 
 		m_ddb = ddb;
 		if (false == ddb.tableExists("NamespaceTable")) {
@@ -142,7 +144,7 @@ public class DMNamespaceHelper {
     	String uuid1 = null;
     	if (0 == n) {
     		System.out.println("register() Inside 0 == n");
-    		uuid1 = UUID.randomUUID().toString();
+    		uuid1 = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
 
     		document.put("Type", dmjson.getString("Type"));
 			document.put("Host", dmjson.getString("Host"));

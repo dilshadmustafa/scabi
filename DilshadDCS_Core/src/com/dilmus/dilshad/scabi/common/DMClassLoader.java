@@ -145,12 +145,16 @@ public class DMClassLoader extends ClassLoader {
 					e.printStackTrace();
 				} catch (Error | Exception e) {
 					e.printStackTrace();
+					jarStream.close();
+					bais.close();
+					baop.close();
 					throw e;
 				}
 				if (false == isMatchFound && className.contains(classNameToRun)) {
 					log.debug("loadJarAndSearchClass() found first matching name, classNameToRun : {}, className : {}", classNameToRun, className);
 					classNameToRun = className;
 					isMatchFound  = true;
+					// Don't break here. All the classes in the jar should be loaded
 				}
 			}
 		} 
@@ -199,6 +203,9 @@ public class DMClassLoader extends ClassLoader {
 					e.printStackTrace();
 				} catch (Error | Exception e) {
 					e.printStackTrace();
+					jarStream.close();
+					bais.close();
+					baop.close();
 					throw e;
 				}
 			}

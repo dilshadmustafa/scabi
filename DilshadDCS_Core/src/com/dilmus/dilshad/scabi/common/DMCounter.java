@@ -1,9 +1,10 @@
 /**
  * @author Dilshad Mustafa
- * Copyright (c) Dilshad Mustafa
+ * (c) Dilshad Mustafa
  * All Rights Reserved.
- * @since 28-Feb-2016
- * File Name : DThreadPoolExecutor.java
+ * @version 1.0
+ * @since 14-Jun-2016
+ * File Name : DMCounter.java
  */
 
 /**
@@ -72,103 +73,30 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+package com.dilmus.dilshad.scabi.common;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import com.dilmus.dilshad.scabi.common.DMJson;
-import com.dilmus.dilshad.scabi.common.DMUtil;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public class DThreadPoolExecutor extends ThreadPoolExecutor {
+public class DMCounter {
 
-	private DCompute m_compute = null;
-	private HashMap<Future<?>, DComputeRun> m_localFutureCRunMap = null;
-	
-	public DThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime,
-		      					TimeUnit unit, BlockingQueue<Runnable> workQueue, DCompute compute) {
-		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-		m_compute = compute;
-		m_localFutureCRunMap = new HashMap<Future<?>, DComputeRun>();
-	}
-	
-	protected void beforeExecute(Thread th, Runnable r) {
-		  super.beforeExecute(th, r);
-		  
-		  synchronized (m_compute) {
-			  HashMap<Future<?>, DComputeRun> map = m_compute.getFutureCRunMap();
-			  if (map != null) {
-				  // Compute class adds the future in its map in its own thread after every m_threadPool.submit(crun)
-				  // a copy of this map is made here
-				  // So even if Compute class initialize() method clears its m_futureCRunMap, it won't affect here
-				  m_localFutureCRunMap.putAll(map);
-			  }
-		  }
+    private AtomicLong c = new AtomicLong(0);
 
-	}
-	
-	protected void afterExecute(Runnable r, Throwable t) {
-		  super.afterExecute(r, t);
-	  
-		  if (t == null && r instanceof Future<?>) {
-			  Future<?> future = (Future<?>) r;
-			  try {
-				  if (future.isDone()) {
-		            future.get();
-		          }
-			  } catch (CancellationException ce) {
-				  //ComputeRun crun = m_compute.getFutureCRunMap(future);
-				  DComputeRun crun = m_localFutureCRunMap.get(future);
-				  if (crun != null) {
-					  String errorJson = DMJson.error(DMUtil.clientErrMsg(ce));
-					  crun.setExecutionError(errorJson);
-				  }
-			  } catch (ExecutionException ee) {
-				  //t = ee.getCause();
-				  //ComputeRun crun = m_compute.getFutureCRunMap(future);
-				  DComputeRun crun = m_localFutureCRunMap.get(future);
-				  if (crun != null) {
-					  String errorJson = DMJson.error(DMUtil.clientErrMsg(ee));
-					  crun.setExecutionError(errorJson);
-				  }
-			  } catch (InterruptedException ie) {
-				  //ComputeRun crun = m_compute.getFutureCRunMap(future);
-				  DComputeRun crun = m_localFutureCRunMap.get(future);
-				  if (crun != null) {
-					  String errorJson = DMJson.error(DMUtil.clientErrMsg(ie));
-					  crun.setExecutionError(errorJson);
-				  }
-				  Thread.currentThread().interrupt(); // ignore/reset
-			  }
-		  }
-		  if (t != null && r instanceof Future<?>) {
-			  //System.out.println(t);
-			  Future<?> future = (Future<?>) r;
-			  //ComputeRun crun = m_compute.getFutureCRunMap(future);
-			  DComputeRun crun = m_localFutureCRunMap.get(future);
-			  if (crun != null) {
-				  String errorJson = DMJson.error(DMUtil.clientErrMsg(t));
-				  crun.setExecutionError(errorJson);
-			  }
+    public long inc() {
+        c.incrementAndGet();
+        return c.get();
+    }
 
-		  }
-		      
-	}
-	
-	@Override
-	public void terminated() {
-		super.terminated();
-	}
-		  
+    public long dec() {
+        c.decrementAndGet();
+        return c.get();
+    }
+
+    public long value() {
+        return c.get();
+    }
+
 }

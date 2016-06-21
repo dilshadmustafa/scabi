@@ -75,11 +75,11 @@ and conditions of this license without giving prior notice.
 import java.util.HashMap;
 import java.util.Set;
 
-import com.dilmus.dilshad.scabi.core.DCompute;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DComputeAsync;
+import com.dilmus.dilshad.scabi.core.async.DCompute;
+import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
 
 /**
  * @author Dilshad Mustafa
@@ -95,7 +95,7 @@ public class Example1_3 {
 	    	System.out.println("Example1_3");
 
 	    	DMeta meta = new DMeta("localhost", "5000");
-	     	DCompute c = new DCompute(meta);
+	     	DComputeSync c = new DComputeSync(meta);
 
 	     	// Using executeClass() method to submit Compute Units for execution in the Cluster
 	     	Dson jsonInput = new Dson();

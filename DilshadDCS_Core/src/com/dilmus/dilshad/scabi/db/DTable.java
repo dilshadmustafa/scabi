@@ -77,6 +77,7 @@ package com.dilmus.dilshad.scabi.db;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Set;
 
 import org.bson.BasicBSONObject;
@@ -117,7 +118,7 @@ public class DTable {
 	
 	private String m_tableName;
 	private boolean m_firstTime;
-	private ArrayList<String> m_fieldNames;
+	private LinkedList<String> m_fieldNames;
 	
 	private DResultSet m_dcursor = null;
 	
@@ -181,7 +182,7 @@ public class DTable {
 		return m_table.count();
 	}
 
-	public ArrayList<String> fieldNames() throws DScabiException {
+	public LinkedList<String> fieldNames() throws DScabiException {
 		if (null == m_tableName) {
 			throw new DScabiException("Table name is null", "DBT.FNS.1");
 		}
@@ -200,7 +201,7 @@ public class DTable {
 			//MapReduceCommand cmd = new MapReduceCommand(m_table, map, reduce,
 			//		   	     null, MapReduceCommand.OutputType.INLINE, null);
 			MapReduceIterable<Document> out = m_table.mapReduce(map, reduce);
-			m_fieldNames = new ArrayList<String>();
+			m_fieldNames = new LinkedList<String>();
 			for (Document o : out) {
 			    log.debug("fieldNames() Key, value is : {}", o.toString());
 			    log.debug("fieldNames() Key name is : {}", o.get("_id").toString());
@@ -213,7 +214,7 @@ public class DTable {
 		return m_fieldNames;
 	}
 
-	public ArrayList<String> fieldNamesUsingFindOne() throws DScabiException {
+	public LinkedList<String> fieldNamesUsingFindOne() throws DScabiException {
 		if (null == m_tableName) {
 			throw new DScabiException("Table name is null", "DBT.FNU.1");
 		}
@@ -227,7 +228,7 @@ public class DTable {
 		}
 		if (m_firstTime) {
 			FindIterable<Document> out = m_table.find();
-			m_fieldNames = new ArrayList<String>();
+			m_fieldNames = new LinkedList<String>();
 			
 			for (Document o : out) {
 				Set<String> st = o.keySet();
@@ -359,7 +360,7 @@ public class DTable {
 	}
 
 	
-	private boolean isEmpty(ArrayList<String> fieldList) {
+	private boolean isEmpty(LinkedList<String> fieldList) {
 		
 		if (null == fieldList)
 			return true;
@@ -371,7 +372,7 @@ public class DTable {
 	public int insertRow(String jsonRow, String jsonCheck) throws DScabiException, IOException {
 
 		log.debug("insertRow() firstTime is {}", m_firstTime);
-		ArrayList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
+		LinkedList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
 		DMJson djson = new DMJson(jsonRow);
 		Set<String> st = djson.keySet();
 		Document document = new Document();
@@ -470,11 +471,11 @@ public class DTable {
 	}
 
 	public String executeQuery(String jsonQuery) throws DScabiException, IOException {
-		ArrayList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
+		LinkedList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
 		DMJson djson = new DMJson(jsonQuery);
 		Set<String> st = djson.keySet();
 		Document document = new Document();
-		ArrayList<String> finalList = new ArrayList<String>();
+		LinkedList<String> finalList = new LinkedList<String>();
 		HashMap<String, String> hmap = new HashMap<String, String>();
 		DMJson djson3 = null;
 		
@@ -544,7 +545,7 @@ public class DTable {
 	}
 
 	public DResultSet executeQueryCursorResult(String jsonQuery) throws IOException, DScabiException {
-		ArrayList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
+		LinkedList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
 		DMJson djson = new DMJson(jsonQuery);
 		Set<String> st = djson.keySet();
 		Document document = new Document();
@@ -564,7 +565,7 @@ public class DTable {
 	}
 
 	public long executeUpdate(String jsonUpdate, String jsonWhere) throws IOException, DScabiException {
-		ArrayList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
+		LinkedList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
 		DMJson djsonWhere = new DMJson(jsonWhere);
 		Set<String> stWhere = djsonWhere.keySet();
 		Document documentWhere = new Document();
@@ -605,7 +606,7 @@ public class DTable {
 	}
 
 	public long executeRemove(String jsonWhere) throws IOException, DScabiException {
-		ArrayList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
+		LinkedList<String> fieldList = fieldNamesUsingFindOne(); // fieldNames();
 		DMJson djsonWhere = new DMJson(jsonWhere);
 		Set<String> stWhere = djsonWhere.keySet();
 		Document documentWhere = new Document();

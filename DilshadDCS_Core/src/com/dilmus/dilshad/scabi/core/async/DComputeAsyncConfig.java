@@ -74,15 +74,16 @@ and conditions of this license without giving prior notice.
 
 package com.dilmus.dilshad.scabi.core.async;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dilmus.dilshad.scabi.common.DMClassLoader;
+import com.dilmus.dilshad.scabi.common.DMCounter;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
@@ -107,19 +108,37 @@ public class DComputeAsyncConfig {
 	private int m_configType = 0;
 	private String m_jsonStrInput = null;
 	private HashMap<String, String> m_outputMap = null;
-	private int m_maxSplit = 1;
+	private long m_maxSplit = 1;
 	private int m_maxRetry = 0;
 	
 	private boolean m_isSplitSet = false;
-	private int m_startSplit = -1;
-	private int m_endSplit = -1;
+	private long m_startSplit = -1;
+	private long m_endSplit = -1;
 	
 	private boolean m_isJarFilePathListSet = false;
-	private List<String> m_jarFilePathList = null;
+	private LinkedList<String> m_jarFilePathList = null;
 
 	private boolean m_isComputeUnitJarsSet = false;
 	private DMClassLoader m_dcl = null;
 	
+	private String m_jobId = null;
+	private String m_taskId = null;
+	
+	private static final DMCounter M_DMCOUNTER = new DMCounter();
+	
+	public int setJobId(String jobId) {
+		m_jobId = jobId;
+		return 0;
+	}
+	
+	public String getJobId() {
+		return m_jobId;
+	}
+
+	public String getTaskId() {
+		return m_taskId;
+	}
+
 	public int setComputeUnitJars(DMClassLoader dcl) {
 		m_isComputeUnitJarsSet = true;
 		m_dcl = dcl;
@@ -139,8 +158,11 @@ public class DComputeAsyncConfig {
 		m_configType = DComputeAsyncConfig.OBJECT;
 		m_maxSplit = 1;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		m_jsonStrInput = DMJson.empty();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
 	}
 	
 	public DComputeAsyncConfig(Class<? extends DComputeUnit> cls) {
@@ -148,8 +170,11 @@ public class DComputeAsyncConfig {
 		m_configType = DComputeAsyncConfig.CLASS;
 		m_maxSplit = 1;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		m_jsonStrInput = DMJson.empty();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
 	}
 
 	public DComputeAsyncConfig(String code) {
@@ -157,8 +182,11 @@ public class DComputeAsyncConfig {
 		m_configType = DComputeAsyncConfig.CODE;
 		m_maxSplit = 1;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		m_jsonStrInput = DMJson.empty();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
 	}
 
 	public DComputeAsyncConfig(String jarFilePath, String classNameInJar) {
@@ -167,8 +195,11 @@ public class DComputeAsyncConfig {
 		m_configType = DComputeAsyncConfig.CLASSNAMEINJAR;
 		m_maxSplit = 1;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		m_jsonStrInput = DMJson.empty();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
 	}
 
 	public boolean isJarFilePathListSet() {
@@ -185,7 +216,7 @@ public class DComputeAsyncConfig {
 		return m_jarFilePathList;
 	}
 	
-	int setSplitRange(int startSplit, int endSplit) throws DScabiException {
+	int setSplitRange(long startSplit, long endSplit) throws DScabiException {
 		
 		if (startSplit <= 0) {
 			throw new DScabiException("startSplit should not be <= 0", "CAC.SSR.1");
@@ -207,11 +238,11 @@ public class DComputeAsyncConfig {
 		return m_isSplitSet;
 	}
 	
-	public int getStartSplit() {
+	public long getStartSplit() {
 		return m_startSplit;
 	}
 	
-	public int getEndSplit() {
+	public long getEndSplit() {
 		return m_endSplit;
 	}
 
@@ -249,7 +280,7 @@ public class DComputeAsyncConfig {
 		return 0;
 	}
 	
-	public int setResult(int splitno, String result) {
+	public int setResult(long splitno, String result) {
 		if (m_outputMap != null) {
 			m_outputMap.put("" + splitno, result);
 			log.debug("setResult() Setting result for splitno : {}, {}", splitno, result);
@@ -264,7 +295,7 @@ public class DComputeAsyncConfig {
 		return 0;
 	}
 
-	public int appendResult(int splitno, String result) {
+	public int appendResult(long splitno, String result) {
 		if (m_outputMap != null) {
 			if (m_outputMap.containsKey("" + splitno)) {
 				String str = m_outputMap.get("" + splitno);
@@ -286,7 +317,7 @@ public class DComputeAsyncConfig {
 	}
 
 	
-	public boolean isResultSet(int splitno) {
+	public boolean isResultSet(long splitno) {
 		if (m_outputMap != null) {
 			if (m_outputMap.containsKey("" + splitno))
 				return true;
@@ -294,7 +325,7 @@ public class DComputeAsyncConfig {
 		return false;
 	}
 	
-	public int setMaxSplit(int maxSplit) {
+	public int setMaxSplit(long maxSplit) {
 		m_maxSplit = maxSplit;
 		return 0;
 	}
@@ -312,7 +343,7 @@ public class DComputeAsyncConfig {
 		return m_outputMap;
 	}
 	
-	public int getMaxSplit() {
+	public long getMaxSplit() {
 		return m_maxSplit;
 	}
 	

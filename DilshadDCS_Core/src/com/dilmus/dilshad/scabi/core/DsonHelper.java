@@ -145,12 +145,15 @@ public class DsonHelper {
 	public static boolean isOk(String jsonString) throws IOException {
 		
 		Dson dson = new Dson(jsonString);
+		return dson.isOk();
+		/*
 		Set<String> st = dson.keySet();
 		
 		if (1 == st.size() && st.contains("Ok"))
 			return true;
 		else
 			return false;
+		*/
 	}
 	
 }

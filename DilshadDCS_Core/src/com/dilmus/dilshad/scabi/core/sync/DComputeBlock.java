@@ -3,7 +3,7 @@
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * @since 27-Jan-2016
- * File Name : DComputeSync.java
+ * File Name : DComputeBlock.java
  */
 
 /**
@@ -72,7 +72,7 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+package com.dilmus.dilshad.scabi.core.sync;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -85,6 +85,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -110,6 +111,8 @@ import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMJsonHelper;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.core.DComputeUnit;
+import com.dilmus.dilshad.scabi.core.DMeta;
 
 import javax.json.JsonObject;
 
@@ -117,9 +120,9 @@ import javax.json.JsonObject;
  * @author Dilshad Mustafa
  *
  */
-public class DComputeSync {
+public class DComputeBlock {
 
-	private final Logger log = LoggerFactory.getLogger(DComputeSync.class);
+	private final Logger log = LoggerFactory.getLogger(DComputeBlock.class);
 	private CloseableHttpClient m_httpClient = null;
 	private String m_jsonString = null;
 	private HttpHost m_target = null;
@@ -129,29 +132,50 @@ public class DComputeSync {
 	private String m_jsonStrInput = null;
 	private HttpHost m_metaTarget = null;
 	private DMeta m_meta = null;
-	private int m_TU = 1;
-	private int m_SU = 1;
+	private long m_TU = 1;
+	private long m_SU = 1;
 	private boolean m_isFaulty = false;
 	
-	private List<String> m_jarFilePathList = null;
+	private LinkedList<String> m_jarFilePathList = null;
 	
 	private boolean m_isComputeUnitJarsSet = false;
 	private DMClassLoader m_dcl = null;
 	
-	private long m_MAXCSTHREADS = 5;
-	private long m_CSOBJECTCOUNT = 0;
+	private long m_MAXCBTHREADS = 5;
+	private long m_CBOBJECTCOUNT = 0;
 	
-	private List<DComputeSync> m_anotherList = null;
+	private LinkedList<DComputeBlock> m_anotherList = null;
 	
-	public DComputeSync another() throws Exception {
-		if (m_CSOBJECTCOUNT >= m_MAXCSTHREADS)
+	private String m_jobId = null;
+	private String m_taskId = null;
+	
+	public int setJobId(String jobId) {
+		m_jobId = jobId;
+		return 0;
+	}
+	
+	public String getJobId() {
+		return m_jobId;
+	}
+	
+	public int setTaskId(String taskId) {
+		m_taskId = taskId;
+		return 0;
+	}
+	
+	public String getTaskId() {
+		return m_taskId;
+	}
+
+	public DComputeBlock another() throws Exception {
+		if (m_CBOBJECTCOUNT >= m_MAXCBTHREADS)
 			return null;
 		
-		DComputeSync csync = null;
-		csync = new DComputeSync(m_jsonString);
-		m_CSOBJECTCOUNT++;
-		m_anotherList.add(csync);
-		return csync;
+		DComputeBlock cb = null;
+		cb = new DComputeBlock(m_jsonString);
+		m_CBOBJECTCOUNT++;
+		m_anotherList.add(cb);
+		return cb;
 	}
 	
 	public int setComputeUnitJars(DMClassLoader dcl) {
@@ -160,14 +184,14 @@ public class DComputeSync {
 		return 0;
 	}
 
-	public DComputeSync(String jsonString) throws IOException {
+	public DComputeBlock(String jsonString) throws IOException {
 
 		m_djson = new DMJson(jsonString);
 		m_computeHost = m_djson.getString("ComputeHost");
 		m_computePort = m_djson.getString("ComputePort");
 
-		m_MAXCSTHREADS = m_djson.getLongOf("MAXCSTHREADS");
-		m_CSOBJECTCOUNT = 1;
+		m_MAXCBTHREADS = m_djson.getLongOf("MAXCSTHREADS");
+		m_CBOBJECTCOUNT = 1;
 		
 		try {
 			m_httpClient = HttpClientBuilder.create().build();
@@ -184,12 +208,15 @@ public class DComputeSync {
 		
 		m_isFaulty = false;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		
-		m_anotherList = new ArrayList<DComputeSync>();
+		m_anotherList = new LinkedList<DComputeBlock>();
+		
+		m_jobId = DMJson.empty();
+		m_taskId = DMJson.empty();
 	}
 	
-	public DComputeSync(DMeta meta) throws IOException {
+	public DComputeBlock(DMeta meta) throws IOException {
 		
 		String jsonCompute = null;
 		try {
@@ -199,8 +226,8 @@ public class DComputeSync {
 			m_computeHost = m_djson.getString("ComputeHost");
 			m_computePort = m_djson.getString("ComputePort");
 			
-			m_MAXCSTHREADS = m_djson.getLongOf("MAXCSTHREADS");
-			m_CSOBJECTCOUNT = 1;
+			m_MAXCBTHREADS = m_djson.getLongOf("MAXCSTHREADS");
+			m_CBOBJECTCOUNT = 1;
 
 			m_target = new HttpHost(m_computeHost, Integer.parseInt(m_computePort), "http");
 			m_jsonString = jsonCompute;
@@ -216,10 +243,12 @@ public class DComputeSync {
 		
 		m_isFaulty = false;
 		
-		m_jarFilePathList = new ArrayList<String>();
+		m_jarFilePathList = new LinkedList<String>();
 		
-		m_anotherList = new ArrayList<DComputeSync>();
+		m_anotherList = new LinkedList<DComputeBlock>();
 
+		m_jobId = DMJson.empty();
+		m_taskId = DMJson.empty();
 	}
 	
 	public int close() throws IOException {
@@ -231,8 +260,8 @@ public class DComputeSync {
 	public int setFaulty(boolean isFaulty) {
 		m_isFaulty = isFaulty;
 		
-		for (DComputeSync csync : m_anotherList)
-			csync.setFaulty(isFaulty);
+		for (DComputeBlock cb : m_anotherList)
+			cb.setFaulty(isFaulty);
 		return 0;
 	}
 	
@@ -287,21 +316,21 @@ public class DComputeSync {
 		return 0;
 	}
 
-	public int setTU(int tu) {
+	public int setTU(long tu) {
 		m_TU = tu;
 		return 0;
 	}
 
-	public int setSU(int su) {
+	public int setSU(long su) {
 		m_SU = su;
 		return 0;
 	}
 	
-	public int getTU() {
+	public long getTU() {
 		return m_TU;
 	}
 
-	public int getSU() {
+	public long getSU() {
 		return m_SU;
 	}
 
@@ -310,6 +339,8 @@ public class DComputeSync {
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("BshSource", bshSource);
 
@@ -389,6 +420,8 @@ public class DComputeSync {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
 		DMJson djson5 = djson4.add("ClassBytes", hexStr);
@@ -468,6 +501,8 @@ public class DComputeSync {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
 		DMJson djson5 = djson4.add("ClassBytes", hexStr);
@@ -541,6 +576,8 @@ public class DComputeSync {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("JobId", m_jobId);
+		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassNameInJar", classNameInJar);
 		DMJson djson5 = djson4.add("JarFilePath", jarFilePath);

@@ -76,9 +76,10 @@ package com.dilmus.dilshad.scabi.core.async;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -93,6 +94,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMUtil;
+import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DScabiClientException;
 
@@ -103,21 +105,22 @@ import com.dilmus.dilshad.scabi.core.DScabiClientException;
 public class DRetryAsyncMonitor implements Runnable {
 	private final Logger log = LoggerFactory.getLogger(DRetryAsyncMonitor.class);
 	
-	private DComputeAsync m_compute = null;
+	private DCompute m_compute = null;
 	private DMeta m_meta = null;
-	private List<DComputeAsyncConfig> m_cconfigList = null;
-	private List<DComputeAsyncRun> m_crunList = null;
-	private List<DComputeNoBlock> m_cnbList = null;
-	private List<DComputeNoBlock> m_cnbWorkingList = null;
+	private LinkedList<DComputeAsyncConfig> m_cconfigList = null;
+	private LinkedList<DComputeAsyncRun> m_crunList = null;
+	private LinkedList<DComputeNoBlock> m_cnbList = null;
 	
-	private List<DComputeAsyncRun> m_localCRunList = null;
-	private List<DComputeNoBlock> m_localCNBList = null;
+	//Previous works private LinkedList<DComputeNoBlock> m_cnbWorkingList = null;
+	//Previous works private LinkedList<DComputeAsyncRun> m_localCRunList = null;
+	//Previous works private LinkedList<DComputeNoBlock> m_localCNBList = null;
 	
-	private List<DComputeAsyncRun> m_retryCRunList = null;
-	private List<DComputeAsyncRun> m_allowedCRunList = null;
-	// Not used private List<DComputeAsyncRun> m_blockedCRunList = null;
+	private LinkedList<DComputeAsyncRun> m_retryCRunList = null;
+	private LinkedList<DComputeAsyncRun> m_allowedCRunList = null;
 	
-	public DRetryAsyncMonitor(DComputeAsync compute, DMeta meta) {
+	private long m_cnbListSize = 0; // TODO change to long
+	
+	public DRetryAsyncMonitor(DCompute compute, DMeta meta) {
 		m_compute = compute;
 		m_meta = meta;
 		
@@ -125,23 +128,22 @@ public class DRetryAsyncMonitor implements Runnable {
 		m_crunList = compute.getCRunList();
 		m_cnbList = compute.getCNBList();
 		
-		m_cnbWorkingList = new ArrayList<DComputeNoBlock>();
+		//Previous works m_cnbWorkingList = new ArrayList<DComputeNoBlock>();
+		//Previous works m_localCRunList = new ArrayList<DComputeAsyncRun>();
+		//Previous works m_localCNBList = new ArrayList<DComputeNoBlock>();
 		
-		m_localCRunList = new ArrayList<DComputeAsyncRun>();
-		m_localCNBList = new ArrayList<DComputeNoBlock>();
+		m_retryCRunList = new LinkedList<DComputeAsyncRun>();
+		m_allowedCRunList = new LinkedList<DComputeAsyncRun>();
 		
-		m_retryCRunList = new ArrayList<DComputeAsyncRun>();
-		m_allowedCRunList = new ArrayList<DComputeAsyncRun>();
-		// Not used m_blockedCRunList = new ArrayList<DComputeAsyncRun>();;
-		
+		m_cnbListSize = compute.getCNBListSize();
 	}
 	
 	List<DComputeNoBlock> getCNBList() {
-		return m_localCNBList;
+		return m_cnbList;
+		// Previous works return m_localCNBList;
 	}
 	
 	public int executeRetry() {
-		String result = null;
 		boolean check = true;
 		//log.debug("executeRetry() Inside executeRetry()");
 		while (check) {
@@ -159,15 +161,17 @@ public class DRetryAsyncMonitor implements Runnable {
 			
 			} // End for
 			
-			//log.debug("m_retryCRunList");
-			//for (DComputeAsyncRun crun : m_retryCRunList)
-			//	log.debug("crun.toString() : {}", crun.toString());
+			// Debugging
+			/*
+			log.debug("m_retryCRunList");
+			for (DComputeAsyncRun crun : m_retryCRunList)
+				log.debug("crun.toString() : {}", crun.toString());
 
-			//log.debug("allowedCRunList");
-			//for (DComputeAsyncRun crun : allowedCRunList)
-			//	log.debug("crun.toString() : {}", crun.toString());
-				
-			HttpResponse httpResponse = null;
+			log.debug("allowedCRunList");
+			for (DComputeAsyncRun crun : allowedCRunList)
+				log.debug("crun.toString() : {}", crun.toString());
+			*/
+			
 			for (DComputeAsyncRun crun : m_allowedCRunList) {
 				m_retryCRunList.remove(crun);
 				crun.get();
@@ -184,13 +188,14 @@ public class DRetryAsyncMonitor implements Runnable {
 	}
 	
 	public int doRetry() throws ParseException, IOException, DScabiClientException {
-		int fcTotal = 0;
-		int cnbWorkingTotal = 0;
-		boolean firstTime = true;
-		boolean isAllRunOnce = true;
+		long fcTotal = 0;
+		// Previous works long cnbWorkingTotal = 0;
+		// Previous works boolean firstTime = true;
+		// Previous works boolean isAllRunOnce = true;
 		
 		// RetryMonitor is started only after all ComputeRun and ComputeNoBlock are created in Compute class
 		// copy m_crunList, m_cnbList to local copy, m_localCRunList, m_localCNBList
+		/* Previous works
 		synchronized(m_compute) {
 			for (DComputeAsyncRun crun : m_crunList) {
 				if (false == m_localCRunList.contains(crun))
@@ -201,27 +206,52 @@ public class DRetryAsyncMonitor implements Runnable {
 					m_localCNBList.add(cnb);
 			}
 		}
+		*/
 		
 		while(true) {
 			
 		fcTotal = 0;
-		isAllRunOnce = true;
-		for (DComputeAsyncRun crun : m_localCRunList) {
+		// Previous works isAllRunOnce = true;
+		boolean isDone = true;
+		boolean isRetrySubmitted = false;
+		
+		for (DComputeAsyncRun crun : m_crunList /* works m_localCRunList*/) {
+			/* Previous works
 			if (false == crun.isRunOnce())
 				isAllRunOnce = false;
+			*/
+			if (false == crun.isDone())
+				isDone = false;
+			if (true == crun.isRetrySubmitted())
+				isRetrySubmitted = true;
+
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
 				fcTotal = fcTotal + 1;
 			}
 		}
-		//log.debug("doRetry() isAllRunOnce : {}", isAllRunOnce);
+
 		//log.debug("fcTotal : {}", fcTotal);
+		//log.debug("doRetry() isAllRunOnce : {}", isAllRunOnce);
+		//log.debug("doRetry() isDone : {}", isDone);
+		//log.debug("doRetry() isRetrySubmitted : {}", isRetrySubmitted);
+		
+		if (0 == fcTotal && true == isDone && false == isRetrySubmitted) {
+			log.debug("doRetry() fcTotal : {}", fcTotal);
+			log.debug("doRetry() isDone : {}", isDone);
+			log.debug("doRetry() isRetrySubmitted : {}", isRetrySubmitted);
+			return 0;
+		}
+
+		/* Previous works
 		if (0 == fcTotal && true == isAllRunOnce) {
 			log.debug("doRetry() fcTotal : {}", fcTotal);
 			return 0;
 		}
-
+		*/
+		
+		/* Previous works
 		if (firstTime) {
 			m_cnbWorkingList.addAll(m_localCNBList);
 			firstTime = false;
@@ -245,7 +275,8 @@ public class DRetryAsyncMonitor implements Runnable {
 				log.debug("removing faulty cnb");
 			}
 		}
-
+		*/
+		
 		//TODO make a faulty csynclist
 		/*
 		if (fcTotal > cnbWorkingTotal) {
@@ -275,8 +306,9 @@ public class DRetryAsyncMonitor implements Runnable {
 		*/
 		
 		m_retryCRunList.clear();
-		int k = 0;
-		for (DComputeAsyncRun crun : m_localCRunList) {
+		//Previous works int k = 0;
+		ListIterator<DComputeNoBlock> itr = m_cnbList.listIterator();
+		for (DComputeAsyncRun crun : m_crunList /* Previous works m_localCRunList*/) {
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
@@ -286,12 +318,33 @@ public class DRetryAsyncMonitor implements Runnable {
 				log.debug("crun.isRetrySubmitted() : {}", crun.isRetrySubmitted());
 				log.debug("crun.getSU() : {}", crun.getSU());
 				
-				if (k >= m_cnbWorkingList.size())
-					k = 0;
-				DComputeNoBlock cnb = m_cnbWorkingList.get(k);
+				// Previous works if (k >= m_cnbWorkingList.size())
+				// Previous works	k = 0;
+				// Previous works DComputeNoBlock cnb = m_cnbWorkingList.get(k);
+				DComputeNoBlock cnb = null;
+        		boolean check = true;
+				long count = 0;
+        		while (check) {
+	        		if (itr.hasNext()) {
+	        			cnb = itr.next();
+	        			if (cnb.isFaulty() == false)
+	        				check = false;
+	        		}
+	                else {
+	        			itr = m_cnbList.listIterator();
+	        			cnb = itr.next();
+	        			if (cnb.isFaulty() == false)
+	        				check = false;
+	        		}
+	        		if (false == check)
+	        			break;
+	        		count++;
+	        		if (count >= m_cnbListSize)
+	        			throw new DScabiClientException("Unable to find a working CNB", "RAM.DRY.1");
+				}
 				//log.debug("cnb.toString() : {}", cnb.toString());
 				crun.setComputeNB(cnb);
-				k++;
+				//Previous works k++;
 				m_retryCRunList.add(crun);
 				// In Compute class, initialize() method, after thread pool shutdown, m_threadPool is set to null
 				if (null == m_compute.getExecutorService()) {

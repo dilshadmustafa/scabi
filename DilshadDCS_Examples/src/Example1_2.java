@@ -78,7 +78,7 @@ import java.util.Set;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DComputeAsync;
+import com.dilmus.dilshad.scabi.core.async.DCompute;
 
 /**
  * @author Dilshad Mustafa
@@ -94,7 +94,7 @@ public class Example1_2 {
 	    	System.out.println("Example1_2");
 
 	    	DMeta meta = new DMeta("localhost", "5000");
-	     	DComputeAsync c = new DComputeAsync(meta);
+	     	DCompute c = new DCompute(meta);
 	     	
 	     	// The below example show how to add additional Java libraries, jar files
 	     	// and shows how to use the classes inside the Compute Unit
@@ -128,7 +128,7 @@ public class Example1_2 {
 	     		public String compute(Dson jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
-		    	     	DComputeAsync c = new DComputeAsync(meta);
+		    	     	DCompute c = new DCompute(meta);
 		    	     	HashMap<String, String> myout = new HashMap<String, String>();
 		    	     	//System.out.println("jsonInput.toString() : " + jsonInput.toString());
 		    	     
@@ -165,7 +165,7 @@ public class Example1_2 {
 	     		public String compute(Dson jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
-		    	     	DComputeAsync c = new DComputeAsync(meta);
+		    	     	DCompute c = new DCompute(meta);
 		    	     	HashMap<String, String> myout = new HashMap<String, String>();
 		    	     	//System.out.println("jsonInput.toString() : " + jsonInput.toString());
 		    	     	

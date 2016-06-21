@@ -72,7 +72,7 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+package com.dilmus.dilshad.scabi.core.sync;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -88,17 +88,16 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.async.DComputeAsyncConfig;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public class DComputeRun implements Runnable {
+public class DComputeSyncRun implements Runnable {
 
-	private final Logger log = LoggerFactory.getLogger(DComputeRun.class);
-	private DComputeConfig m_config = null;
-	private DComputeSync m_computeSync = null;
+	private final Logger log = LoggerFactory.getLogger(DComputeSyncRun.class);
+	private DComputeSyncConfig m_config = null;
+	private DComputeBlock m_computeBlock = null;
 	private boolean m_isDone = false;
 	private boolean m_isError = false;
 	private boolean m_isRetrySubmitted = false;
@@ -106,14 +105,14 @@ public class DComputeRun implements Runnable {
 	
 	private boolean m_isExecutionError = false;
 	
-	private int m_TU = 0;
-	private int m_SU = 0;
+	private long m_TU = 0;
+	private long m_SU = 0;
 	private int m_retriesTillNow = 0;
 	private int m_maxRetry = 0;
 	
-	public DComputeRun() {
+	public DComputeSyncRun() {
 		m_config = null;
-		m_computeSync = null;
+		m_computeBlock = null;
 
 		m_isDone = false;
 		m_isError = false;
@@ -123,12 +122,12 @@ public class DComputeRun implements Runnable {
 		m_isExecutionError = false;
 	}
 	
-	public int setTU(int totalUnits) {
+	public int setTU(long totalUnits) {
 		m_TU = totalUnits;
 		return 0;
 	}
 
-	public int setSU(int splitno) {
+	public int setSU(long splitno) {
 		m_SU = splitno;
 		return 0;
 	}
@@ -138,11 +137,11 @@ public class DComputeRun implements Runnable {
 		return 0;
 	}
 
-	public int getTU() {
+	public long getTU() {
 		return m_TU;
 	}
 
-	public int getSU() {
+	public long getSU() {
 		return m_SU;
 	}
 	
@@ -166,12 +165,12 @@ public class DComputeRun implements Runnable {
 		return m_isRunOnce;
 	}
 	
-	public int setComputeSync(DComputeSync computeSync) {
-		m_computeSync = computeSync;
+	public int setComputeBlock(DComputeBlock computeBlock) {
+		m_computeBlock = computeBlock;
 		return 0;
 	}
 
-	public int setConfig(DComputeConfig config) {
+	public int setConfig(DComputeSyncConfig config) {
 		m_config = config;
 		return 0;
 	}
@@ -210,99 +209,82 @@ public class DComputeRun implements Runnable {
 		return 0;
 	}
 	
-	/* Not used. Previous working version without retry mechanism
-	public void run() {
-		try {
-			Thread.sleep(10000);	
-		} catch (Exception e) { 
-			
-		}
-		if (null == m_config) {
-			//throw new DScabiException("config is not set", "CRN.RUN.1");
-			log.debug("config is not set");
-		}
-		if (null == m_computeSync) {
-			//throw new DScabiException("computeSync is not set", "CRN.RUN.1");
-			log.debug("computeSync is not set");
-		}
-		synchronized (m_computeSync) {
-		
-			try {
-				if (ComputeConfig.OBJECT == m_config.getConfigType()) {
-					log.debug("Executing Object");
-					m_computeSync.executeObject(m_config.getComputeUnit());
-				}
-			} catch (Exception e) {
-				log.debug("Exception : {}", e.toString());
-			}
-		
-		}
-		
-	}
-	*/
-	
 	public void doRun() throws IOException, DScabiException {
+
+		log.debug("doRun() m_SU : {}", m_SU);
 		
 		if (null == m_config) {
-			log.debug("doRun() config is not set");
+			log.debug("doRun() m_config is not set");
 			throw new DScabiException("doRun() config is not set", "CRN.DRN.1");
 			//return;
 		}
-		if (null == m_computeSync) {
-			log.debug("doRun() computeSync is not set");
-			throw new DScabiException("computeSync is not set", "CRN.DRN.2");
+		if (null == m_computeBlock) {
+			log.debug("doRun() m_computeBlock is not set");
+			throw new DScabiException("computeBlock is not set", "CRN.DRN.2");
 			//return;
 		}
 		
-		int splitno = m_SU;
-		log.debug("doRun() splitno : {}", splitno);
+		// Previous works int splitno = m_SU;
 		String result = null;
+		
+		if (m_computeBlock.isFaulty()) {
+			log.debug("doRun() m_computeBlock is marked as faulty. crun m_SU : {}", m_SU);
+			String errorJsonStr = DMJson.error("m_computeBlock is marked as faulty. crun m_SU : " + m_SU);
+			synchronized (m_config) {
+				m_config.setResult(m_SU, errorJsonStr);
+			}
+			m_isError = true; 
+			return;
+		}
+
 		try {
 			if (m_config.isJarFilePathListSet()) {
 				log.debug("doRun() isJarFilePathSet() is true");
-				m_computeSync.setJarFilePathFromList(m_config.getJarFilePathList());
+				m_computeBlock.setJarFilePathFromList(m_config.getJarFilePathList());
 			}
-			m_computeSync.setInput(m_config.getInput());
+			m_computeBlock.setInput(m_config.getInput());
+			m_computeBlock.setJobId(m_config.getJobId());
+			m_computeBlock.setTaskId(m_config.getTaskId());
 			if (m_config.isComputeUnitJarsSet()) {
 				log.debug("doRun() isComputeUnitJarsSet() is true");
-				m_computeSync.setComputeUnitJars(m_config.getComputeUnitJars());
+				m_computeBlock.setComputeUnitJars(m_config.getComputeUnitJars());
 			}
-			if (DComputeConfig.OBJECT == m_config.getConfigType()) {
+			if (DComputeSyncConfig.OBJECT == m_config.getConfigType()) {
 				log.debug("doRun() Executing for Object");
-				result = m_computeSync.executeObject(m_config.getComputeUnit());
+				result = m_computeBlock.executeObject(m_config.getComputeUnit());
 				log.debug("doRun() result is : {}", result);
-			} else if (DComputeConfig.CLASS == m_config.getConfigType()){
+			} else if (DComputeSyncConfig.CLASS == m_config.getConfigType()){
 				log.debug("doRun() Executing for Class");
-				result = m_computeSync.executeClass(m_config.getComputeClass());
+				result = m_computeBlock.executeClass(m_config.getComputeClass());
 				log.debug("doRun() result is : {}", result);
 				
-			} else if (DComputeConfig.CODE == m_config.getConfigType()){
+			} else if (DComputeSyncConfig.CODE == m_config.getConfigType()){
 				log.debug("doRun() Executing for Code");
-				result = m_computeSync.executeCode(m_config.getComputeCode());
+				result = m_computeBlock.executeCode(m_config.getComputeCode());
 				log.debug("doRun() result is : {}", result);
-			} else if (DComputeConfig.CLASSNAMEINJAR == m_config.getConfigType()){
+			} else if (DComputeSyncConfig.CLASSNAMEINJAR == m_config.getConfigType()){
 				log.debug("doRun() Executing for Class Name In Jar");
-				result = m_computeSync.executeClassNameInJar(m_config.getJarFilePath(), m_config.getClassNameInJar());
+				result = m_computeBlock.executeClassNameInJar(m_config.getJarFilePath(), m_config.getClassNameInJar());
 			} else {
 				throw new DScabiException("Unknown ComputeConfig type m_config.getConfigType() " + m_config.getConfigType(), "CRN.DRN.3");
 			}
 			
 			synchronized (m_config) {
-				log.debug("doRun() Setting result for splitno : {}", splitno);
-				m_config.setResult(splitno, result);
+				log.debug("doRun() Setting result for splitno m_SU : {}", m_SU);
+				m_config.setResult(m_SU, result);
 				// Not used m_config.setSplitStatus(splitno, true);
 				// Not used m_config.incIfExistsFailedSplitRetryMap(splitno);
 			}
 				
 		} catch (ClientProtocolException | SocketException | NoHttpResponseException e) {
 			log.debug("doRun() Exception : {}", e.toString());
-			// m_computeSync is faulty only in the case of ClientProtocolException/NetworkException
-			m_computeSync.setFaulty(true);
-			String errorJson = DMJson.error(DMUtil.clientErrMsg(e));	
+			// m_computeBlock is faulty only in the case of ClientProtocolException/NetworkException
+			m_computeBlock.setFaulty(true);
+			String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));	
 			synchronized (m_config) {
 				// Not used m_config.setOrIncFailedSplitRetryMap(splitno);
 				// Not used m_config.setSplitStatus(splitno, false);
-				m_config.setResult(splitno, errorJson);
+				m_config.setResult(m_SU, errorJsonStr);
 			}
 			// m_isError is set only in the case of network exception
 			// only in this case retry has to be attempted if maxRetry > 0 is set by User
@@ -312,30 +294,34 @@ public class DComputeRun implements Runnable {
 	}
 
 	public void run() {
+
+		log.debug("run() m_SU : {}", m_SU);
+		
 		m_isDone = false;
 		if (true == m_isError)
 			m_retriesTillNow = m_retriesTillNow + 1;
 		m_isError = false;
-		synchronized (m_computeSync) {
+		
+		synchronized (m_computeBlock) {
 			try {
-				m_computeSync.setTU(m_TU);
-				m_computeSync.setSU(m_SU);
+				m_computeBlock.setTU(m_TU);
+				m_computeBlock.setSU(m_SU);
 
 		        doRun();
 		    } catch (Throwable e) {
 				log.debug("run() Throwable : {}", e.toString());
-				// m_computeSync is faulty only in the case of ClientProtocolException/NetworkException which 
+				// m_computeBlock is faulty only in the case of ClientProtocolException/NetworkException which 
 				// is already handled in doRun() method
-				// // // m_computeSync.setFaulty(true);
+				// // // m_computeBlock.setFaulty(true);
 				
-				// TODO: check later, low priority, whether to use m_SU
-				int splitno = m_computeSync.getSU(); // just to be exact, getting SU directly from m_computeSync
-				log.debug("run() m_computeSync.getSU() : {}", splitno);
-				String errorJson = DMJson.error(DMUtil.clientErrMsg(e));
+				// Previous works int splitno = m_SU; // m_computeBlock.getSU(); // just to be exact, getting SU directly from m_computeBlock
+				// Previous works log.debug("run() splitno : {}", splitno);
+
+				String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
 				synchronized (m_config) {
 					// Not used m_config.setOrIncFailedSplitRetryMap(splitno);
 					// Not used m_config.setSplitStatus(splitno, false);
-					m_config.setResult(splitno, errorJson);
+					m_config.setResult(m_SU, errorJsonStr);
 				}
 	        	
 		    }
