@@ -173,7 +173,7 @@ public class Example1_4 {
 		    	     	// If the class is under a package, use fully qualified class name new A.B() inside action string
 		    	     	// or append "import A.B;" first to the action string
 		    	        String action =	"t = new MyPrimeCheckUnit();" +
-		    	        				"return t.compute(jsonInput);";
+		    	        				"return t.compute(context);";
 	    	     	
 		    	     	c.addComputeUnitJars();
 		    	     	c.executeCode(action).input(jsonInput.getInput()).split(1).output(myout);

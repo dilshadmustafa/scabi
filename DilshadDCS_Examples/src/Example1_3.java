@@ -126,7 +126,7 @@ public class Example1_3 {
 	     	c.addJar("MyPrimeCheckUnit.jar"); // Add Java libraries, jar files like this
 	     	c.executeCode("import MyPrimeCheckUnit;" +
 	     				  "cu = new MyPrimeCheckUnit();" +
-	     			      "return cu.compute(jsonInput);");
+	     			      "return cu.compute(context);");
 	     	c.input(jsonInput).split(1).output(out3).perform();
 	     	c.finish();
 	     	
