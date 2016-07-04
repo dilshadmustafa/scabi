@@ -147,7 +147,16 @@ public class DComputeBlock {
 	private LinkedList<DComputeBlock> m_anotherList = null;
 	
 	private String m_jobId = null;
+	private String m_configId = null;
 	private String m_taskId = null;
+	
+	private DComputeBlock m_clonedFrom = null;
+	private boolean m_isAnotherListSetToFaulty = false;
+	
+	private int setClonedFrom(DComputeBlock clonedFrom) {
+		m_clonedFrom = clonedFrom;
+		return 0;
+	}
 	
 	public int setJobId(String jobId) {
 		m_jobId = jobId;
@@ -158,6 +167,15 @@ public class DComputeBlock {
 		return m_jobId;
 	}
 	
+	public int setConfigId(String configId) {
+		m_configId = configId;
+		return 0;
+	}
+	
+	public String getConfigId() {
+		return m_configId;
+	}
+
 	public int setTaskId(String taskId) {
 		m_taskId = taskId;
 		return 0;
@@ -173,6 +191,7 @@ public class DComputeBlock {
 		
 		DComputeBlock cb = null;
 		cb = new DComputeBlock(m_jsonString);
+		cb.setClonedFrom(this);
 		m_CBOBJECTCOUNT++;
 		m_anotherList.add(cb);
 		return cb;
@@ -213,7 +232,12 @@ public class DComputeBlock {
 		m_anotherList = new LinkedList<DComputeBlock>();
 		
 		m_jobId = DMJson.empty();
+		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
+		
+		m_clonedFrom = null;
+		m_isAnotherListSetToFaulty = false;
+
 	}
 	
 	public DComputeBlock(DMeta meta) throws IOException {
@@ -248,7 +272,12 @@ public class DComputeBlock {
 		m_anotherList = new LinkedList<DComputeBlock>();
 
 		m_jobId = DMJson.empty();
+		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
+		
+		m_clonedFrom = null;
+		m_isAnotherListSetToFaulty = false;
+
 	}
 	
 	public int close() throws IOException {
@@ -260,8 +289,31 @@ public class DComputeBlock {
 	public int setFaulty(boolean isFaulty) {
 		m_isFaulty = isFaulty;
 		
+		/* Previous works
 		for (DComputeBlock cb : m_anotherList)
 			cb.setFaulty(isFaulty);
+		*/
+		
+		if (null == m_clonedFrom) {
+			
+				synchronized (m_anotherList) {
+					if (false == m_isAnotherListSetToFaulty) {
+	
+						m_isAnotherListSetToFaulty = true;
+					} else {
+						return 0;
+					}
+				} // End synchronized
+
+				// Moved the for loop here from above synchronized block so that cloned cb's don't need to wait 
+				// till one of them does the entire loop
+				for (DComputeBlock cb : m_anotherList)
+					cb.setFaulty(isFaulty);
+			
+		} else {
+			m_clonedFrom.setFaulty(isFaulty);
+		}
+		
 		return 0;
 	}
 	
@@ -340,6 +392,7 @@ public class DComputeBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("BshSource", bshSource);
@@ -421,6 +474,7 @@ public class DComputeBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
@@ -502,6 +556,7 @@ public class DComputeBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
@@ -577,6 +632,7 @@ public class DComputeBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassNameInJar", classNameInJar);

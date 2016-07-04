@@ -102,6 +102,9 @@ import com.dilmus.dilshad.scabi.core.DScabiClientException;
  * @author Dilshad Mustafa
  *
  */
+
+// Lock order inside transaction : CR
+
 public class DRetryAsyncMonitor implements Runnable {
 	private final Logger log = LoggerFactory.getLogger(DRetryAsyncMonitor.class);
 	
@@ -150,7 +153,14 @@ public class DRetryAsyncMonitor implements Runnable {
 			
 			for (DComputeAsyncRun crun : m_retryCRunList) {
 					DComputeNoBlock cnb = crun.getComputeNB();
-					if (cnb.isAllowed()) {
+					boolean proceed = false;
+					synchronized(cnb) {
+						if (cnb.isAllowed()) {
+							cnb.incCountRequests();
+							proceed = true;
+						}
+					}
+					if (proceed) {
 						m_allowedCRunList.add(crun);
 						crun.setRetrySubmitStatus(true);
 						crun.run();
@@ -158,7 +168,16 @@ public class DRetryAsyncMonitor implements Runnable {
 						check = false;
 						
 					}
-			
+
+					/* Previous works
+					if (cnb.isAllowed()) {
+						m_allowedCRunList.add(crun);
+						crun.setRetrySubmitStatus(true);
+						crun.run();
+					} else {
+						check = false;
+					}
+					*/
 			} // End for
 			
 			// Debugging
@@ -216,6 +235,9 @@ public class DRetryAsyncMonitor implements Runnable {
 		boolean isRetrySubmitted = false;
 		
 		for (DComputeAsyncRun crun : m_crunList /* works m_localCRunList*/) {
+
+			synchronized(crun) {
+			
 			/* Previous works
 			if (false == crun.isRunOnce())
 				isAllRunOnce = false;
@@ -230,6 +252,8 @@ public class DRetryAsyncMonitor implements Runnable {
 					&& false == crun.isRetrySubmitted()) {
 				fcTotal = fcTotal + 1;
 			}
+			
+			} // End synchronized crun
 		}
 
 		//log.debug("fcTotal : {}", fcTotal);
@@ -309,6 +333,9 @@ public class DRetryAsyncMonitor implements Runnable {
 		//Previous works int k = 0;
 		ListIterator<DComputeNoBlock> itr = m_cnbList.listIterator();
 		for (DComputeAsyncRun crun : m_crunList /* Previous works m_localCRunList*/) {
+
+			synchronized(crun) {
+			
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
@@ -352,6 +379,8 @@ public class DRetryAsyncMonitor implements Runnable {
 				}
 
 			}
+			
+			} // End synchronized crun
 			
 		} // End for
 		

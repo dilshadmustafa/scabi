@@ -173,6 +173,7 @@ public class DComputeNoBlock {
 	private DMClassLoader m_dcl = null;
 	
 	private String m_jobId = null;
+	private String m_configId = null;
 	private String m_taskId = null;
 	
 	public int setJobId(String jobId) {
@@ -184,6 +185,15 @@ public class DComputeNoBlock {
 		return m_jobId;
 	}
 	
+	public int setConfigId(String configId) {
+		m_configId = configId;
+		return 0;
+	}
+	
+	public String getConfigId() {
+		return m_configId;
+	}
+	
 	public int setTaskId(String taskId) {
 		m_taskId = taskId;
 		return 0;
@@ -192,7 +202,7 @@ public class DComputeNoBlock {
 	public String getTaskId() {
 		return m_taskId;
 	}
-	
+		
 	public int setComputeUnitJars(DMClassLoader dcl) {
 		m_isComputeUnitJarsSet = true;
 		m_dcl = dcl;
@@ -224,8 +234,8 @@ public class DComputeNoBlock {
 		m_jarFilePathList = new LinkedList<String>();
 		
 		m_jobId = DMJson.empty();
+		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
-		
 	}
 	
 	public DComputeNoBlock(DMeta meta) throws Exception {
@@ -257,8 +267,8 @@ public class DComputeNoBlock {
 		m_jarFilePathList = new LinkedList<String>(); // new ArrayList<String>();
 		
 		m_jobId = DMJson.empty();
+		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
-		
 	}
 	
 	public int close() throws IOException {
@@ -344,7 +354,7 @@ public class DComputeNoBlock {
 	    postRequest.setEntity(params);
 	            			
 		log.debug("computeAlloc() executing request to " + m_metaTarget + "/Meta/Compute/Alloc");
-		incCountRequests();
+		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_metaTarget, postRequest, null);
 		return futureHttpResponse;
 				
@@ -383,6 +393,7 @@ public class DComputeNoBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("BshSource", bshSource);
@@ -419,7 +430,7 @@ public class DComputeNoBlock {
 	    //======================================================================
 
 		log.debug("executeCode() executing request to " + m_target + "/Compute/Execute/BshCode");
-		incCountRequests();
+		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
 		return futureHttpResponse;
 		
@@ -445,6 +456,7 @@ public class DComputeNoBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
@@ -482,7 +494,7 @@ public class DComputeNoBlock {
 	    //======================================================================
         			
 		log.debug("executeClass() executing request to " + m_target + "/Compute/Execute/Class");
-		incCountRequests();
+		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
 		return futureHttpResponse;
 		
@@ -507,6 +519,7 @@ public class DComputeNoBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassName", className);
@@ -544,7 +557,7 @@ public class DComputeNoBlock {
 	    //======================================================================
 	    
 		log.debug("executeObject() executing request to " + m_target + "/Compute/Execute/ClassFromObject");
-		incCountRequests();
+		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
 		return futureHttpResponse;
 		
@@ -563,6 +576,7 @@ public class DComputeNoBlock {
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
 		djson2.add("JobId", m_jobId);
+		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
 		DMJson djson3 = djson2.add("JsonInput", "" + m_jsonStrInput);
 		DMJson djson4 = djson3.add("ClassNameInJar", classNameInJar);
@@ -601,7 +615,7 @@ public class DComputeNoBlock {
 	    //======================================================================
         			
 		log.debug("executeClassNameInJar() executing request to " + m_target + "/Compute/Execute/ClassNameInJar");
-		incCountRequests();
+		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
 		return futureHttpResponse;
 		

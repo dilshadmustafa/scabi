@@ -101,6 +101,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dilmus.dilshad.scabi.common.DMClassLoader;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DFile;
 import com.dilmus.dilshad.scabi.core.DMeta;
@@ -202,7 +203,7 @@ public class UnitTest1 {
     	DMeta meta = new DMeta("localhost", "5000");
     	DComputeUnit cu2 = new DComputeUnit() {
     		
-    		public String compute(Dson jsonInput) {
+    		public String compute(DComputeContext jsonInput) {
     			//System.out.println("compute() Testing 2 in remote. I'm from CU class from CNS");
     			return "Hello from this Compute Unit, CU #" + jsonInput.getCU();
     		}

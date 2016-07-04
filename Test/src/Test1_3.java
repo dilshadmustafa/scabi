@@ -78,6 +78,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
@@ -123,7 +124,7 @@ public class Test1_3 {
 	     	
 	     	// Using executeObject() method to submit Compute Units through object references and objects of Anonymous class
 	     	DComputeUnit cu = new DComputeUnit() {
-	     		public String compute(Dson jsonInput) {
+	     		public String compute(DComputeContext jsonInput) {
 	     			return "Hello from this Compute Unit CU #" + jsonInput.getCU();
 	     		}
 	     	};
@@ -139,7 +140,7 @@ public class Test1_3 {
 	     	c.addJar("/home/anees/self/MyPrimeCheckUnit.jar"); // Add Java libraries, jar files like this
 	     	c.executeCode("import MyPrimeCheckUnit;" +
 	     				  "cu = new MyPrimeCheckUnit();" +
-	     			      "return cu.compute(jsonInput);");
+	     			      "return cu.compute(context);");
 	     	c.input(jsonInput).split(1).output(out3).perform();
 	     	c.finish();
 	     	

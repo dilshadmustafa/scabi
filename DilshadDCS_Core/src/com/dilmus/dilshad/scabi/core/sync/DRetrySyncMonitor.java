@@ -97,6 +97,9 @@ import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
  * @author Dilshad Mustafa
  *
  */
+
+// Lock order inside transaction : CR, C
+
 public class DRetrySyncMonitor implements Runnable {
 	private final Logger log = LoggerFactory.getLogger(DRetrySyncMonitor.class);
 	
@@ -214,6 +217,9 @@ public class DRetrySyncMonitor implements Runnable {
 		boolean isRetrySubmitted = false;
 		
 		for (DComputeSyncRun crun : m_crunList /* Previous works m_localCRunList */) {
+
+			synchronized(crun) {
+				
 			/* Previous works
 			if (false == crun.isRunOnce())
 				isAllRunOnce = false;
@@ -228,6 +234,8 @@ public class DRetrySyncMonitor implements Runnable {
 					&& false == crun.isRetrySubmitted()) {
 				fcTotal = fcTotal + 1;
 			}
+			
+			} // End synchronized crun
 		}
 		
 		//log.debug("doRetry() fcTotal : {}", fcTotal);
@@ -313,6 +321,9 @@ public class DRetrySyncMonitor implements Runnable {
 		// Previous works int k = 0;
 		ListIterator<DComputeBlock> itr = m_cbList.listIterator();
 		for (DComputeSyncRun crun : m_crunList /* Previous works m_localCRunList */) {
+
+			synchronized(crun) {
+				
 			if (crun.getRetriesTillNow() < crun.getMaxRetry() 
 					&& true == crun.isError() && true == crun.isDone() 
 					&& false == crun.isRetrySubmitted()) {
@@ -365,6 +376,7 @@ public class DRetrySyncMonitor implements Runnable {
 				}
 			}
 			
+			} // End synchronized crun
 		}
 		
 		} // End While

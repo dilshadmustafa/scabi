@@ -75,6 +75,7 @@ and conditions of this license without giving prior notice.
 import java.util.HashMap;
 import java.util.Set;
 
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
@@ -103,7 +104,7 @@ public class Example1_2 {
 	     	jsonInput.add("NumberToCheck", "993960000099397");
 
 	     	DComputeUnit cu2 = new DComputeUnit() {
-	     		public String compute(Dson jsonInput) {
+	     		public String compute(DComputeContext jsonInput) {
 	     			MyPrimeCheckUnit cu = new MyPrimeCheckUnit();
 	     			return cu.compute(jsonInput);
 	     		}
@@ -125,7 +126,7 @@ public class Example1_2 {
 	     	// The below example shows executeObject() method to submit a Compute Unit. The Compute Unit will internally submit 
 	     	// its own Compute Units / split jobs for execution in the Cluster
 	     	DComputeUnit cu3 = new DComputeUnit() {
-	     		public String compute(Dson jsonInput) {
+	     		public String compute(DComputeContext jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
 		    	     	DCompute c = new DCompute(meta);
@@ -162,7 +163,7 @@ public class Example1_2 {
 	     	// Use addComputeUnitJars() method to add all the jar files provided to this Compute Unit cu4 by User.
 	     	
 	     	DComputeUnit cu4 = new DComputeUnit() {
-	     		public String compute(Dson jsonInput) {
+	     		public String compute(DComputeContext jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
 		    	     	DCompute c = new DCompute(meta);

@@ -669,6 +669,7 @@ public class DCompute implements Runnable {
         	log.debug("run() Compute is {}", cnb);
         }
 
+		ListIterator<DComputeNoBlock> itr = m_cnbList.listIterator();
         Set<String> st = m_commandMap.keySet();
         for (String key : st) {
         	DComputeAsyncConfig config = m_commandMap.get(key);
@@ -683,7 +684,7 @@ public class DCompute implements Runnable {
 				log.debug("run() endSplit : {}", endSplit);
 			}
         	
-			ListIterator<DComputeNoBlock> itr = m_cnbList.listIterator();
+			// Moved to above ListIterator<DComputeNoBlock> itr = m_cnbList.listIterator();
 			for (long i = startSplit; i <= endSplit; i++) {	
         		log.debug("Inside split for loop");
         		//Previous works if (k >= cnba.size())
@@ -764,8 +765,7 @@ public class DCompute implements Runnable {
 		
 		try {
 			m_futureCompute.get();
-			m_futureRetry.get();
-			
+			// Previous works, moved to bottom m_futureRetry.get();
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			//e.printStackTrace();
 			closeCNBConnections();
@@ -804,18 +804,32 @@ public class DCompute implements Runnable {
 						closeCNBConnections();
 						throw new DScabiException("No more crun", "COE.FIH.1");
 					}
+					
+					synchronized(crun) {
+					
 					DComputeAsyncConfig config = crun.getConfig();
 					synchronized (config) {
 						if (false == config.isResultSet(crun.getSU())) {
 							crun.setExecutionError(errorJsonStr);
+							// crun.setExecutionError(errorJsonStr) sets crun's m_isDone to true so that 
+							// DRetryAsyncMonitor doesn't go into infinite loop
 						}
 					}
 	
+					} // End synchronized crun
 				} // End for
 				
 			} // End catch
         
         } // End for
+		
+		try {
+			m_futureRetry.get();
+		} catch (CancellationException | InterruptedException | ExecutionException e) {
+			//e.printStackTrace();
+			closeCNBConnections();
+			throw e;
+		}
 		
 		closeCNBConnections();
  		log.debug("finish() Exiting finish()");
@@ -858,7 +872,7 @@ public class DCompute implements Runnable {
 
 		try {
 			m_futureCompute.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
-			m_futureRetry.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
+			// Previous works, moved to bottom  m_futureRetry.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
 			
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			//e.printStackTrace();
@@ -901,18 +915,33 @@ public class DCompute implements Runnable {
 						closeCNBConnections();
 						throw new DScabiException("No more crun", "DCE.FIH2.1");
 					}
+					
+					synchronized(crun) {
+					
 					DComputeAsyncConfig config = crun.getConfig();
 					synchronized (config) {
 						if (false == config.isResultSet(crun.getSU())) {
 							crun.setExecutionError(errorJsonStr);
+							// crun.setExecutionError(errorJsonStr) sets crun's m_isDone to true so that 
+							// DRetryAsyncMonitor doesn't go into infinite loop
 						}
 					}
 	
+					} // End synchronized crun
 				} // End for
 				
 			} // End catch
        
         } // End for
+        
+		try {
+			m_futureRetry.get();
+		} catch (CancellationException | InterruptedException | ExecutionException e) {
+			//e.printStackTrace();
+			closeCNBConnections();
+			throw e;
+		}
+
         closeCNBConnections();
 		log.debug("finish(nanosec) Exiting finish()");
 		initialize();
@@ -1025,7 +1054,8 @@ public class DCompute implements Runnable {
 			throw new DScabiException("Perform already in progress", "COE.PEM.1");
 		}
 		
-		String jobId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		String jobId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		jobId = jobId.replace('-', '_');
 		for (DComputeAsyncConfig config : m_cconfigList) {
 			config.setJobId(jobId);
 		}

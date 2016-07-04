@@ -144,8 +144,8 @@ public class DMNamespaceHelper {
     	String uuid1 = null;
     	if (0 == n) {
     		System.out.println("register() Inside 0 == n");
-    		uuid1 = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
-
+    		uuid1 = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+    		uuid1 = uuid1.replace('-', '_');
     		document.put("Type", dmjson.getString("Type"));
 			document.put("Host", dmjson.getString("Host"));
  			document.put("Port", dmjson.getString("Port"));

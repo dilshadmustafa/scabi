@@ -123,6 +123,7 @@ import com.dilmus.dilshad.scabi.common.DMJsonHelper;
 import com.dilmus.dilshad.scabi.common.DMNamespace;
 import com.dilmus.dilshad.scabi.common.DMNamespaceHelper;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DaoHelper;
@@ -207,21 +208,30 @@ public class ComputeServer extends Application {
     	   log.debug("executeCode() TotalComputeUnit : {}", djson.getTU());
     	   log.debug("executeCode() SplitComputeUnit : {}", djson.getCU());
     	   log.debug("executeCode() JsonInput : {}", djson.getString("JsonInput"));
-	  		
+	  	   
+    	   /* Previous works
     	   Dson dson1 = new Dson("TotalComputeUnit", djson.getString("TotalComputeUnit"));
     	   Dson dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
     	   Dson dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
-           
-    	   DaoHelper ddaohelp = new DaoHelper("localhost", "27017", "MetaDB");
+           */
+    	   
+    	   DComputeContext dson1 = new DComputeContext("TotalComputeUnit", djson.getString("TotalComputeUnit"));
+    	   DComputeContext dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
+    	   dson2.add("JobId", djson.getString("JobId"));
+    	   dson2.add("ConfigId", djson.getString("ConfigId"));
+    	   dson2.add("TaskId", djson.getString("TaskId"));
+    	   DComputeContext dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
+    	   
+    	   // Previous works DaoHelper ddaohelp = new DaoHelper("localhost", "27017", "MetaDB");
     	   
            Interpreter i = new Interpreter();
            
            // Not working i.setClassLoader(Thread.currentThread().getContextClassLoader());
            // Not working i.setClassLoader(ClassLoader.getSystemClassLoader());
            i.setClassLoader(dcl);
-           
 
-           i.set("jsonInput", dson3);
+           // Previous works i.set("jsonInput", dson3);
+           i.set("context", dson3);
            i.eval("import com.mongodb.*");
            i.eval("import com.dilmus.dilshad.scabi.common.*");
            i.eval("import com.dilmus.dilshad.scabi.core.*");
@@ -356,11 +366,20 @@ public class ComputeServer extends Application {
 	  		log.debug("computeExecuteClass() TotalComputeUnit : {}", djson.getTU());
 	  		log.debug("computeExecuteClass() SplitComputeUnit : {}", djson.getCU());
 	  		log.debug("computeExecuteClass() JsonInput : {}", djson.getString("JsonInput"));
-			   
+			
+	  		/* Previous works
 	  		Dson dson1 = new Dson("TotalComputeUnit", djson.getString("TotalComputeUnit"));
 	  		Dson dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
 	  		Dson dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
-
+			*/
+	  		
+	  		DComputeContext dson1 = new DComputeContext("TotalComputeUnit", djson.getString("TotalComputeUnit"));
+	  		DComputeContext dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
+	    	dson2.add("JobId", djson.getString("JobId"));
+	    	dson2.add("ConfigId", djson.getString("ConfigId"));
+	    	dson2.add("TaskId", djson.getString("TaskId"));
+	  		DComputeContext dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
+	  		
 	  		if (proceed) {
 	  			log.debug("computeExecuteClass() ComputeUnit cast is working ok for this object");
 		  		String result = cuu.compute(dson3);
@@ -519,9 +538,18 @@ public class ComputeServer extends Application {
 	  		log.debug("computeExecuteFromObject() SplitComputeUnit : {}", djson.getCU());
 	  		log.debug("computeExecuteFromObject() JsonInput : {}", djson.getString("JsonInput"));
 			   
+	  		/* Previous works
 	  		Dson dson1 = new Dson("TotalComputeUnit", djson.getString("TotalComputeUnit"));
 	  		Dson dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
 	  		Dson dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
+	  		*/
+	  		
+	  		DComputeContext dson1 = new DComputeContext("TotalComputeUnit", djson.getString("TotalComputeUnit"));
+	  		DComputeContext dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
+	    	dson2.add("JobId", djson.getString("JobId"));
+	    	dson2.add("ConfigId", djson.getString("ConfigId"));
+	    	dson2.add("TaskId", djson.getString("TaskId"));
+	  		DComputeContext dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
 	  		
 	  		if (proceed) {
 	  			log.debug("computeExecuteFromObject() ComputeUnit cast is working ok for this object");
@@ -586,7 +614,7 @@ public class ComputeServer extends Application {
 		  		if (null == ob)
 		  			System.out.println("null == ob");
 
-		  		Method m = df2.getMethod("compute", Dson.class);
+		  		Method m = df2.getMethod("compute", DComputeContext.class);
 		  		if (null == m)
 		  			System.out.println("null == m");
 
@@ -662,11 +690,20 @@ public class ComputeServer extends Application {
 		   log.debug("computeExecuteClassNameInJar() TotalComputeUnit : {}", djson.getTU());
 		   log.debug("computeExecuteClassNameInJar() SplitComputeUnit : {}", djson.getCU());
 		   log.debug("computeExecuteClassNameInJar() JsonInput : {}", djson.getString("JsonInput"));
-			   
+
+		   /* Previous works
 		   Dson dson1 = new Dson("TotalComputeUnit", djson.getString("TotalComputeUnit"));
 		   Dson dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
 		   Dson dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
-			   
+		   */
+		   
+		   DComputeContext dson1 = new DComputeContext("TotalComputeUnit", djson.getString("TotalComputeUnit"));
+		   DComputeContext dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
+    	   dson2.add("JobId", djson.getString("JobId"));
+    	   dson2.add("ConfigId", djson.getString("ConfigId"));
+    	   dson2.add("TaskId", djson.getString("TaskId"));
+		   DComputeContext dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
+		   
 		   DComputeUnit cuu = null;
 				
 		   dmcl = new DMClassLoader();
@@ -697,7 +734,7 @@ public class ComputeServer extends Application {
 		   
 		   cuu = (DComputeUnit) df.newInstance();
 		   log.debug("computeExecuteClassNameInJar() Going to invoke method");
-		   Dson dson = new Dson("input", "1");
+		   // Not used Dson dson = new Dson("input", "1");
 		   String result = cuu.compute(dson3);
 		   log.debug("computeExecuteClassNameInJar result : {}", result);
 		   

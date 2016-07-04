@@ -163,10 +163,24 @@ public class DRangeRunner implements Runnable {
 				throw new RuntimeException(new DScabiException("No more crun", "DRR.RUN.1"));
 			}
 			DComputeNoBlock cnb = crun.getComputeNB();
+			boolean proceed = false;
+			synchronized(cnb) {
+				if (cnb.isAllowed()) {
+					cnb.incCountRequests();
+					proceed = true;
+				}
+			}
+			if (proceed)
+				crun.run();
+			else
+				listBlockedCRun.add(crun);
+
+			/* Previous works
 			if (cnb.isAllowed())
 				crun.run();
 			else
 				listBlockedCRun.add(crun);
+			*/
 		}
 
 		ListIterator<DComputeAsyncRun> itr2 = null;
@@ -194,11 +208,26 @@ public class DRangeRunner implements Runnable {
 			
 			for (DComputeAsyncRun crun : listBlockedCRun) {
 				DComputeNoBlock cnb = crun.getComputeNB();
+				boolean proceed = false;
+				synchronized(cnb) {
+					if (cnb.isAllowed()) {
+						cnb.incCountRequests();
+						proceed = true;
+					}
+				}
+				if (proceed) {
+					allowedCRunList.add(crun);
+					crun.run();
+				} else
+					check = false;
+				
+				/* Previous works
 				if (cnb.isAllowed()) {
 					allowedCRunList.add(crun);
 					crun.run();
 				} else
 					check = false;
+				*/
 			} // End for
 			
 			for (DComputeAsyncRun crun : allowedCRunList) {

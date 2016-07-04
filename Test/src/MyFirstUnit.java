@@ -73,6 +73,7 @@ and conditions of this license without giving prior notice.
 */
 
 
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.Dson;
 
@@ -82,7 +83,7 @@ import com.dilmus.dilshad.scabi.core.Dson;
  */
 public class MyFirstUnit extends DComputeUnit {
 	
-	public String compute(Dson jsonInput) {
+	public String compute(DComputeContext jsonInput) {
 		//System.out.println("compute() Testing 2 in remote. I'm from CU class running in ComputeServer");
 		return "CU class : sending back : " + jsonInput.toString();
 	}

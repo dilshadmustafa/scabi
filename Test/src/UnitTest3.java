@@ -105,6 +105,7 @@ import com.dilmus.dilshad.scabi.common.DMComputeTemplate;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMJsonHelper;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DUtil;
 import com.dilmus.dilshad.scabi.core.DaoHelper;
@@ -297,7 +298,7 @@ public class UnitTest3 {
 		    	  		log.debug("Going to invoke method");
 		    	  		//String result = (String) m.invoke(ob, (Object[])sa);
 		    	  		//String result = (String) m.invoke(null, sa);    	  		
-		    	  		Dson dson = new Dson("input", "1");
+		    	  		DComputeContext dson = new DComputeContext("input", "1");
 		    	  		String result = cuu.compute(dson);
 		    	  		log.debug("result : {}", result);
 		    	  		//return "" + result;
@@ -321,7 +322,7 @@ public class UnitTest3 {
     	DComputeUnit cu = new DComputeUnit() {
 			int x = 0;
 			
-    		public String compute(Dson jsonInput) {
+    		public String compute(DComputeContext jsonInput) {
     			newX();
     			x = x + 3;
     			return "compute() from ComputeUnit " + x;			
@@ -379,7 +380,7 @@ public class UnitTest3 {
   		
   		if (proceed) {
   			log.debug("ComputeUnit cast is working ok for this object");
-	  		Dson dson = new Dson("input", "1");
+  			DComputeContext dson = new DComputeContext("input", "1");
 	  		String result = cuu.compute(dson);
 	  		//return "" + result;
   		} else {

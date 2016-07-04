@@ -76,6 +76,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.Dson;
 
@@ -99,7 +100,7 @@ public class MyPrimeCheckUnit extends DComputeUnit {
         }
     }
     
-	public String compute(Dson jsonInput) {
+	public String compute(DComputeContext jsonInput) {
     	long time1 = System.currentTimeMillis();
 
 		int totalunits = jsonInput.getTU();

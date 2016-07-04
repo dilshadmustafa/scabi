@@ -93,6 +93,9 @@ import com.dilmus.dilshad.scabi.common.DScabiException;
  * @author Dilshad Mustafa
  *
  */
+
+// Lock order inside transaction : CR, CB, CC
+
 public class DComputeSyncRun implements Runnable {
 
 	private final Logger log = LoggerFactory.getLogger(DComputeSyncRun.class);
@@ -110,6 +113,36 @@ public class DComputeSyncRun implements Runnable {
 	private int m_retriesTillNow = 0;
 	private int m_maxRetry = 0;
 	
+	private String m_taskId = null;
+	
+	String getTaskId() {
+		log.debug("getTaskId() m_SU : {}", m_SU);
+
+		if (m_taskId != null)
+			return m_taskId;
+		
+		if (null == m_config) {
+			log.debug("getTaskId() m_config is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_config is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		if (0 == m_TU) {
+			log.debug("getTaskId() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		if (0 == m_SU) {
+			log.debug("getTaskId() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		
+		if (null == m_taskId)
+			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU;
+
+		return m_taskId;
+	}
+
 	public DComputeSyncRun() {
 		m_config = null;
 		m_computeBlock = null;
@@ -120,6 +153,8 @@ public class DComputeSyncRun implements Runnable {
 		m_isRunOnce = false;
 		
 		m_isExecutionError = false;
+		
+		m_taskId = null;
 	}
 	
 	public int setTU(long totalUnits) {
@@ -213,6 +248,7 @@ public class DComputeSyncRun implements Runnable {
 
 		log.debug("doRun() m_SU : {}", m_SU);
 		
+		/* Previous works
 		if (null == m_config) {
 			log.debug("doRun() m_config is not set");
 			throw new DScabiException("doRun() config is not set", "CRN.DRN.1");
@@ -223,6 +259,7 @@ public class DComputeSyncRun implements Runnable {
 			throw new DScabiException("computeBlock is not set", "CRN.DRN.2");
 			//return;
 		}
+		*/
 		
 		// Previous works int splitno = m_SU;
 		String result = null;
@@ -244,7 +281,7 @@ public class DComputeSyncRun implements Runnable {
 			}
 			m_computeBlock.setInput(m_config.getInput());
 			m_computeBlock.setJobId(m_config.getJobId());
-			m_computeBlock.setTaskId(m_config.getTaskId());
+			m_computeBlock.setConfigId(m_config.getConfigId());
 			if (m_config.isComputeUnitJarsSet()) {
 				log.debug("doRun() isComputeUnitJarsSet() is true");
 				m_computeBlock.setComputeUnitJars(m_config.getComputeUnitJars());
@@ -294,8 +331,34 @@ public class DComputeSyncRun implements Runnable {
 	}
 
 	public void run() {
+		
+		synchronized(this) {
 
 		log.debug("run() m_SU : {}", m_SU);
+		
+		if (null == m_config) {
+			log.debug("run() m_config is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_config is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (null == m_computeBlock) {
+			log.debug("run() m_computeNB is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_computeNB is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (0 == m_TU) {
+			log.debug("run() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (0 == m_SU) {
+			log.debug("run() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+
+		if (null == m_taskId)
+			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU;
 		
 		m_isDone = false;
 		if (true == m_isError)
@@ -306,7 +369,7 @@ public class DComputeSyncRun implements Runnable {
 			try {
 				m_computeBlock.setTU(m_TU);
 				m_computeBlock.setSU(m_SU);
-
+				m_computeBlock.setTaskId(m_taskId);
 		        doRun();
 		    } catch (Throwable e) {
 				log.debug("run() Throwable : {}", e.toString());
@@ -332,6 +395,8 @@ public class DComputeSyncRun implements Runnable {
 		if (false == m_isRunOnce) {
 			m_isRunOnce = true;
 		}
+		
+		} // End synchronized crun
 	}
 	
 }

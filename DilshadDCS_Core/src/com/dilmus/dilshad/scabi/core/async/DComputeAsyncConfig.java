@@ -122,12 +122,13 @@ public class DComputeAsyncConfig {
 	private DMClassLoader m_dcl = null;
 	
 	private String m_jobId = null;
-	private String m_taskId = null;
+	private String m_configId = null;
 	
 	private static final DMCounter M_DMCOUNTER = new DMCounter();
 	
 	public int setJobId(String jobId) {
 		m_jobId = jobId;
+		m_configId = jobId + "_" + M_DMCOUNTER.inc();
 		return 0;
 	}
 	
@@ -135,8 +136,8 @@ public class DComputeAsyncConfig {
 		return m_jobId;
 	}
 
-	public String getTaskId() {
-		return m_taskId;
+	public String getConfigId() {
+		return m_configId;
 	}
 
 	public int setComputeUnitJars(DMClassLoader dcl) {
@@ -162,7 +163,11 @@ public class DComputeAsyncConfig {
 		m_jsonStrInput = DMJson.empty();
 		
 		m_jobId = DMJson.empty();
-		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
 	}
 	
 	public DComputeAsyncConfig(Class<? extends DComputeUnit> cls) {
@@ -174,7 +179,11 @@ public class DComputeAsyncConfig {
 		m_jsonStrInput = DMJson.empty();
 		
 		m_jobId = DMJson.empty();
-		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
 	}
 
 	public DComputeAsyncConfig(String code) {
@@ -186,7 +195,11 @@ public class DComputeAsyncConfig {
 		m_jsonStrInput = DMJson.empty();
 		
 		m_jobId = DMJson.empty();
-		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
 	}
 
 	public DComputeAsyncConfig(String jarFilePath, String classNameInJar) {
@@ -199,7 +212,11 @@ public class DComputeAsyncConfig {
 		m_jsonStrInput = DMJson.empty();
 		
 		m_jobId = DMJson.empty();
-		m_taskId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
 	}
 
 	public boolean isJarFilePathListSet() {

@@ -100,6 +100,9 @@ import org.apache.http.NoHttpResponseException;
  * @author Dilshad Mustafa
  *
  */
+
+// Lock order inside transaction : CR, CNB, CC
+
 public class DComputeAsyncRun implements Runnable {
 
 	private final Logger log = LoggerFactory.getLogger(DComputeAsyncRun.class);
@@ -119,6 +122,36 @@ public class DComputeAsyncRun implements Runnable {
 	
 	private Future<HttpResponse> m_futureHttpResponse = null;
 	
+	private String m_taskId = null;
+	
+	String getTaskId() {
+		log.debug("getTaskId() m_SU : {}", m_SU);
+
+		if (m_taskId != null)
+			return m_taskId;
+		
+		if (null == m_config) {
+			log.debug("getTaskId() m_config is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_config is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		if (0 == m_TU) {
+			log.debug("getTaskId() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		if (0 == m_SU) {
+			log.debug("getTaskId() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
+			// Not used return;
+		}
+		
+		if (null == m_taskId)
+			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU;
+
+		return m_taskId;
+	}
+	
 	public DComputeAsyncRun() {
 		m_config = null;
 		m_computeNB = null;
@@ -131,6 +164,8 @@ public class DComputeAsyncRun implements Runnable {
 		m_isExecutionError = false;
 		
 		m_futureHttpResponse = null;
+		
+		m_taskId = null;
 	}
 	
 	public int setTU(long totalUnits) {
@@ -248,6 +283,7 @@ public class DComputeAsyncRun implements Runnable {
 
 		log.debug("doRun() m_SU : {}", m_SU);
 		
+		/* Previous works
 		if (null == m_config) {
 			// Not used throw new DScabiException("config is not set", "CRN.RUN.1");
 			log.debug("doRun() m_config is not set");
@@ -258,6 +294,7 @@ public class DComputeAsyncRun implements Runnable {
 			log.debug("doRun() m_computeNB is not set");
 			return;
 		}
+		*/
 		
 		// Previous works long splitno = m_SU;
 		m_futureHttpResponse = null;
@@ -285,7 +322,7 @@ public class DComputeAsyncRun implements Runnable {
 			}
 			m_computeNB.setInput(m_config.getInput());
 			m_computeNB.setJobId(m_config.getJobId());
-			m_computeNB.setTaskId(m_config.getTaskId());
+			m_computeNB.setConfigId(m_config.getConfigId());
 			if (m_config.isComputeUnitJarsSet()) {
 				log.debug("doRun() isComputeUnitJarsSet() is true");
 				m_computeNB.setComputeUnitJars(m_config.getComputeUnitJars());
@@ -334,7 +371,33 @@ public class DComputeAsyncRun implements Runnable {
 
 	public void run() {
 
+		synchronized(this) {
+		
 		log.debug("run() m_SU : {}", m_SU);
+
+		if (null == m_config) {
+			log.debug("run() m_config is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_config is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (null == m_computeNB) {
+			log.debug("run() m_computeNB is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_computeNB is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (0 == m_TU) {
+			log.debug("run() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		if (0 == m_SU) {
+			log.debug("run() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "CRN.RUN.1"));			
+			// Not used return;
+		}
+		
+		if (null == m_taskId)
+			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU;
 		
 		m_isDone = false;
 		if (true == m_isError)
@@ -345,7 +408,7 @@ public class DComputeAsyncRun implements Runnable {
 			try {
 				m_computeNB.setTU(m_TU);
 				m_computeNB.setSU(m_SU);
-
+				m_computeNB.setTaskId(m_taskId);
 		        doRun();
 		    } catch (Throwable e) {
 				log.debug("run() Throwable : {}", e.toString());
@@ -365,11 +428,14 @@ public class DComputeAsyncRun implements Runnable {
 
 		    }
 			
-		} // synchronized
+		} // End synchronized m_computeNB
 
+		} // End synchronized crun
 	}
 	
 	void get() {
+		
+		synchronized(this) {
 		
 		HttpResponse httpResponse = null;
 		String result = null;
@@ -381,6 +447,8 @@ public class DComputeAsyncRun implements Runnable {
 			log.debug("get() m_isError is true for crun m_SU : {}", m_SU);
 			return;
 		}
+		
+		// Not needed synchronized (m_computeNB) {
 		
 		if (m_futureHttpResponse != null) {
 
@@ -491,12 +559,16 @@ public class DComputeAsyncRun implements Runnable {
 			// TODO check if setError() on crun here is needed to enable retry for this crun
 		
 		} // End if
+		
+		// Not needed } // End synchronized m_computeNB
+		
 		m_isDone = true;
 		m_isRetrySubmitted = false;
 		if (false == m_isRunOnce) {
 			m_isRunOnce = true;
 		}
 		
+		} // End synchronized crun
 	}
 	
 }

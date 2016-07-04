@@ -733,6 +733,7 @@ public class DComputeSync implements Runnable {
         }
         */
 		
+		ListIterator<DComputeBlock> itr = m_cbList.listIterator();
         Set<String> st = m_commandMap.keySet();
         // Previous works int k = 0;
         for (String key : st) {
@@ -748,7 +749,7 @@ public class DComputeSync implements Runnable {
 				log.debug("run() endSplit for this config : {}", endSplit);
 			}
 
-			ListIterator<DComputeBlock> itr = m_cbList.listIterator();
+			// Moved to above ListIterator<DComputeBlock> itr = m_cbList.listIterator();
         	// Previous works for (int i = 0; i < maxSplit; i++) {
         	for (long i = startSplit; i <= endSplit; i++) {
         		log.debug("Inside split for loop");
@@ -806,7 +807,16 @@ public class DComputeSync implements Runnable {
 		try {
 			m_futureCompute.get();
 			m_futureRetry.get();
-			
+			// Put m_futureRetry.get() here so that if DRetrySyncMonitor goes down
+			// when a particular crun's m_isError is true, m_isDone is true
+			// the below while(check) will not go into infinite loop
+			// In case of crun Execution error, DThreadPoolExecutor's afterExecute() will reset crun's flags
+			// appropriately in another thread which executed the crun
+			// This place differs from how it is handled in DCompute class
+			// DComputeSync class - variable futures for threads, crun flags reset in another thread which 
+			// executed the crun using DThreadPoolExecutor's afterExecute() method
+			// For DCompute class - fixed futures for threads, crun flags reset by finish() method in the 
+			// driver's or master's thread
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			//e.printStackTrace();
 			closeCBConnections();
@@ -826,6 +836,9 @@ public class DComputeSync implements Runnable {
 		boolean check = true;
 		while(check) {
 			for (DComputeSyncRun crun : m_crunList) {
+				
+				synchronized(crun) {
+				
 				if (crun.getRetriesTillNow() < crun.getMaxRetry() && true == crun.isError() && true == crun.isDone() ) {
 					check = false;
 					break;
@@ -839,13 +852,24 @@ public class DComputeSync implements Runnable {
 					; // don't set anything. Consider the crun to be done. Proceed with next crun check
 				} 
 				
+				} // End synchronized crun
 			}
 			if (check)
 				break;	
 			check = true;
 		}
+		
+		/* TODO Further analysis
+		try {
+			m_futureRetry.get();
+		} catch (CancellationException | InterruptedException | ExecutionException e) {
+			//e.printStackTrace();
+			closeCBConnections();
+			throw e;
+		}
+		*/
+		
 		closeCBConnections();
-
 		log.debug("finish() Exiting finish()");
 		initialize();
 		return true;
@@ -886,6 +910,16 @@ public class DComputeSync implements Runnable {
 		try {
 			m_futureCompute.get();
 			m_futureRetry.get();
+			// Put m_futureRetry.get() here so that if DRetrySyncMonitor goes down
+			// when a particular crun's m_isError is true, m_isDone is true
+			// the below while(check) will not go into infinite loop
+			// In case of crun Execution error, DThreadPoolExecutor's afterExecute() will reset crun's flags
+			// appropriately in another thread which executed the crun
+			// This place differs from how it is handled in DCompute class
+			// DComputeSync class - variable futures for threads, crun flags reset in another thread which 
+			// executed the crun using DThreadPoolExecutor's afterExecute() method
+			// For DCompute class - fixed futures for threads, crun flags reset by finish() method in the 
+			// driver's or master's thread
 			
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			//e.printStackTrace();
@@ -908,6 +942,9 @@ public class DComputeSync implements Runnable {
 		boolean check = true;
 		while(check) {
 			for (DComputeSyncRun crun : m_crunList) {
+				
+				synchronized(crun) {
+				
 				if (crun.getRetriesTillNow() < crun.getMaxRetry() && true == crun.isError() && true == crun.isDone() ) {
 					check = false;
 					break;
@@ -921,6 +958,7 @@ public class DComputeSync implements Runnable {
 					; // don't set anything. Consider the crun to be done. Proceed with next crun check
 				}
 				
+				} // End synchronized crun
 			}
 			if (check)
 				break;	
@@ -1042,7 +1080,8 @@ public class DComputeSync implements Runnable {
 			throw new DScabiException("Perform already in progress", "COE.PEM.1");
 		}
 		
-		String jobId = UUID.randomUUID().toString() + "-" + System.nanoTime() + "-" + M_DMCOUNTER.inc();
+		String jobId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		jobId = jobId.replace('-', '_');
 		for (DComputeSyncConfig config : m_cconfigList) {
 			config.setJobId(jobId);
 		}

@@ -83,5 +83,5 @@ public abstract class DComputeUnit {
 	// Notes: Since this class is abstract, it cannot be instantiated.
 	// So no need to give constructor.
 	
-	public abstract String compute(Dson jsonInput);
+	public abstract String compute(DComputeContext jsonInput);
 }
