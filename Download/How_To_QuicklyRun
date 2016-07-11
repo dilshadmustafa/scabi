@@ -6,7 +6,7 @@ How to run:
 4. Download scabi.tar.gz from Download folder in Scabi's GitHub project
 5. Unzip scabi.tar.gz to a folder /home/<username>/scabi
 -------------------------------------------------
-Starting servers:
+6. Starting servers:
 
 cd /home/<username>/scabi
 ./start_meta.sh &
@@ -17,7 +17,7 @@ To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
 	start_compute.bat 5001 localhost 5000 1000
 -------------------------------------------------
-Running examples:
+7. Running examples:
 
 cd examples
 java -cp "../dependency-jars/*":"../*":. Example1

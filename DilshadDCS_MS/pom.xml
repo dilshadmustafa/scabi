@@ -52,11 +52,28 @@
         <artifactId>mongodb-driver</artifactId>
         <version>3.2.1</version>
     </dependency>
+    
+	<!-- http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
 	<dependency>
-	    <groupId>org.glassfish</groupId>
-	    <artifactId>javax.json</artifactId>
-	    <version>1.0.4</version>
+	    <groupId>com.fasterxml.jackson.core</groupId>
+	    <artifactId>jackson-core</artifactId>
+	    <version>2.7.4</version>
 	</dependency>
+	
+	<!-- http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
+	<dependency>
+	    <groupId>com.fasterxml.jackson.core</groupId>
+	    <artifactId>jackson-annotations</artifactId>
+	    <version>2.7.4</version>
+	</dependency>
+	
+	<!-- http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+	<dependency>
+	    <groupId>com.fasterxml.jackson.core</groupId>
+	    <artifactId>jackson-databind</artifactId>
+	    <version>2.7.4</version>
+	</dependency>
+		
 	<dependency>
 		<groupId>org.slf4j</groupId>
 		<artifactId>slf4j-simple</artifactId>

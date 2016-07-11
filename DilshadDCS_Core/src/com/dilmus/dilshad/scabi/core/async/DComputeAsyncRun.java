@@ -2,7 +2,7 @@
  * @author Dilshad Mustafa
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
- * @since 29-Feb-2016
+ * Created 29-Feb-2016
  * File Name : DComputeAsyncRun.java
  */
 
@@ -471,7 +471,8 @@ public class DComputeAsyncRun implements Runnable {
 						e.getCause() instanceof ConnectionClosedException ||
 						e.getCause() instanceof IllegalStateException ||
 						e.getCause() instanceof SocketException ||
-						e.getCause() instanceof NoHttpResponseException) {
+						e.getCause() instanceof NoHttpResponseException ||
+						e.getCause() instanceof IOException) {
 						log.debug("get() e.getCause() : {}", e.getCause().toString());
 						log.debug("get() Exception : {}", e.toString());
 						// computeNB is faulty only in the case of Network Exception/ConnectException
