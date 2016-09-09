@@ -9,9 +9,9 @@ How to run:
 6. Starting servers:
 
 cd /home/<username>/scabi
-./start_meta.sh &
-./start_compute.sh 5001 localhost 5000 1000 &
-./start_compute.sh 5002 localhost 5000 1000 &
+./start_meta.sh
+./start_compute.sh 5001 localhost 5000 1000
+./start_compute.sh 5002 localhost 5000 1000
 
 To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
@@ -26,7 +26,7 @@ Commandline arguments
 
 ./start_meta.sh
 
-Usage : <No arguments> to use default settings
+Usage : <No arguments> to use default settings, local host, port 5000, connect to local MongoDB server and port
 Usage : <MetaServer_Port> [debug]
 Usage : <MetaServer_Port> <Database_HostName> <Database_Port> [debug]
 

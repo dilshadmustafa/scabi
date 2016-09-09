@@ -31,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -50,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -241,6 +244,14 @@ public class DMJson {
 		m_root.put(key, value);
 	}
 
+	public int clear() {
+		m_root.removeAll();
+		m_isChanged = true;
+		m_jsonString = null;
+		
+		return 0;
+	}
+	
 	public String getString(String field) {
 		return m_root.get(field).asText();
 	}
@@ -285,6 +296,16 @@ public class DMJson {
 		}
 		//log.debug("toString() jsonString : {}", m_jsonString);
 		return m_jsonString;
+	}
+	
+	public DMJson remove(String key) {
+		m_root.remove(key);
+		m_isChanged = true;
+		if (0 == m_root.size())
+			m_isDsonEmpty = true;
+		else
+			m_isDsonEmpty = false;
+		return this;
 	}
 	
 	public DMJson add(String key, String value) {
@@ -433,6 +454,12 @@ public class DMJson {
 		return (new DMJson("Error", errorMessage)).toString();
 	}
 
+	public static String error(String errorCode, String errorMessage) {
+		DMJson djson = new DMJson("ErrorCode", errorCode);
+		djson.add("Error", errorMessage);
+		return djson.toString();
+	}	
+	
 	public static String result(String result) {
 		//return "{ \"Result\" : \"" + result + "\" }";
 		return (new DMJson("Result", result)).toString();
@@ -512,17 +539,17 @@ public class DMJson {
 		return m_root.has(key);
 	}
 	
-	public static DMJson dummyDson() throws IOException {
-		DMJson dson1 = new DMJson("TotalComputeUnit", "1");
-		DMJson dson2 = dson1.add("SplitComputeUnit", "1");
+	public static DMJson dummy() throws IOException {
+		DMJson dson1 = new DMJson("TotalComputeUnit", "0");
+		DMJson dson2 = dson1.add("SplitComputeUnit", "0");
 		DMJson dson3 = dson2.add("JsonInput", DMJson.empty());
 
 		return dson3;
 	}
 
-	public static String dummy() throws IOException {
-		DMJson dson1 = new DMJson("TotalComputeUnit", "1");
-		DMJson dson2 = dson1.add("SplitComputeUnit", "1");
+	public static String dummyAsString() throws IOException {
+		DMJson dson1 = new DMJson("TotalComputeUnit", "0");
+		DMJson dson2 = dson1.add("SplitComputeUnit", "0");
 		DMJson dson3 = dson2.add("JsonInput", DMJson.empty());
 
 		return dson3.toString();

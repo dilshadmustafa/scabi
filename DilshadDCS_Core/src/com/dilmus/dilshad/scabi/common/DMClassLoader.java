@@ -31,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -50,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -220,12 +223,20 @@ public class DMClassLoader extends ClassLoader {
 	
 	public InputStream getResourceAsStream(String classAsPath) {
 		log.debug("getResourceAsStream() classAsPath  : {}", classAsPath);
- 		String className = classAsPath.replace(".class", "").replace('/', '.');
-		 
+		String className = null;
+		
+		// Previous works String className = classAsPath.replace(".class", "").replace('/', '.');
+		
+		if (classAsPath.endsWith(".class"))
+			className = classAsPath.replace(".class", "").replace('/', '.');
+		else
+			className = classAsPath;
+		
     	log.debug("getResourceAsStream() className  : {}", className);
     	
     	if (false == m_mapClassNameClassBytes.containsKey(className)) {
-    		return super.getResourceAsStream(className);
+    		// Previous works return super.getResourceAsStream(className);
+    		return super.getResourceAsStream(classAsPath);
     	}
 		byte b[] = m_mapClassNameClassBytes.get(className);
 		ByteArrayInputStream bais = new ByteArrayInputStream(b);

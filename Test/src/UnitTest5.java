@@ -1,10 +1,9 @@
 /**
-
  * @author Dilshad Mustafa
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 21-Jan-2016
- * File Name : ScabiClient.java
+ * File Name : UnitTest5.java
  */
 
 /**
@@ -32,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -51,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -109,9 +111,10 @@ import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DScabiClientException;
 import com.dilmus.dilshad.scabi.core.Dao;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
-import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
-import com.dilmus.dilshad.scabi.core.sync.DComputeBlock;
+import com.dilmus.dilshad.scabi.core.compute.DCompute;
+import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
+import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeBlock_D1;
+import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeSync_D1;
 import com.dilmus.dilshad.scabi.deprecated.DComputable;
 import com.dilmus.dilshad.scabi.deprecated.DObject;
 import com.dilmus.dilshad.scabi.deprecated.DTableOld;
@@ -212,7 +215,7 @@ public class UnitTest5 {
     	long time1 = System.currentTimeMillis();
     	//String primeresult = cu2.compute(Dson.dummyDson());
     	//String primeresult = c.executeObject(cu2);
-    	DComputeSync c = new DComputeSync(meta);
+    	DComputeSync_D1 c = new DComputeSync_D1(meta);
     	HashMap<String, String> out1 = new HashMap<String, String>();
     	HashMap<String, String> out2 = new HashMap<String, String>();
     	HashMap<String, String> out3 = new HashMap<String, String>();
@@ -327,7 +330,7 @@ public class UnitTest5 {
     	long time1 = System.currentTimeMillis();
     	//String primeresult = cu2.compute(Dson.dummyDson());
     	//String primeresult = c.executeObject(cu2);
-    	DComputeSync c = new DComputeSync(meta);
+    	DCompute c = new DCompute(meta);
     	HashMap<String, String> out1 = new HashMap<String, String>();
     	HashMap<String, String> out2 = new HashMap<String, String>();
     	HashMap<String, String> out3 = new HashMap<String, String>();
@@ -398,14 +401,19 @@ public class UnitTest5 {
 		DMeta meta = new DMeta("localhost", "5000");
 		List<DComputeNoBlock> list = new LinkedList<DComputeNoBlock>();
 		// DComputeNoBlock cnb = new DComputeNoBlock("{ \"ComputeHost\" : \"anees\", \"ComputePort\" : \"5002\", \"MAXCSTHREADS\" : \"5\" }");
+		DComputeNoBlock.startHttpAsyncService();
 		DComputeNoBlock cnb = new DComputeNoBlock("{ \"ComputeHost\" : \"anees\", \"ComputePort\" : \"5001\", \"MAXCSTHREADS\" : \"5\" }");
 		list.add(cnb);
 		List<DComputeNoBlock> cnba = meta.getComputeNoBlockManyMayExclude(5, list);
-		
-		for (DComputeNoBlock cnbeach : cnba) {
-			cnbeach.close();
+		try {
+			for (DComputeNoBlock cnbeach : cnba) {
+				cnbeach.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		cnb.close();
+		DComputeNoBlock.closeHttpAsyncService();
 		meta.close();
 
 	}

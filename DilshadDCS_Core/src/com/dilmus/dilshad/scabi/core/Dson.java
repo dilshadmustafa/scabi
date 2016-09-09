@@ -31,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -50,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -98,6 +101,7 @@ import javax.json.JsonValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dilmus.dilshad.scabi.common.DMJson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -275,6 +279,16 @@ public class Dson {
 		return m_jsonString;
 	}
 	
+	public Dson remove(String key) {
+		m_root.remove(key);
+		m_isChanged = true;
+		if (0 == m_root.size())
+			m_isDsonEmpty = true;
+		else
+			m_isDsonEmpty = false;
+		return this;
+	}
+	
 	public Dson add(String key, String value) {
 		m_root.put(key, value);
 		m_isChanged = true;
@@ -425,6 +439,12 @@ public class Dson {
 		return (new Dson("Error", errorMessage)).toString();
 	}
 	
+	public static String error(String errorCode, String errorMessage) {
+		DMJson djson = new DMJson("ErrorCode", errorCode);
+		djson.add("Error", errorMessage);
+		return djson.toString();
+	}	
+	
 	public static String result(String result) {
 		//return "{ \"Result\" : \"" + result + "\" }";
 		return (new Dson("Result", result)).toString();
@@ -504,17 +524,17 @@ public class Dson {
 		return m_root.has(key);
 	}
 	
-	public static Dson dummyDson() throws IOException {
-		Dson dson1 = new Dson("TotalComputeUnit", "1");
-		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+	public static Dson dummy() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "0");
+		Dson dson2 = dson1.add("SplitComputeUnit", "0");
 		Dson dson3 = dson2.add("JsonInput", Dson.empty());
 
 		return dson3;
 	}
 
-	public static String dummy() throws IOException {
-		Dson dson1 = new Dson("TotalComputeUnit", "1");
-		Dson dson2 = dson1.add("SplitComputeUnit", "1");
+	public static String dummyAsString() throws IOException {
+		Dson dson1 = new Dson("TotalComputeUnit", "0");
+		Dson dson2 = dson1.add("SplitComputeUnit", "0");
 		Dson dson3 = dson2.add("JsonInput", Dson.empty());
 
 		return dson3.toString();

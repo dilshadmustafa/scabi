@@ -3,7 +3,7 @@
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 06-Mar-2016
- * File Name : Test1.java
+ * File Name : Test6_2.java
  */
 
 /**
@@ -31,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -50,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -75,8 +78,8 @@ and conditions of this license without giving prior notice.
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DCompute;
-import com.dilmus.dilshad.scabi.core.async.DComputeNoBlock;
+import com.dilmus.dilshad.scabi.core.compute.DCompute;
+import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -207,6 +210,7 @@ public class Test6_2 {
 	  		log.debug("result : {}", result);
 			*/
 
+	     	c.close();
 	     	meta.close();
 	   }
 }

@@ -31,12 +31,15 @@ well as in each source code file of this Software.
 4. You should not modify this Software source code and/or its compiled object binary 
 form in any way.
 
-5. You should not redistribute any modified source code of this Software and/or its 
-compiled object binary form with any changes, additions, enhancements, updates or 
-modifications, any modified works of this Software, any straight forward translation 
-and/or implementation to same and/or another programming language and embedded modified 
-versions of this Software source code and/or its compiled object binary in any form, 
-both within as well as outside your organization, company, legal entity and/or individual. 
+5. You should not redistribute any modified source code of this Software and/or 
+its compiled object binary form with any changes, additions, enhancements, 
+updates or modifications. You should not redistribute any modified works of this 
+Software. You should not create and/or redistribute any straight forward 
+translation and/or implementation of this Software source code to same and/or 
+another programming language, either partially or fully. You should not redistribute 
+embedded modified versions of this Software source code and/or its compiled object 
+binary in any form, both within as well as outside your organization, company, 
+legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or its compiled 
 object binary form in any way, either partially or fully.
@@ -50,8 +53,8 @@ and/or its compiled object binary form, modified or original.
 8. You agree to use the original source code from Dilshad Mustafa's project only
 and/or the compiled object binary form of the original source code.
 
-9. You agree fully to the terms and conditions of this License of this software product, 
-under same software name and/or if it is renamed in future.
+9. You accept and agree fully to the terms and conditions of this License of this 
+software product, under same software name and/or if it is renamed in future.
 
 10. This software is created and programmed by Dilshad Mustafa and Dilshad holds the 
 copyright for this Software and all its source code. You agree that you will not infringe 
@@ -81,9 +84,10 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
+import com.dilmus.dilshad.scabi.core.DUtil;
 import com.dilmus.dilshad.scabi.core.Dson;
-import com.dilmus.dilshad.scabi.core.async.DCompute;
-import com.dilmus.dilshad.scabi.core.sync.DComputeSync;
+import com.dilmus.dilshad.scabi.core.compute.DCompute;
+import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeSync_D1;
 
 /**
  * @author Dilshad Mustafa
@@ -107,7 +111,7 @@ public class Test1_4 {
 	    	System.out.println("Test1_4");
 
 	    	DMeta meta = new DMeta("localhost", "5000");
-	     	DComputeSync c = new DComputeSync(meta);
+	     	DComputeSync_D1 c = new DComputeSync_D1(meta);
 	     	
 	     	// The below example show how to add additional Java libraries, jar files
 	     	// and shows how to use the classes inside the Compute Unit
@@ -128,13 +132,6 @@ public class Test1_4 {
 	     	c.perform();
 	     	c.finish();
 
-	        if (out5.isEmpty())
-	     		System.out.println("out5 is empty");
-	     	Set<String> st5 = out5.keySet();
-	     	for (String s : st5) {
-	     		System.out.println("out5 for s : " + s + " value : " + out5.get(s));
-	     	}
-      	
 	     	// The below example shows executeObject() method to submit a Compute Unit. The Compute Unit will internally submit 
 	     	// its own Compute Units / split jobs for execution in the Cluster
 	     	DComputeUnit cu3 = new DComputeUnit() {
@@ -149,7 +146,7 @@ public class Test1_4 {
 		    	     	c.finish();
 		    	     	return myout.toString();
 	    	    	} catch (Exception e) {
-	    	    		return e.toString();
+	    	    		return DUtil.errorMessage(e);
 	    	    	}
 	     			
 	     		}
@@ -161,13 +158,6 @@ public class Test1_4 {
 	     	c.perform();
 	     	c.finish();
 
-	        if (out6.isEmpty())
-	     		System.out.println("out6 is empty");
-	     	Set<String> st6 = out6.keySet();
-	     	for (String s : st6) {
-	     		System.out.println("out6 for s : " + s + " value : " + out6.get(s));
-	     	}
-	     	
 	     	// The below example shows how to add jar files, java libraries to Compute Units submitted from
 	     	// within Compute Unit cu4.
 	     	// CUs are run inside Compute Servers. jar file paths provided by User are not available inside Compute Servers
@@ -177,22 +167,26 @@ public class Test1_4 {
 	     		public String compute(DComputeContext jsonInput) {
 	    	    	try {
 		     			DMeta meta = new DMeta("localhost", "5000");
-		    	     	DComputeSync c = new DComputeSync(meta);
+		    	     	DComputeSync_D1 c = new DComputeSync_D1(meta);
 		    	     	HashMap<String, String> myout = new HashMap<String, String>();
 		    	     	//System.out.println("jsonInput.toString() : " + jsonInput.toString());
 		    	     	
 		    	     	// If the class is under a package, use fully qualified class name new A.B() inside action string
 		    	     	// or append "import A.B;" first to the action string
-		    	        String action =	"t = new MyPrimeCheckUnit();" +
+		    	        // better to explicitly specify import MyPrimeCheckUnit; because it
+		    	     	// keeps checking for MyPrimeCheckUnit.java under all folders
+		    	     	// like java/awt/MyPrimeCheckUnit.java, java/lang/MyPrimeCheckUnit.java, etc.
+		    	     	// since class loader is set as dcl (DMClassloader), it searches through DMClassloader 
+		    	     	String action =	"import MyPrimeCheckUnit; t = new MyPrimeCheckUnit();" +
 		    	        				"return t.compute(context);";
-	    	     	
+		    	     	//c.addJar("/home/anees/self/MyPrimeCheckUnit.jar"); // just for testing .addJar() and .addComputeUnitJars() combination	    	     	
 		    	     	c.addComputeUnitJars();
 		    	     	c.executeCode(action).input(jsonInput.getInput()).split(1).output(myout);
 		    	     	c.perform();
 		    	     	c.finish();
 		    	     	return myout.toString();
 	    	    	} catch (Exception e) {
-	    	    		return e.toString();
+	    	    		return DUtil.errorMessage(e);
 	    	    	}
 	     			
 	     		}
@@ -204,6 +198,20 @@ public class Test1_4 {
 	     	c.perform();
 	     	c.finish();
 
+	        if (out5.isEmpty())
+	     		System.out.println("out5 is empty");
+	     	Set<String> st5 = out5.keySet();
+	     	for (String s : st5) {
+	     		System.out.println("out5 for s : " + s + " value : " + out5.get(s));
+	     	}
+	     	
+	        if (out6.isEmpty())
+	     		System.out.println("out6 is empty");
+	     	Set<String> st6 = out6.keySet();
+	     	for (String s : st6) {
+	     		System.out.println("out6 for s : " + s + " value : " + out6.get(s));
+	     	}
+	     	
 	        if (out7.isEmpty())
 	     		System.out.println("out7 is empty");
 	     	Set<String> st7 = out7.keySet();
@@ -211,6 +219,7 @@ public class Test1_4 {
 	     		System.out.println("out7 for s : " + s + " value : " + out7.get(s));
 	     	}
 
+	     	c.close();
 	     	meta.close();
 	   }
 

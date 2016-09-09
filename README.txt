@@ -19,14 +19,14 @@ HOW TO QUICKLY RUN SCABI:-
 (7) cd /home/<username>/scabi
 
 (8) Start Meta Server, 
-	./start_meta.sh &
+	./start_meta.sh
 
 (9) Start Compute Servers,
-	./start_compute.sh 5001 localhost 5000 1000 &
-	./start_compute.sh 5002 localhost 5000 1000 &
+	./start_compute.sh 5001 localhost 5000 1000
+	./start_compute.sh 5002 localhost 5000 1000
 
-   	To start Compute Servers in other machines, enter command as below,
-	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]] &
+   	To start Compute Servers in other machines and ports, enter command as below,
+	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]]
 	
 	To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
@@ -44,6 +44,17 @@ java -cp "../dependency-jars/*":"../*":. Example3
 java -cp "../dependency-jars/*":"../*":. Example4
 java -cp "../dependency-jars/*":"../*":. Example5
 
+(11) Commandline arguments
+
+./start_meta.sh
+
+Usage : <No arguments> to use default settings, local host, port 5000, connect to local MongoDB server and port
+Usage : <MetaServer_Port> [debug]
+Usage : <MetaServer_Port> <Database_HostName> <Database_Port> [debug]
+
+./start_compute.sh
+
+Usage : <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]]
 
 HOW TO QUICKLY BUILD SCABI:-
 
