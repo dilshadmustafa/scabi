@@ -1,28 +1,40 @@
 How to run:
 
-1. Install MongoDB v3.2.1 with default settings, without enabling login password
-2. Create data folder for MongoDB, /home/<username>/data/db
-3. Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
-4. Download scabi.tar.gz from Download folder in Scabi's GitHub project
-5. Unzip scabi.tar.gz to a folder /home/<username>/scabi
+1. Install Oracle Java 8 Java SE 1.8.0_66
+2. Install MongoDB v3.2.1 with default settings, without enabling login password
+3. Create data folder for MongoDB, /home/<username>/data/db
+4. Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
+5. Download scabi.tar.gz from Download folder in Scabi's GitHub project
+6. Unzip scabi.tar.gz to a folder /home/<username>/scabi
 -------------------------------------------------
-6. Starting servers:
+7. cd /home/<username>/scabi
 
-cd /home/<username>/scabi
-./start_meta.sh
-./start_compute.sh 5001 localhost 5000 1000
-./start_compute.sh 5002 localhost 5000 1000
+8. Start Meta Server:
+	./start_meta.sh
 
-To run Meta Server and Compute Server from Windows, use the .bat files,
+9. Start Compute Servers:
+	./start_compute.sh 5001 localhost 5000 1000
+	./start_compute.sh 5002 localhost 5000 1000
+
+	To start Compute Servers in other machines and ports, enter command as below,
+	./start_compute.sh <ComputeServer_Port> <MetaServer_HostName> <MetaServer_Port> [<NoOfThreads> [debug]]
+
+	To run Meta Server and Compute Server from Windows, use the .bat files,
 	start_meta.bat
 	start_compute.bat 5001 localhost 5000 1000
 -------------------------------------------------
-7. Running examples:
+10. Run example code inside the examples folder in /home/<username>/scabi,
 
 cd examples
 java -cp "../dependency-jars/*":"../*":. Example1
+java -cp "../dependency-jars/*":"../*":. Example1_2
+java -cp "../dependency-jars/*":"../*":. Example2
+java -cp "../dependency-jars/*":"../*":. Example3
+java -cp "../dependency-jars/*":"../*":. Example4
+java -cp "../dependency-jars/*":"../*":. Example5
+
 -------------------------------------------------
-Commandline arguments
+11. Commandline arguments
 
 ./start_meta.sh
 

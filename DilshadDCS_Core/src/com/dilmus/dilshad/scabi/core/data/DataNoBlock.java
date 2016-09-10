@@ -169,7 +169,7 @@ public class DataNoBlock {
 	private long m_SU = 1;
 	private boolean m_isFaulty = false;
 	
-	private int MAX_REQUESTS = 100000; // works 1000;
+	private int MAX_REQUESTS = 1000;
 	private int m_countRequests = 0;
 	private Object m_lockCountRequests = new Object();
 	
