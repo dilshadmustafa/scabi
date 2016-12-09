@@ -463,12 +463,12 @@ public class DComputeContext {
 			return false;
 	}
 
-	public int getTU() {
-		return getIntOf("TotalComputeUnit");
+	public long getTU() {
+		return getLongOf("TotalComputeUnit");
 	}
 
-	public int getCU() {
-		return getIntOf("SplitComputeUnit");
+	public long getCU() {
+		return getLongOf("SplitComputeUnit");
 	}
 	
 	public int getIntOf(String field) {
@@ -499,8 +499,8 @@ public class DComputeContext {
 		return new DComputeContext(getString("Result"));
 	}
 
-	public int getCount() throws IOException {
-		return Integer.parseInt(getString("Count"));
+	public long getCount() throws IOException {
+		return Long.parseLong(getString("Count"));
 	}
 
 	public boolean contains(String key) {

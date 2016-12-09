@@ -11,7 +11,7 @@
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpasyncclient-4.1.1.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpclient-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpcore-4.4.4.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpcore-4.4.4.jar" sourcepath="/home/anees/.m2/repository/org/apache/httpcomponents/httpcore/4.4.4/httpcore-4.4.4-sources.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpcore-nio-4.4.4.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/javassist-3.20.0-GA.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/javax.servlet-api-3.1.0.jar"/>
@@ -35,5 +35,9 @@
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/resteasy-jaxrs-3.0.14.Final.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-api-1.7.16.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-simple-1.7.16.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/ftplet-api-1.0.6.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/ftpserver-core-1.0.6.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/mina-core-2.0.4.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Dfs_bigqueue"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

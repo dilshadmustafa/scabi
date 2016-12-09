@@ -86,9 +86,11 @@ public abstract class DataUnit {
 	// Notes: Since this class is abstract, it cannot be instantiated.
 	// So no need to give constructor.
 	
-	public abstract long count(DataContext ctx) throws Exception;
-	public abstract void load(DataContext ctx) throws Exception;
-	public void get(DataContext ctx) throws Exception { return; }
-	public long increase(DataContext ctx) throws Exception { return 0; }
+	public abstract long count(DataContext c) throws Exception;
+	public abstract void load(DataPartition a, DataContext c) throws Exception;
+	public void get(DataPartition a, DataContext c) throws Exception { return; }
+	
+	// TODO decide about increase() method later
+	public long increase(DataContext c) throws Exception { return 0; }
 	
 }

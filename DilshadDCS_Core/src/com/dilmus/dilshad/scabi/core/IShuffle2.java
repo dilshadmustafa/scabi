@@ -77,12 +77,16 @@ and conditions of this license without giving prior notice.
 
 package com.dilmus.dilshad.scabi.core;
 
+import com.dilmus.dilshad.scabi.deprecated.DOperatorContext;
+
 /**
  * @author Dilshad Mustafa
  *
  */
+
+// Not needed as of 22-Sep-2016 -> IShuffle2 and shuffle for IShuffle2 are not needed
 public interface IShuffle2 {
 	
-	public <T> Iterable<T> shuffle(DOperatorContext ctx) throws Exception;
+	public long shuffle(DataPartition a, DataPartition b, DOperatorContext ctx) throws Exception;
 	
 }

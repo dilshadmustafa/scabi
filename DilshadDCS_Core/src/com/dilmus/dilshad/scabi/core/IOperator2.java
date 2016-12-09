@@ -77,12 +77,14 @@ and conditions of this license without giving prior notice.
 
 package com.dilmus.dilshad.scabi.core;
 
+import java.io.Serializable;
+
 /**
  * @author Dilshad Mustafa
  *
  */
-public interface IOperator2 {
+public interface IOperator2 extends Serializable {
 	
-	public <T> Iterable<T> operate(DOperatorContext ctx) throws Exception;
+	public void operate(DataPartition a, DataPartition b, DataContext c) throws Exception;
 	
 }

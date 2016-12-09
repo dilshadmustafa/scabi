@@ -106,8 +106,8 @@ public class MyPrimeCheckUnit extends DComputeUnit {
 	public String compute(DComputeContext jsonInput) {
     	long time1 = System.currentTimeMillis();
 
-		int totalunits = jsonInput.getTU();
-		int thisunit = jsonInput.getCU();
+		long totalunits = jsonInput.getTU();
+		long thisunit = jsonInput.getCU();
 		Dson dson = null;
 		String inputNumber = null;
 		

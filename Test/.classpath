@@ -14,5 +14,10 @@
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/mongodb-driver-core-3.2.1.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-api-1.7.16.jar"/>
 	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/slf4j-simple-1.7.16.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/jackson-annotations-2.7.4.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/jackson-core-2.7.4.jar"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/jackson-databind-2.7.4.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Dfs_bigqueue"/>
+	<classpathentry kind="lib" path="/home/anees/master_refer_frommavenbuild/dependency-jars/httpmime-4.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

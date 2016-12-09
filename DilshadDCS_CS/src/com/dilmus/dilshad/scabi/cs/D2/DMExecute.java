@@ -78,8 +78,10 @@ and conditions of this license without giving prior notice.
 package com.dilmus.dilshad.scabi.cs.D2;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Set;
@@ -90,18 +92,27 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMClassLoader;
 import com.dilmus.dilshad.scabi.common.DMComputeTemplate;
 import com.dilmus.dilshad.scabi.common.DMCounter;
+import com.dilmus.dilshad.scabi.common.DMDataTemplate;
 import com.dilmus.dilshad.scabi.common.DMJson;
+import com.dilmus.dilshad.scabi.common.DMOperatorTemplate;
+import com.dilmus.dilshad.scabi.common.DMSeaweedStorageHandler;
+import com.dilmus.dilshad.scabi.common.DMStdStorageHandler;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataUnit;
+import com.dilmus.dilshad.scabi.core.DataElement;
+import com.dilmus.dilshad.scabi.core.IOperator;
+import com.dilmus.dilshad.scabi.core.data.DataAsyncConfigNode;
 
 import bsh.EvalError;
 import bsh.Interpreter;
 import bsh.ParseException;
 import bsh.TargetError;
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -109,6 +120,9 @@ import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.LoaderClassPath;
 import javassist.Modifier;
+import javassist.NotFoundException;
+
+import com.leansoft.bigqueue.IStorageHandler;
 
 /**
  * @author Dilshad Mustafa
@@ -121,6 +135,34 @@ public class DMExecute {
 
 	private static final DMCounter m_gcCounter = new DMCounter();
 	
+	public static int createDirs(String dirPath) throws DScabiException {
+		
+		DMUtil.createDirIfAbsent(dirPath);
+		
+		String dpPath = DMUtil.appendToDirPath(dirPath, "dp");
+		DMUtil.createDirIfAbsent(dpPath);
+		
+		String fromPath = DMUtil.appendToDirPath(dirPath, "from");
+		DMUtil.createDirIfAbsent(fromPath);
+		
+		String fromImportPath = DMUtil.appendToDirPath(dirPath, "from" + File.separator + "import");
+		DMUtil.createDirIfAbsent(fromImportPath);
+		
+		String fromDpPath = DMUtil.appendToDirPath(dirPath, "from" + File.separator + "from_dp");
+		DMUtil.createDirIfAbsent(fromDpPath);
+		
+		String toPath = DMUtil.appendToDirPath(dirPath, "to");
+		DMUtil.createDirIfAbsent(toPath);
+		
+		String toExportPath = DMUtil.appendToDirPath(dirPath, "to" + File.separator + "export");
+		DMUtil.createDirIfAbsent(toExportPath);
+		
+		String toDpPath = DMUtil.appendToDirPath(dirPath, "to" + File.separator + "to_dp");
+		DMUtil.createDirIfAbsent(toDpPath);
+		
+		return 0;
+	}
+	
 	private static void gc() {
 		m_gcCounter.inc();
 		if (m_gcCounter.value() >= 2500) {
@@ -129,30 +171,100 @@ public class DMExecute {
 		}
 	}
 	
-	public static String dataExecuteForDataUnitOperators(String request) {
+	public static String dataExecuteForDataUnit(DMClassLoader dcl, String request, DMJson dj) throws IOException {
 		gc();
-		DMClassLoader dcl = null;
-		ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
+		
 		ClassPool pool = null;
 		String result = null;
-		DMJson dj = null;
 		String taskId = null;
+		DataPartition dp = null;
 		
-		log.debug("dataExecuteForDataUnit() request : {}", request);
+		// log.debug("dataExecuteForDataUnit() request : {}", request);
 		try {
-			dj = new DMJson(request);
 			taskId = dj.getString("TaskId");
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_STARTED); }
 
 			long configCount = dj.getLong("ConfigCount");
 		   
-		   	for (long i = 1; i <= configCount; i++) {
+		   	//for (long i = 1; i <= configCount; i++) {
 
-			String jsonStr = dj.getString("" + i);
-		   	DMJson djson = new DMJson(jsonStr);
-		   
+			String jsonStr = dj.getString("1");
+			DMJson djson = new DMJson(jsonStr);
+			String commandId = djson.getString("CommandId");
+			log.debug("dataExecuteForDataUnit() CommandId : {}", commandId);
+			
+			if (false == commandId.equals("1")) {
+				throw new DScabiException("CommandId is not 1 for first ConfigNode entry in Json", "EXE.DEFD.1");
+			}
+			
+			int retryNumber = dj.getIntOf("RetryNumber");
+			log.debug("dataExecuteForDataUnit() retryNumber : {}", retryNumber);
+			
+	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
+	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
+	  		dctx1.add("AppId", dj.getString("AppId"));
+	  		dctx1.add("JobId", dj.getString("JobId"));
+	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
+	    	dctx1.add("TaskId", dj.getString("TaskId"));
+	    	dctx1.add("JsonInput", djson.getString("JsonInput"));
+	    	
+	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
+			
+			String appId = dj.getString("AppId");
+			log.debug("dataExecuteForDataUnit() AppId : {}", appId);
+	  		
+	  		String storageDPDirPath = null;
+	  		IStorageHandler storageHandler = null;
+	  		
+			String storageProvider = ComputeServer_D2.getStorageProvider();
+	  		// For storage system that can create directory
+			// Pass the storage directory path through m_mountDir from ComputeServer_D2.getStorageDirPath() in case of DMHdfsStorageHandler
+			if (storageProvider.equalsIgnoreCase("dfs") 
+				|| storageProvider.equalsIgnoreCase("fuse")
+				|| storageProvider.equalsIgnoreCase("nfs")) 
+			{
+	  			storageDPDirPath = ComputeServer_D2.getStorageDirPath();
+	  			storageHandler = new DMStdStorageHandler();
+			} else if (storageProvider.equalsIgnoreCase("seaweedfs")) {
+				storageDPDirPath = appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
+				String storageConfig = ComputeServer_D2.getStorageConfig();
+				storageHandler = new DMSeaweedStorageHandler(storageConfig);
+			} else {
+				throw new DScabiException("Unknown StorageProvider : " + storageProvider, "EXE.EFD.1");
+			}
+		
+			String configNodeType = djson.getString("ConfigNodeType");
+			log.debug("dataExecuteForDataUnit() ConfigNodeType : {}", configNodeType);
+			String dataId = djson.getString("DataId");
+			log.debug("dataExecuteForDataUnit() DataId : {}", dataId);
+			String partitionId = dataId + "_" + dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForDataUnit() PartitionId : {}", partitionId);
+			String splitAppId = dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForDataUnit() splitAppId : {}", splitAppId);
+			
+			// Testing purpose dp = new DataPartition(dctx3, "mydata1", "mydata1_1", "/home/anees/testdata/bigfile/tutorial", "test_for_CU_" + dj.getCU(), 64 * 1024 * 1024);
+			// Testing purpose String s = "testing string from CU" + dj.getCU();
+			// Testing purpose dp.append(s);
+
+			synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { ComputeServer_D2.m_splitAppIdIStorageHandlerMap.put(splitAppId, storageHandler); }
+			
+			if (retryNumber > 0) {
+				log.debug("dataExecuteForDataUnit() retryNumber {} > 0. Proceeding with isPartitionExists() check", retryNumber);
+				boolean check = DataPartition.isPartitionExists(appId, dataId, dj.getCU(), storageDPDirPath, storageHandler);
+				
+				if (check) {
+					log.debug("dataExecuteForDataUnit() isPartitionExists() check. Partition already exists for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId, dj.getCU(), storageDPDirPath);					
+					log.debug("dataExecuteForDataUnit() Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId, dj.getCU(), storageDPDirPath);					
+					DataPartition.deletePartition(appId, dataId, dj.getCU(), storageDPDirPath, storageHandler);
+					log.debug("dataExecuteForDataUnit() Done Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId, dj.getCU(), storageDPDirPath);					
+				}
+			}
+			
+			dp = new DataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, storageHandler);
+			synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId, dp); }
+			
 		   	String hexStr = djson.getString("ClassBytes");
-		   	//log.debug("computeExecuteClass() Hex string is : {}", hexStr);
+		   	// log.debug("dataExecuteForDataUnit() Hex string is : {}", hexStr);
 		   	String className = djson.getString("ClassName");
 		   	log.debug("dataExecuteForDataUnit() className is : {}", className);
 		  	
@@ -162,36 +274,14 @@ public class DMExecute {
 	  		boolean proceed = false;
 	  		DataUnit cuu = null;
 	  		try {
-	  			dcl = new DMClassLoader();
 	  			Class<?> df = dcl.findClass(className, b2);
-	  			
-	  			if(false == djson.contains("AddJars")) {
-	  				log.debug("dataExecuteForDataUnit() Information only : No additional jars to load. AddJars are not provided.");
-	  				Thread.currentThread().setContextClassLoader(dcl);
-	  			} else {
-	  				log.debug("dataExecuteForDataUnit() AddJars are provided");
-	  				loadAddJars(dcl, djson);
-	  				
-	  				//=====Debugging purpose only==========
-	  				//log.debug("computeExecuteClass() Going to load class TestNew");
-	  				//Class<?> testNew = dcl.loadClass("test.TestNew");
-	  				//log.debug("computeExecuteClass() Loaded class TestNew with name : {}", testNew.getName());
-	  				//=====================================
-	  				
-	  				Thread.currentThread().setContextClassLoader(dcl);
-
-	  			}
-	  			
 		  		cuu = (DataUnit) df.newInstance();
 		  		proceed = true;
 	  		} catch (SecurityException | InstantiationException | IllegalAccessException e) {
-	  			//e.printStackTrace();
+	  			// e.printStackTrace();
 	  			proceed = false;
 	  		} catch (ClassCastException e) {
-	  			Thread.currentThread().setContextClassLoader(originalLoader);
-	  			dcl = null;
-	  			// Not needed System.gc();
-	  			result = DMJson.error("CSR.SYM.EXE", DMUtil.serverErrMsg(e));
+	  			result = DMJson.error("CSE.EXE.DEFD.1", DMUtil.serverErrMsg(e));
 	  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 	  			return result;
@@ -199,50 +289,24 @@ public class DMExecute {
 	  		
 	  		log.debug("dataExecuteForDataUnit() TotalComputeUnit : {}", dj.getTU());
 	  		log.debug("dataExecuteForDataUnit() SplitComputeUnit : {}", dj.getCU());
-	  		log.debug("dataExecuteForDataUnit() JsonInput : {}", dj.getString("JsonInput"));
+	  		log.debug("dataExecuteForDataUnit() JsonInput : {}", djson.getString("JsonInput"));
 			
-	  		/* Previous works
-	  		Dson dson1 = new Dson("TotalComputeUnit", djson.getString("TotalComputeUnit"));
-	  		Dson dson2 = dson1.add("SplitComputeUnit", djson.getString("SplitComputeUnit"));
-	  		Dson dson3 = dson2.add("JsonInput", djson.getString("JsonInput"));
-			*/
-	  		
-	  		DataContext dson1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
-	  		DataContext dson2 = dson1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
-	    	dson2.add("JobId", dj.getString("JobId"));
-	    	dson2.add("ConfigId", dj.getString("ConfigId"));
-	    	dson2.add("TaskId", dj.getString("TaskId"));
-	  		DataContext dson3 = dson2.add("JsonInput", dj.getString("JsonInput"));
-	  		
 	  		if (proceed) {
 	  			log.debug("dataExecuteForDataUnit() ComputeUnit cast is working ok for this object");
 		  		try { 
-		  			cuu.load(dson3);
+		  			cuu.load(dp, dctx1);
 		  		} catch(Throwable e) {
-		  			Thread.currentThread().setContextClassLoader(originalLoader);
-		  			dcl = null;
-		  			// Not needed System.gc();
-			   		result = DMJson.error("CSR.SYM.APP", DMUtil.serverErrMsg(e));
+			   		result = DMJson.error("CSE.EXE.DEFD.2", DMUtil.serverErrMsg(e));
 			   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 					synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 			   		return result;
 			   	}
 		  		log.debug("dataExecuteForDataUnit() loaded");
-		  		Thread.currentThread().setContextClassLoader(originalLoader);
-		  		dcl = null;
-		  		// Not needed System.gc();
-		  		/* return in the end
-		  		result = DMJson.result("ok from CU : " + dj.getCU());
-		  		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
-				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
-		  		//return DMJson.ok();
-		  		return result;
-		  		*/
 	  		} else {
 	  			log.debug("dataExecuteForDataUnit() ComputeUnit cast is not working for this object. So proceeding with Class copy.");
 	  			InputStream fis = new ByteArrayInputStream(b2);
 		
-				//works ClassPool pool = ClassPool.getDefault();
+				// Previous works ClassPool pool = ClassPool.getDefault();
 				pool = new ClassPool(true);
 				pool.appendSystemPath();
 				// Reference pool.appendClassPath(new LoaderClassPath(_extraLoader));
@@ -252,9 +316,8 @@ public class DMExecute {
 		  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
 		  		log.debug("dataExecuteForDataUnit() modifiers : {}", cr.getModifiers());
 		  		
-		  		// Reference CtClass ct = pool.getAndRename("com.dilmus.test.ComputeTemplate", "CT" + System.nanoTime());
-		  		log.debug("dataExecuteForDataUnit() DMComputeTemplate.class.getCanonicalName() : {}", DMComputeTemplate.class.getCanonicalName());
-		  		CtClass ct = pool.getAndRename(DMComputeTemplate.class.getCanonicalName(), "CT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
+		  		log.debug("dataExecuteForDataUnit() DMDataTemplate.class.getCanonicalName() : {}", DMDataTemplate.class.getCanonicalName());
+		  		CtClass ct = pool.getAndRename(DMDataTemplate.class.getCanonicalName(), "DT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
 		  		   
 			    CtMethod amethods[] = cr.getDeclaredMethods();
 			    for (CtMethod amethod : amethods) {
@@ -280,18 +343,15 @@ public class DMExecute {
 			    
 		  		Class<?> df2 = ct.toClass();
 		  		Object ob = df2.newInstance();
-		  		Method m = df2.getMethod("load", DataContext.class);
-		
+		  		Method m = df2.getMethod("load", DataPartition.class, DataContext.class);
+		  		// OR try ((DataUnit) ob).load(dp, dctx3);
 		  		try {
-		  			m.invoke(ob, dson3);
+		  			m.invoke(ob, dp, dctx1);
 		  		} catch(Throwable e) {
-		  			Thread.currentThread().setContextClassLoader(originalLoader);
 			  		cr.detach();
 			 		ct.detach();
 		  			pool = null;
-		  			dcl = null;
-		  			// Not needed System.gc();
-			   		result = DMJson.error("CSR.SYM.APP", DMUtil.serverErrMsg(e));
+			   		result = DMJson.error("CSE.EXE.DEFD.3", DMUtil.serverErrMsg(e));
 			   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 					synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 			   		return result;
@@ -303,53 +363,442 @@ public class DMExecute {
 		 		dcl = null;
 		 		
 		  		log.debug("dataExecuteForDataUnit() loaded");
-	  			Thread.currentThread().setContextClassLoader(originalLoader);
-	  			// Not needed System.gc();
-	  			/* return in the end
-	  			result = DMJson.result("ok from CU : " + dj.getCU());
-	  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
-				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
-	  			// return DMJson.ok();
-		  		return result;
-		  		*/
 	  		}
 	   
-		   } // End For
+		   //} // End For
 	  		
 	   	} catch (Error | RuntimeException e) {
-  			Thread.currentThread().setContextClassLoader(originalLoader);
   			pool = null;
-  			dcl = null;
-  			// Not needed System.gc();
-  			result = DMJson.error("CSR.SYM.EXE", DMUtil.serverErrMsg(e));
+  			result = DMJson.error("CSE.EXE.DEFD.4", DMUtil.serverErrMsg(e));
   			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
   			return result;
 	   	} catch(Exception e) {
-  			Thread.currentThread().setContextClassLoader(originalLoader);
 	   		pool = null;
-  			dcl = null;
-  			// Not needed System.gc();
-	   		result = DMJson.error("CSR.SYM.EXE", DMUtil.serverErrMsg(e));
+	   		result = DMJson.error("CSE.EXE.DEFD.5", DMUtil.serverErrMsg(e));
 	   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 	   		return result;
 	   	} catch(Throwable e) {
-  			Thread.currentThread().setContextClassLoader(originalLoader);
 	   		pool = null;
-  			dcl = null;
-  			// Not needed System.gc();
-	   		result = DMJson.error("CSR.SYM.EXE", DMUtil.serverErrMsg(e));
+	   		result = DMJson.error("CSE.EXE.DEFD.6", DMUtil.serverErrMsg(e));
 	   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 	   		return result;
 	   	}
-   
-	   result = DMJson.result("ok from CU : " + dj.getCU());
-	   synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
-	   synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
-	   // return DMJson.ok();
-	   return result;		
+		String s = dp.prettyPrint();
+		result = DMJson.result(s);
+		// Later result = DMJson.ok();
+		
+		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+		// CW synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
+	   
+		return DMJson.ok();
+	   		
+	}
+	
+	public static String dataExecuteForOperators(DMClassLoader dcl, String request, DMJson dj) throws IOException {
+		gc();
+		
+		String result = null;
+		String taskId = null;
+		DataPartition dp1 = null;
+		DataPartition dp2 = null;
+		
+		// log.debug("dataExecuteForOperators() request : {}", request);
+		try {
+			taskId = dj.getString("TaskId");
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_STARTED); }
+
+			long configCount = dj.getLong("ConfigCount");
+			if (configCount < 2) {
+				log.debug("dataExecuteForOperators() configCount < 2. No operators.");
+				return DMJson.ok();
+			}
+			
+	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
+	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
+	  		dctx1.add("AppId", dj.getString("AppId"));
+	  		dctx1.add("JobId", dj.getString("JobId"));
+	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
+	    	dctx1.add("TaskId", dj.getString("TaskId"));
+			
+	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
+			
+			String appId = dj.getString("AppId");
+			log.debug("AppId : {}", appId);
+	  		
+			String storageDPDirPath = null;
+					
+			String storageProvider = ComputeServer_D2.getStorageProvider();
+	  		// For storage system that can create directory
+			// Pass the storage directory path through m_mountDir from ComputeServer_D2.getStorageDirPath() in case of DMHdfsStorageSystem
+			if (storageProvider.equalsIgnoreCase("dfs") 
+				|| storageProvider.equalsIgnoreCase("fuse")
+				|| storageProvider.equalsIgnoreCase("nfs"))
+	  			storageDPDirPath = ComputeServer_D2.getStorageDirPath();
+			else 
+				storageDPDirPath = appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
+	  		
+			long startCommandId = dj.getLongOf("StartCommandId");
+			log.debug("dataExecuteForOperators() startCommandId : {}", startCommandId);
+			long endCommandId = dj.getLongOf("EndCommandId");
+			log.debug("dataExecuteForOperators() endCommandId : {}", endCommandId);
+			int retryNumber = dj.getIntOf("RetryNumber");
+			log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
+			String splitAppId = dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForOperators() splitAppId : {}", splitAppId);
+
+		   	for (long i = 2; i <= configCount; i++) {
+
+			String jsonStr = dj.getString("" + i);
+		   	DMJson djson = new DMJson(jsonStr);
+		   
+			String commandId = djson.getString("CommandId");
+			log.debug("dataExecuteForOperators() CommandId : {}", commandId);
+			
+			long cmdId = Long.parseLong(commandId);
+			if (cmdId < startCommandId || cmdId > endCommandId) {
+				continue;
+			}
+				
+	    	dctx1.add("JsonInput", djson.getString("JsonInput"));
+			log.debug("dataExecuteForOperators() JsonInput : {}", djson.getString("JsonInput"));
+			String configNodeType = djson.getString("ConfigNodeType");
+			log.debug("dataExecuteForOperators() ConfigNodeTyped : {}", configNodeType);
+			String dataId1 = djson.getString("SourceDataId");
+			log.debug("dataExecuteForOperators() DataId1 : {}", dataId1);
+			String dataId2 = djson.getString("TargetDataId");
+			log.debug("dataExecuteForOperators() DataId2 : {}", dataId2);
+			String partitionId1 = dataId1 + "_" + dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForOperators() PartitionId1 : {}", partitionId1);
+			String partitionId2 = dataId2 + "_" + dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForOperators() PartitionId2 : {}", partitionId2);
+			
+		   	synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { dp1 = ComputeServer_D2.m_partitionIdDataPartitionMap.get(partitionId1); }
+
+			IStorageHandler storageHandler = null;
+			synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { storageHandler = ComputeServer_D2.m_splitAppIdIStorageHandlerMap.get(splitAppId); }			
+			
+			if (retryNumber > 0) {
+				
+			   	if (null == storageHandler) {
+					if (storageProvider.equalsIgnoreCase("dfs") 
+						|| storageProvider.equalsIgnoreCase("fuse")
+						|| storageProvider.equalsIgnoreCase("nfs")) 
+					{
+				  			storageHandler = new DMStdStorageHandler();
+					} else if (storageProvider.equalsIgnoreCase("seaweedfs")) {
+							String storageConfig = ComputeServer_D2.getStorageConfig();
+							storageHandler = new DMSeaweedStorageHandler(storageConfig);
+					} else {
+							throw new DScabiException("Unknown StorageProvider : " + storageProvider, "EXE.EFD.1");
+					}
+					synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { ComputeServer_D2.m_splitAppIdIStorageHandlerMap.put(splitAppId, storageHandler); }
+			   	}
+
+			   	if (null == dp1) {
+			   		// log.debug("dataExecuteForOperators() Reconstruct source data partition - dp1 is null");
+			   		log.debug("dataExecuteForOperators() Reconstruct source data partition - dp1 is null. Proceeding with isPartitionExists() check");			   		
+			   		boolean check = DataPartition.isPartitionExists(appId, dataId1, dj.getCU(), storageDPDirPath, storageHandler);
+					
+					if (check) {
+						log.debug("dataExecuteForOperators() Reconstruct source data partition - isPartitionExists() check. Partition already exists for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId1, dj.getCU(), storageDPDirPath);
+						dp1 = new DataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPath, storageHandler);
+						synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
+					} else {
+					   	throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in Storage system", "EXE.EFO.1");
+					}
+			   	}
+
+				log.debug("dataExecuteForOperators() retryNumber {} > 0. Proceeding with isPartitionExists() check", retryNumber);
+				boolean check2 = DataPartition.isPartitionExists(appId, dataId2, dj.getCU(), storageDPDirPath, storageHandler);
+				
+				if (check2) {
+					log.debug("dataExecuteForOperators() isPartitionExists() check. Partition already exists for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId2, dj.getCU(), storageDPDirPath);					
+					log.debug("dataExecuteForOperators() Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId2, dj.getCU(), storageDPDirPath);					
+					DataPartition.deletePartition(appId, dataId2, dj.getCU(), storageDPDirPath, storageHandler);
+					log.debug("dataExecuteForOperators() Done Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId2, dj.getCU(), storageDPDirPath);					
+				}
+			   	
+			} else {
+			   	if (null == storageHandler)
+			   		throw new DScabiException("splitAppId : " + splitAppId + " is not found in ComputeServer_D2.m_splitAppIdIStorageHandlerMap", "EXE.EFO.2");	
+			   	
+			   	if (null == dp1)
+			   		throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in ComputeServer_D2.m_partitionIdDataPartitionMap", "EXE.EFO.1");
+			}
+			
+		   	dp2 = new DataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPath, storageHandler);
+			synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
+			
+		   	String hexStr = djson.getString("ClassBytes");
+		   	// log.debug("dataExecuteForOperators() Hex string is : {}", hexStr);
+		   	String className = djson.getString("ClassName");
+		   	log.debug("dataExecuteForOperators() className is : {}", className);
+		  	
+		   	byte b2[] = DMUtil.toBytesFromHexStr(hexStr);
+
+		   	// Not used ClassLoader cl = ClassLoader.getSystemClassLoader();
+		   
+		   	// Big if
+		   	if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_1) {
+		   		result = dataExecuteForOperator_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2) {
+		   		result = dataExecuteForOperator_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1) {
+		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2) {
+		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_1) {
+		   		result = dataExecuteForComparator_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	} 
+		   	/* later
+		   	else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_2) {
+		   		result = dataExecuteForComparator_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   	}
+		   	*/
+		   	// End Big if
+		   	
+		   	} // End For
+	  		
+		   	String s = dp2.prettyPrint();
+		   	result = DMJson.result(s);	
+		   	
+	   	} catch (Error | RuntimeException e) {
+  			result = DMJson.error("CSE.EXE.DEFO.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+	   	} catch(Exception e) {
+	   		result = DMJson.error("CSE.EXE.DEFO.2", DMUtil.serverErrMsg(e));
+	   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+	   		return result;
+	   	} catch(Throwable e) {
+	   		result = DMJson.error("CSE.EXE.DEFO.3", DMUtil.serverErrMsg(e));
+	   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+	   		return result;
+	   	}
+		
+		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+
+		return DMJson.ok();	
+	}	
+	
+	public static String dataExecuteForOperator_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+		
+		ClassPool pool = null;
+		String result = null;
+  		boolean proceed = false;
+  		IOperator cuu = null;
+  		try {
+  			Class<?> df = dcl.findClass(className, b2);
+	  		cuu = (IOperator) df.newInstance();
+	  		proceed = true;
+  		} catch (SecurityException | InstantiationException | IllegalAccessException e) {
+  			// e.printStackTrace();
+  			proceed = false;
+  		} catch (ClassCastException e) {
+  			result = DMJson.error("CSE.EXE.DEFO2.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+  		}
+  		
+  		log.debug("dataExecuteForOperator_1_1() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForOperator_1_1() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForOperator_1_1() JsonInput : {}", djson.getString("JsonInput"));
+		
+  		if (proceed) {
+  			log.debug("dataExecuteForOperator_1_1() ComputeUnit cast is working ok for this object");
+	  		try { 
+	  			// TODO set a read only attribute to dp1.setReadOnly()
+	  			cuu.operate(dp1, dp2, dctx1);
+	  		} catch(Throwable e) {
+		   		result = DMJson.error("CSE.EXE.DEFO2.2", DMUtil.serverErrMsg(e));
+		   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+		   		return result;
+		   	}
+	  		log.debug("dataExecuteForOperator_1_1() operation done");
+  		} else {
+  			log.debug("dataExecuteForOperator_1_1() IOperator cast is not working for this object. So proceeding with Class copy.");
+  			InputStream fis = new ByteArrayInputStream(b2);
+	
+			// Previous works ClassPool pool = ClassPool.getDefault();
+			pool = new ClassPool(true);
+			pool.appendSystemPath();
+			// Reference pool.appendClassPath(new LoaderClassPath(_extraLoader));
+			pool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+			// Reference pool.importPackage("com.dilmus.dilshad.scabi.client.Dson");
+			CtClass cr = pool.makeClass(fis);
+	  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
+	  		log.debug("dataExecuteForOperator_1_1() modifiers : {}", cr.getModifiers());
+	  		
+	  		log.debug("dataExecuteForOperator_1_1() DMOperatorTemplate.class.getCanonicalName() : {}", DMOperatorTemplate.class.getCanonicalName());
+	  		CtClass ct = pool.getAndRename(DMOperatorTemplate.class.getCanonicalName(), "OT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
+		    CtMethod ctmethods[] = ct.getDeclaredMethods();
+		    for (CtMethod ctmethod : ctmethods)
+		  		   ct.removeMethod(ctmethod);
+	  		   
+		    CtMethod amethods[] = cr.getDeclaredMethods();
+		    for (CtMethod amethod : amethods) {
+		    	CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+		    	
+		    	// OR
+		    	//CtMethod bmethod = new CtMethod(pool.get(String.class.getCanonicalName()), "compute", new CtClass[] {pool.get(Dson.class.getCanonicalName())}, ct);
+		    	//bmethod.setBody(amethod, null);
+		    	//bmethod.setModifiers(bmethod.getModifiers() | Modifier.PUBLIC);
+		    	// OR
+		    	//CtMethod bmethod = CtMethod.make(amethod.getMethodInfo(), ct);
+		    	
+		    	ct.addMethod(bmethod);
+		    }
+		    
+		    CtField afields[] = cr.getDeclaredFields();
+		    for (CtField afield : afields) {
+		    	CtField bfield = new CtField(afield, ct);
+			    ct.addField(bfield);
+		    }
+		    
+		    // Notes : Anonymous class can not define constructor. So no need to copy constructor
+		    
+	  		Class<?> df2 = ct.toClass();
+	  		Object ob = df2.newInstance();
+	  		Method m = df2.getMethod("operate", DataPartition.class, DataPartition.class, DataContext.class);
+	  		/* OR try
+	  		IOperator  iob = (IOperator) ob;
+	  		iob.operate(dp1, dp2, dctx3);
+	  		*/
+	  		try {
+	  			// TODO set a read only attribute to dp1.setReadOnly()
+	  			m.invoke(ob, dp1, dp2, dctx1);
+	  		} catch(Throwable e) {
+		  		cr.detach();
+		 		ct.detach();
+	  			pool = null;
+		   		result = DMJson.error("CSE.EXE.DEFO2.3", DMUtil.serverErrMsg(e));
+		   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+		   		return result;
+		   	}
+	 		// Release CtClass from ClassPool
+	  		cr.detach();
+	 		ct.detach();
+	 		pool = null;
+	 		
+	  		log.debug("dataExecuteForOperator_1_1() operation done");
+  		}		
+  		return DMJson.ok();	
+	}
+	
+	public static String dataExecuteForOperator_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+
+		ClassPool pool = null;
+		String result = null;
+  		boolean proceed = false;
+  		IOperator cuu = null;
+  		
+  		log.debug("dataExecuteForOperator_1_2() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForOperator_1_2() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForOperator_1_2() JsonInput : {}", djson.getString("JsonInput"));
+  		
+  		InputStream fis = new ByteArrayInputStream(b2);
+	
+  		// Previous works ClassPool pool = ClassPool.getDefault();
+  		pool = new ClassPool(true);
+  		pool.appendSystemPath();
+  		// Reference pool.appendClassPath(new LoaderClassPath(_extraLoader));
+  		pool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+  		// Reference pool.importPackage("com.dilmus.dilshad.scabi.client.Dson");
+  		CtClass cr = pool.makeClass(fis);
+  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
+  		log.debug("dataExecuteForOperator_1_2() modifiers : {}", cr.getModifiers());
+	  		
+  		log.debug("dataExecuteForOperator_1_2() DMDataTemplate.class.getCanonicalName() : {}", DMDataTemplate.class.getCanonicalName());
+  		CtClass ct = pool.getAndRename(DMDataTemplate.class.getCanonicalName(), "OT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
+  		// Not used CtMethod ctmethods[] = ct.getDeclaredMethods();
+  		// Not used for (CtMethod ctmethod : ctmethods)
+  			// Not used ct.removeMethod(ctmethod);
+  		String lambdaMethodName = djson.getString("LambdaMethodName");   
+  		log.debug("dataExecuteForOperator_1_2() lambdaMethodName: {}", lambdaMethodName);
+  		CtMethod amethods[] = cr.getDeclaredMethods();
+  		for (CtMethod amethod : amethods) {
+  			if (amethod.getName().equals(lambdaMethodName)) {
+  				log.debug("dataExecuteForOperator_1_2() Match found for lambdaMethodName: {}", lambdaMethodName);
+  				CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+		    	
+  				// OR
+		    	//CtMethod bmethod = new CtMethod(pool.get(String.class.getCanonicalName()), "compute", new CtClass[] {pool.get(Dson.class.getCanonicalName())}, ct);
+		    	//bmethod.setBody(amethod, null);
+		    	//bmethod.setModifiers(bmethod.getModifiers() | Modifier.PUBLIC);
+		    	// OR
+		    	//CtMethod bmethod = CtMethod.make(amethod.getMethodInfo(), ct);
+		    		
+  				ct.addMethod(bmethod);
+  			}
+  		}
+		    
+  		//CtField afields[] = cr.getDeclaredFields();
+  		//for (CtField afield : afields) {
+  		//	CtField bfield = new CtField(afield, ct);
+  		//    ct.addField(bfield);
+  		//}
+		    
+  		// Notes : Anonymous class can not define constructor. So no need to copy constructor
+		    
+  		Class<?> df2 = ct.toClass();
+  		// Object ob = df2.newInstance();
+  		// Method m = df2.getMethod("operate", DataPartition.class, DataPartition.class, DataContext.class);
+  		Method m = df2.getDeclaredMethod(lambdaMethodName, DataPartition.class, DataPartition.class, DataContext.class);
+  		m.setAccessible(true);
+  		/* OR try
+	  		IOperator  iob = (IOperator) ob;
+	  		iob.operate(dp1, dp2, dctx3);
+  		 */
+  		try {
+  			// TODO set a read only attribute to dp1.setReadOnly()
+  			m.invoke(null, dp1, dp2, dctx1);
+  		} catch(Throwable e) {
+  			cr.detach();
+  			ct.detach();
+  			pool = null;
+  			result = DMJson.error("CSE.EXE.DEFO3.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+  			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+  		}
+  		// Release CtClass from ClassPool
+  		cr.detach();
+  		ct.detach();
+  		pool = null;
+	 		
+  		log.debug("dataExecuteForOperator_1_2() operation done");
+  		
+  		return DMJson.ok();	
+		
+	}
+	
+	public static String dataExecuteForShuffle_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+
+		return DMJson.ok();
+	}
+
+	public static String dataExecuteForShuffle_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+	
+		return DMJson.ok();
+	}
+	
+	public static String dataExecuteForComparator_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+
+		return DMJson.ok();
+	}
+	
+	public static String dataExecuteForComparator_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+		
+		return DMJson.ok();
 	}
 	
 	public static String computeExecuteCode(String request) {

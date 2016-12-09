@@ -133,7 +133,7 @@ public class DComputeAsyncConfig {
 	private String m_jobId = null;
 	private String m_configId = null;
 	
-	private static final DMCounter M_DMCOUNTER = new DMCounter();
+	// Previous works private static final DMCounter M_DMCOUNTER = new DMCounter();
 	
 	// for java class, object .class file
 	private String m_javaFileHexStr = null;
@@ -150,6 +150,27 @@ public class DComputeAsyncConfig {
 	private boolean m_isCombinedJarsSet = false;
 	private String m_combinedJarFilesHexStrJsonStr = null;
 	private DMJson m_combinedJarFilesHexStrDMJson = null;
+	
+	private String m_appName = null;
+	private String m_appId = null;
+
+	public int setAppName(String appName) {
+		m_appName = appName;
+		return 0;
+	}
+	
+	public String getAppName() {
+		return m_appName;
+	}
+	
+	public int setAppId(String appId) {
+		m_appId = appId;
+		return 0;
+	}
+	
+	public String getAppId() {
+		return m_appId;
+	}
 	
 	private int loadJavaFileAsHexStr(Class<?> cls) throws IOException {
 
@@ -336,9 +357,10 @@ public class DComputeAsyncConfig {
 		return m_isCombinedJarsSet;
 	}
 	
-	public int setJobId(String jobId) {
+	public int setJobId(String jobId, long configNo) {
 		m_jobId = jobId;
-		m_configId = jobId + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = jobId + "_" + M_DMCOUNTER.inc();
+		m_configId = jobId + "_" + configNo;
 		return 0;
 	}
 	
@@ -381,6 +403,9 @@ public class DComputeAsyncConfig {
 		m_configId = DMJson.empty();
 		
 		loadJavaFileAsHexStr(unit.getClass());
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public DComputeAsyncConfig(Class<? extends DComputeUnit> cls) throws IOException {
@@ -399,6 +424,9 @@ public class DComputeAsyncConfig {
 		m_configId = DMJson.empty();
 		
 		loadJavaFileAsHexStr(cls);
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 
 	public DComputeAsyncConfig(String code) {
@@ -415,6 +443,9 @@ public class DComputeAsyncConfig {
 		// Previous works m_configId = m_configId.replace('-', '_');
 		
 		m_configId = DMJson.empty();
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 
 	public DComputeAsyncConfig(String classNameInJarFilePath, String classNameInJar) throws IOException {
@@ -434,6 +465,9 @@ public class DComputeAsyncConfig {
 		m_configId = DMJson.empty();
 		
 		loadForClassNameInJarAsHexStr(classNameInJarFilePath);
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 
 	public boolean isJarFilePathListSet() {

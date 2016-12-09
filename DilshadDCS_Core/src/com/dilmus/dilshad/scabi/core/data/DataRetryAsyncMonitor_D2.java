@@ -194,7 +194,44 @@ public class DataRetryAsyncMonitor_D2 implements Runnable {
 		return 0;
 	}
 	
+	private long timeToWait(long whichTurn) {
+		// Use 5000 msec just for debugging, to avoid frequent isDoneProcessing calls
+		return 60000;
+		
+		// TODO uncomment code below before final release
+		/* Use this code before final release
+		if (whichTurn >= 0 && whichTurn <= 9)
+			return 50; // 50 msec
+		else if (whichTurn >= 10 && whichTurn <= 19)
+			return 100; // 100 msec
+		else if (whichTurn >= 20 && whichTurn <= 29)
+			return 250; // 250 msec
+		else if (whichTurn >= 30 && whichTurn <= 39)
+			return 500; // 500 msec
+		else if (whichTurn >= 40 && whichTurn <= 49)
+			return 750; // 750 msec
+		else if (whichTurn >= 50 && whichTurn <= 59)
+			return 1000; // 1 sec
+		else if (whichTurn >= 60 && whichTurn <= 69)
+			return 10*1000; // 10 sec
+		else if (whichTurn >= 70 && whichTurn <= 79)
+			return 20*1000; // 20 sec
+		else if (whichTurn >= 80 && whichTurn <= 89)
+			return 30*1000; // 30 sec
+		else if (whichTurn >= 90 && whichTurn <= 99)
+			return 40*1000; // 40 sec
+		else if (whichTurn >= 100 && whichTurn <= 109)
+			return 50*1000; // 50 sec
+		else if (whichTurn >= 110 && whichTurn <= 119)
+			return 60*1000; // 1 min
+		else // for all others, even if whichTurn (long) overflows and becomes negative value, wait is 1 minute
+			return 60*1000; // 1 min
+		*/
+	}	
+	
 	public int executeRetry() {
+		
+		long time1 = System.currentTimeMillis();
 		
 		m_listBlockedCRun.clear();
 		m_listBlockedCRun.addAll(m_retryCRunList);
@@ -216,9 +253,6 @@ public class DataRetryAsyncMonitor_D2 implements Runnable {
 					m_allowedCRunList.add(crun);
 					synchronized(crun) {
 						crun.setRetrySubmitStatus(true);
-						crun.clearCommandIdRange();
-						// TODO for future analysis. time being use 1, 1 command id range
-						crun.setCommandIdRange(1, 1);
 						crun.submitTask();
 					}
 					cnb.decCountRequests();
@@ -243,7 +277,6 @@ public class DataRetryAsyncMonitor_D2 implements Runnable {
 		// isDoneProcessing, retrieveResult part
 		
 		boolean isFirstTime = true;
-		long time1 = 0;
 		long time2 = 0;
 		long typicalTimeTaken = 5000; //1000;
 		
@@ -266,11 +299,21 @@ public class DataRetryAsyncMonitor_D2 implements Runnable {
 				if (proceed) {
 					m_allowedCRunList2.add(crun);
 					int ret = 0;
-					if (isFirstTime)
-						time1 = System.currentTimeMillis();
+					long whichTurn = 0;
+					
 					while (0 == (ret = crun.submitIsDoneProcessing())) {
+						log.debug("executeRetry() still inside while loop. crun.getSU() : {}, whichTurn : {}", crun.getSU(), whichTurn);
 						try {
-							Thread.sleep(typicalTimeTaken);
+							if (isFirstTime) {
+								long waitTime = timeToWait(whichTurn);
+								log.debug("executeRetry() Going to sleep for waitTime : {}", waitTime);
+								Thread.sleep(waitTime);
+								whichTurn++;
+							}
+							else {
+								log.debug("executeRetry() Going to sleep for typicalTimeTaken : {}", typicalTimeTaken);							
+								Thread.sleep(typicalTimeTaken);
+							}
 						} catch (InterruptedException e) {
 							// TODO further analysis - do I throw exception here?
 							throw new RuntimeException(e);
@@ -281,7 +324,7 @@ public class DataRetryAsyncMonitor_D2 implements Runnable {
 						if (isFirstTime) {
 							time2 = System.currentTimeMillis();
 							typicalTimeTaken = time2 - time1;
-							log.debug("executeRetry() typicalTimeTaken : {}", typicalTimeTaken); 
+							log.debug("executeRetry() typicalTimeTaken : {}, crun.getSU() : {}, whichTurn : {}", typicalTimeTaken, crun.getSU(), whichTurn); 
 							isFirstTime = false;
 						}
 						crun.submitRetrieveResult();

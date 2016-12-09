@@ -2,7 +2,6 @@
  * @author Dilshad Mustafa
  * (c) Dilshad Mustafa
  * All Rights Reserved.
- * @version 1.0
  * Created 14-Aug-2016
  * File Name : DMLimiter.java
  */

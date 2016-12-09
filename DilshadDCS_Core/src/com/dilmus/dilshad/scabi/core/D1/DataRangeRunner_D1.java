@@ -131,7 +131,7 @@ public class DataRangeRunner_D1 implements Runnable {
 		// Previous works m_localCRunList = new ArrayList<DComputeAsyncRun>();
 		synchronized(m_compute) {
 			// Previous works List<DComputeAsyncRun> crunList = compute.getCRunList();
-			m_crunList = compute.getCRunList();
+			m_crunList = null; // works compute.getCRunList();
 			m_crunListSize = compute.getCRunListSize();
 			// Previous works m_localCRunList.addAll(crunList);
 		}

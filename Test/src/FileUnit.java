@@ -75,7 +75,10 @@ and conditions of this license without giving prior notice.
 
 */
 
+import java.io.IOException;
+
 import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 
 /**
@@ -84,12 +87,12 @@ import com.dilmus.dilshad.scabi.core.DataUnit;
  */
 public class FileUnit extends DataUnit{
 
-	public long count(DataContext ctx) {
+	public long count(DataContext c) {
 		long noOfPartitions = 0;
 		
 		try {
-			System.out.println(ctx.getInput().toString());
-			noOfPartitions = ctx.getInput().getLongOf("Partitions");
+			System.out.println(c.getInput().toString());
+			noOfPartitions = c.getInput().getLongOf("Partitions");
 		} catch (Exception e) { 
 			System.out.println(e);
 		}	
@@ -97,8 +100,13 @@ public class FileUnit extends DataUnit{
 		return noOfPartitions;
 	}
 	
-	public void load(DataContext ctx) {
-		System.out.println("load from : " + ctx.getCU());
+	public void load(DataPartition a, DataContext c) throws IOException {
+		System.out.println("load from : " + c.getDU());
+		a.append(c.getDU() + 1);
+		a.append(c.getDU() + 2);
+		a.append(c.getDU() + 3);
+		a.append(c.getDU() + 4);
+		a.append(c.getDU() + 5);
 	}
 	
 }

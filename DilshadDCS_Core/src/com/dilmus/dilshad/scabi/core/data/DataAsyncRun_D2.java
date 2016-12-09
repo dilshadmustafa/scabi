@@ -131,6 +131,22 @@ public class DataAsyncRun_D2 {
 	private long m_startCommandId = -1;
 	private long m_endCommandId = -1;
 	
+	public void initialize() {
+		
+		m_isDone = false;
+		m_isError = false;
+		m_isRetrySubmitted = false;
+		m_isRunOnce = false;
+	
+		m_isExecutionError = false;
+		m_retriesTillNow = 0;
+		
+		m_taskId = null;
+		
+		m_startCommandId = -1;
+		m_endCommandId = -1;		
+	}
+	
 	String getTaskId() {
 		log.debug("getTaskId() m_SU : {}", m_SU);
 
@@ -140,17 +156,14 @@ public class DataAsyncRun_D2 {
 		if (null == m_config) {
 			log.debug("getTaskId() m_config is not set. m_SU : {}", m_SU);
 			throw new RuntimeException(new DScabiException("m_config is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
-			// Not used return;
 		}
 		if (0 == m_TU) {
 			log.debug("getTaskId() m_TU is not set. m_SU : {}", m_SU);
 			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
-			// Not used return;
 		}
 		if (0 == m_SU) {
 			log.debug("getTaskId() m_SU is not set. m_SU : {}", m_SU);
 			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "CRN.GTD.1"));			
-			// Not used return;
 		}
 		if (m_startCommandId <= 0) {
 			log.debug("getTaskId() m_startCommandId is not set. m_startCommandId : {}", m_startCommandId);
@@ -370,7 +383,7 @@ public class DataAsyncRun_D2 {
 					if (false == m_isRunOnce) {
 						m_isRunOnce = true;
 					}
-					clearCommandIdRange();
+
 					return;
 				}
 				
@@ -382,9 +395,12 @@ public class DataAsyncRun_D2 {
 				*/
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				m_computeNB.setCommandIdRange(m_startCommandId, m_endCommandId);
+				m_computeNB.setRetryNumber(m_retriesTillNow);
 				
 				/* Previous works
 				if (m_config.isComputeUnitJarsSet()) {
@@ -396,7 +412,7 @@ public class DataAsyncRun_D2 {
 				if (m_config instanceof DataUnitConfig) {
 					log.debug("submitTask() Executing for DataUnit config");
 					futureHttpResponse = m_computeNB.executeForDataUnitOperators(m_commandMap);
-				} else if (m_config instanceof DPartitionerConfig) {
+				} else if (m_config instanceof DMPartitionerConfig) {
 					log.debug("submitTask() Executing for Partitioner config");
 					// TODO futureHttpResponse = m_computeNB.executeForPartitioner(m_commandMap);
 				} else {
@@ -672,6 +688,8 @@ public class DataAsyncRun_D2 {
 				}
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());				
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				
@@ -987,6 +1005,8 @@ public class DataAsyncRun_D2 {
 				}
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				

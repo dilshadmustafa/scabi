@@ -95,7 +95,7 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMJson;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.data.DPartitionerConfig;
+import com.dilmus.dilshad.scabi.core.data.DMPartitionerConfig;
 import com.dilmus.dilshad.scabi.core.data.DataAsyncConfigNode;
 import com.dilmus.dilshad.scabi.core.data.DataNoBlock;
 import com.dilmus.dilshad.scabi.core.data.DataUnitConfig;
@@ -378,7 +378,7 @@ public class DataAsyncRun_D1 implements Runnable {
 				log.debug("doRun() Executing for Data Unit");
 				m_futureHttpResponse = m_computeNB.executeForDataUnitOperators(m_commandMap);
 			
-			} else if (m_config instanceof DPartitionerConfig) {
+			} else if (m_config instanceof DMPartitionerConfig) {
 				/* remove
 				if (DPartitionerConfig.OBJECT == m_config.getConfigType()) {
 					log.debug("doRun() Executing for Object");

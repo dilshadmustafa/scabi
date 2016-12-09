@@ -130,7 +130,7 @@ public class DataUnitConfig implements IConfig {
 	private String m_jobId = null;
 	private String m_configId = null;
 	
-	private static final DMCounter M_DMCOUNTER = new DMCounter();
+	// Previous works private static final DMCounter M_DMCOUNTER = new DMCounter();
 	
 	private HashMap<String, String> m_statusMap = null;
 	
@@ -152,6 +152,27 @@ public class DataUnitConfig implements IConfig {
 	private String m_combinedJarFilesHexStrJsonStr = null;
 	private DMJson m_combinedJarFilesHexStrDMJson = null;
 	
+	private String m_appName = null;
+	private String m_appId = null;
+	
+	public int setAppName(String appName) {
+		m_appName = appName;
+		return 0;
+	}
+	
+	public String getAppName() {
+		return m_appName;
+	}
+	
+	public int setAppId(String appId) {
+		m_appId = appId;
+		return 0;
+	}
+	
+	public String getAppId() {
+		return m_appId;
+	}
+
 	private int loadJavaFileAsHexStr(Class<?> cls) throws IOException {
 
 		String className = cls.getName();
@@ -350,9 +371,10 @@ public class DataUnitConfig implements IConfig {
 		return m_dataId;
 	}
 	
-	public int setJobId(String jobId) {
+	public int setJobId(String jobId, long configNo) {
 		m_jobId = jobId;
-		m_configId = jobId + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = jobId + "_" + M_DMCOUNTER.inc();
+		m_configId = jobId + "_" + configNo;
 		return 0;
 	}
 	
@@ -397,6 +419,9 @@ public class DataUnitConfig implements IConfig {
 		m_statusMap = new HashMap<String, String>();
 		
 		loadJavaFileAsHexStr(unit.getClass());
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public DataUnitConfig(Class<?> cls) throws IOException {
@@ -417,6 +442,9 @@ public class DataUnitConfig implements IConfig {
 		m_statusMap = new HashMap<String, String>();
 		
 		loadJavaFileAsHexStr(cls);
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 
 	public boolean isJarFilePathListSet() {

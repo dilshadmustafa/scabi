@@ -134,7 +134,7 @@ public class DataRetryAsyncMonitor_D1 implements Runnable {
 		m_meta = meta;
 		
 		m_cconfigList = compute.getConfigNodeList();
-		m_crunList = compute.getCRunList();
+		m_crunList = null; // works compute.getCRunList();
 		m_cnbList = compute.getCNBList();
 		
 		//Previous works m_cnbWorkingList = new ArrayList<DComputeNoBlock>();

@@ -164,6 +164,9 @@ public class DCompute implements Runnable {
 	
 	private static final DMCounter M_DMCOUNTER = new DMCounter();
 	
+	private String m_appName = "My App";
+	private String m_appId = null;
+	
 	public LinkedList<DComputeAsyncConfig> getCConfigList() {
 		return m_cconfigList;
 	}
@@ -244,6 +247,10 @@ public class DCompute implements Runnable {
 		m_futureListSize = 0;
 		
 		DComputeNoBlock.startHttpAsyncService();
+		
+		m_appId = UUID.randomUUID().toString();
+		m_appId = m_appId.replace('-', '_');
+
 	}
 	
 	public int initialize() throws InterruptedException {
@@ -1082,10 +1089,15 @@ public class DCompute implements Runnable {
 			throw new DScabiException("Perform already in progress", "COE.PEM.1");
 		}
 		
-		String jobId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
-		jobId = jobId.replace('-', '_');
+		// Previous works String jobId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works jobId = jobId.replace('-', '_');
+		String jobId = m_appId + "_" + M_DMCOUNTER.inc();
+		long configNo = 1;
 		for (DComputeAsyncConfig config : m_cconfigList) {
-			config.setJobId(jobId);
+			config.setAppName(m_appName);
+			config.setAppId(m_appId);
+			config.setJobId(jobId, configNo);
+			configNo++;
 			config.combineJarsForAddJarJsonField();
 		}
 		

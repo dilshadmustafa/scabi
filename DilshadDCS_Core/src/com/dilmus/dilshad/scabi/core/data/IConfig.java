@@ -100,47 +100,47 @@ import com.dilmus.dilshad.scabi.core.DataUnit;
  */
 public interface IConfig {
 
-	int setJobId(String jobId);
+	public int setJobId(String jobId, long configNo);
 
-	String getJobId();
+	public String getJobId();
 
-	String getConfigId();
+	public String getConfigId();
 
-	int setComputeUnitJars(DMClassLoader dcl) throws IOException;
+	public int setComputeUnitJars(DMClassLoader dcl) throws IOException;
 
-	boolean isComputeUnitJarsSet();
+	public boolean isComputeUnitJarsSet();
 
-	DMClassLoader getComputeUnitJars();
+	public DMClassLoader getComputeUnitJars();
 
-	boolean isJarFilePathListSet();
+	public boolean isJarFilePathListSet();
 
-	int setJarFilePathFromList(List<String> jarFilePathList) throws IOException;
+	public int setJarFilePathFromList(List<String> jarFilePathList) throws IOException;
 
-	List<String> getJarFilePathList();
+	public List<String> getJarFilePathList();
 
-	int getConfigType();
+	public int getConfigType();
 
-	int setInput(String jsonInput);
+	public int setInput(String jsonInput);
 
-	int setOutput(HashMap<String, String> outputMap);
+	public int setOutput(HashMap<String, String> outputMap);
 
-	int setResult(long splitno, String result);
+	public int setResult(long splitno, String result);
 
-	int appendResult(long splitno, String result);
+	public int appendResult(long splitno, String result);
 
-	boolean isResultSet(long splitno);
+	public boolean isResultSet(long splitno);
 
-	int setMaxSplit(long maxSplit);
+	public int setMaxSplit(long maxSplit);
 
-	int setMaxRetry(int maxRetry);
+	public int setMaxRetry(int maxRetry);
 
-	String getInput();
+	public String getInput();
 
-	HashMap<String, String> getOutput();
+	public HashMap<String, String> getOutput();
 
-	long getMaxSplit();
+	public long getMaxSplit();
 
-	int getMaxRetry();
+	public int getMaxRetry();
 	
 	public String getAllJarFilesHexStrJsonStr();
 	
@@ -149,5 +149,13 @@ public interface IConfig {
 	public String getCombinedJarFilesHexStrJsonStr();
 	
 	public boolean isCombinedJarsSet();
+	
+	public int setAppName(String appName);
+	
+	public String getAppName();
+	
+	public int setAppId(String appId);
+	
+	public String getAppId();
 	
 }

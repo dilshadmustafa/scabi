@@ -252,6 +252,13 @@ public class DMJson {
 		return 0;
 	}
 	
+	public int set(String jsonString) throws IOException {
+		m_root = (ObjectNode) m_objectMapper.readTree(jsonString);
+		m_jsonString = jsonString;		
+		m_isChanged = false;
+		return 0;
+	}
+	
 	public String getString(String field) {
 		return m_root.get(field).asText();
 	}
@@ -495,12 +502,12 @@ public class DMJson {
 			return false;
 	}
 
-	public int getTU() {
-		return getIntOf("TotalComputeUnit");
+	public long getTU() {
+		return getLongOf("TotalComputeUnit");
 	}
 
-	public int getCU() {
-		return getIntOf("SplitComputeUnit");
+	public long getCU() {
+		return getLongOf("SplitComputeUnit");
 	}
 	
 	public int getIntOf(String field) {

@@ -77,12 +77,31 @@ and conditions of this license without giving prior notice.
 
 package com.dilmus.dilshad.scabi.core;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
  * @author Dilshad Mustafa
  *
  */
 public interface IShuffle {
 	
-	public void shuffle(DOperatorContext ctx) throws Exception;
+	// example code for word count
+	// List<String> values = new List<String>();
+	// values.add(e.getDson().getString("word"));
+	// return values;
 	
+	// example code for more complex grouping of values
+	// e is { "word" : "went", "wordtype" : ["verb", "past"] }
+	// example code to group values by (word, wordtype:wordtype[0])
+	// List<String> values = new List<String>();
+	// Dson dson = e.getDson();
+	// values.add(dson.getString("word"));
+	// JsonArray j = dson.getJsonArray("wordtype");
+	// values.add(j.get(0));
+	// return values;
+	
+	// this method can be overridden by end users to create more complex groupings
+	public Iterable<String> groupValues(DataElement e, DataContext c) throws Exception;
+
 }

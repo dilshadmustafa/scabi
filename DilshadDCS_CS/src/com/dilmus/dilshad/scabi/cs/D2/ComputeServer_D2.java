@@ -88,6 +88,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -98,6 +99,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
+import org.apache.ftpserver.FtpServerConfigurationException;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -143,10 +145,14 @@ import com.dilmus.dilshad.scabi.common.DMCounter;
 import com.mongodb.DBCollection;
 
 import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataUnit;
+
+import com.leansoft.bigqueue.IStorageHandler;
 
 // for BigInteger
 import java.math.*;
+import java.net.BindException;
 import java.net.InetAddress;
 
 /**
@@ -164,6 +170,9 @@ public class ComputeServer_D2 extends Application {
 	public static final HashMap<String, String> m_taskIdStatusMap = new HashMap<String, String>();
 	public static final HashMap<String, Future<?>> m_taskIdFutureMap = new HashMap<String, Future<?>>();
 	public static final HashMap<String, String> m_taskIdResultMap = new HashMap<String, String>();
+	public static final HashMap<String, DataPartition> m_partitionIdDataPartitionMap = new HashMap<String, DataPartition>();
+	public static final HashMap<String, IStorageHandler> m_splitAppIdIStorageHandlerMap = new HashMap<String, IStorageHandler>();	
+	
 	public static ExecutorService m_threadPool = null;
 	
 	public static final String S_TASKID_ENTERED = "1";
@@ -177,6 +186,66 @@ public class ComputeServer_D2 extends Application {
 	// "CSR.SYM.RET" - from Compute Server System, REST call code
 	// "CSR.SYM.EXE" - from Compute Server System, DMExecute method code
 	// "CSR.SYM.APP" - from Compute Server System, User App code
+	
+	private static String m_localDirPath = null;
+	// Previous works private static String m_storageDirPath = null;
+	
+	private static String m_storageProvider = null;
+	private static String m_mountDirPath = null;
+	private static String m_storageConfig = null;
+	
+	public static String getLocalDirPath() {
+		return m_localDirPath;
+	}
+	
+	public static String getStorageDirPath() throws DScabiException {
+		return m_mountDirPath;
+		// Previous works return m_storageDir;
+	}
+	
+	public static String getStorageProvider() throws DScabiException {
+		return m_storageProvider;
+	}
+	
+	public static String getStorageConfig() throws DScabiException {
+		return m_storageConfig;
+	}
+	
+	public static int closeDataPartitionsForAppIdSU(String appId, long splitUnit) throws IOException {
+		
+		LinkedList<DataPartition> dpList = new LinkedList<DataPartition>();
+		LinkedList<String> partitionList = new LinkedList<String>();
+		
+		// Prefix "_" is required to prevent incorrect matches like "11_<appId>", "21_<appId>", etc 
+		// matching with "1_<appId>"
+		String search = "_" + splitUnit + "_" + appId.replace("_", "");
+		
+		synchronized (m_partitionIdDataPartitionMap) {
+			Set<String> keys = m_partitionIdDataPartitionMap.keySet();
+			for (String s : keys) {
+				if (s.contains(search)) {
+					log.debug("closeDataPartitionsForAppId() partitionId matches : {}", s);
+					DataPartition dp = m_partitionIdDataPartitionMap.get(s);
+					dpList.add(dp);
+					partitionList.add(s);
+				}
+			}
+		}
+		
+		// dp.close() internally calls dp.flushFiles() and hence may be slow
+		// hence this call is outside the synchronized (m_partitionIdDataPartitionMap) code block
+		for (DataPartition dp : dpList) {
+			dp.close();
+		}
+		
+		synchronized (m_partitionIdDataPartitionMap) {
+			for (String s : partitionList) {
+				m_partitionIdDataPartitionMap.remove(s);
+			}
+		}
+	
+		return 0;
+	}
 	
 	public ComputeServer_D2() throws DScabiException {
 		//classesSet.add(ApplicationCommandResource.class);
@@ -219,24 +288,24 @@ public class ComputeServer_D2 extends Application {
 			   check = m_taskIdStatusMap.containsKey(taskId);
 		   }
 		   if (false == check) {
-			   return DMJson.error("CSR.SYM.IDG", "isDoneProcessing() Task Id " + taskId + " is not found in taskId-Status Map");
+			   return DMJson.error("CSE.CSE.IDG.1", "isDoneProcessing() Task Id " + taskId + " is not found in taskId-Status Map");
 		   }
 		   synchronized(m_taskIdFutureMap) { 
 			   f = m_taskIdFutureMap.get(taskId); 
 		   }
 		   if (null == f) {
-			   return DMJson.error("CSR.SYM.IDG", "isDoneProcessing() For Task Id " + taskId + ", Future is null in taskId-Future Map");
+			   return DMJson.error("CSE.CSE.IDG.2", "isDoneProcessing() For Task Id " + taskId + ", Future is null in taskId-Future Map");
 		   }
 		   if (f.isDone())
 			   return DMJson.asTrue();
 		   else
 			   return DMJson.asFalse();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.IDG.3", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.IDG.4", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.IDG.5", DMUtil.serverErrMsg(e));
 	   }
 
    }
@@ -258,31 +327,31 @@ public class ComputeServer_D2 extends Application {
 			   check = m_taskIdStatusMap.containsKey(taskId);
 		   }
 		   if (false == check) {
-			   return DMJson.error("CSR.SYM.RRT", "retrieveResult() Task Id " + taskId + " is not found in taskId-Status Map");
+			   return DMJson.error("CSE.CSE.RRT.1", "retrieveResult() Task Id " + taskId + " is not found in taskId-Status Map");
 		   }
 		   synchronized(m_taskIdFutureMap) { 
 			   f = m_taskIdFutureMap.get(taskId); 
 		   }
 		   if (null == f) {
-			   return DMJson.error("CSR.SYM.RRT", "retrieveResult() For Task Id " + taskId + ", Future is null in taskId-Future Map");
+			   return DMJson.error("CSE.CSE.RRT.2", "retrieveResult() For Task Id " + taskId + ", Future is null in taskId-Future Map");
 		   }
 		   f.get();
 		   synchronized(m_taskIdResultMap) { 
 			   result = m_taskIdResultMap.get(taskId);
 		   }
 		   if (null == result) {
-			   return DMJson.error("CSR.SYM.RRT", "retrieveResult() For Task Id " + taskId + " result is null in taskId-Result Map");
+			   return DMJson.error("CSE.CSE.RRT.3", "retrieveResult() For Task Id " + taskId + " result is null in taskId-Result Map");
 		   }	
 		   synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_RESULT_SENT); }
 		   synchronized(ComputeServer_D2.m_taskIdFutureMap) { ComputeServer_D2.m_taskIdFutureMap.remove(taskId); }
 		   synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.remove(taskId); }
 		   return result;
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.RRT.4", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.RRT.5", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.RRT.6", DMUtil.serverErrMsg(e));
 	   }
 
    }   
@@ -291,47 +360,88 @@ public class ComputeServer_D2 extends Application {
    @Path("/Data/Execute/ExecuteForDataUnit")
    public String dataExecuteForDataUnitOperators(String request) {
 	   log.debug("dataExecuteForDataUnitOperators() request : {}", request);
-	   String taskId = null;
+	   String taskID = null;
 	   String result = null;
 	   DMJson djson = null;
 	   
 	   try {
 		   djson = new DMJson(request);
-		   taskId = djson.getString("TaskId");
-		   synchronized(m_taskIdStatusMap) { m_taskIdStatusMap.put(taskId, S_TASKID_ENTERED); }
-		   // Previous works result = DMExecute.dataExecuteForDataUnitOperators(djson);
+		   taskID = djson.getString("TaskId");
+		   synchronized(m_taskIdStatusMap) { m_taskIdStatusMap.put(taskID, S_TASKID_ENTERED); }
 		   final String req = request;
-		   final DMJson dj = djson;
+		   final String taskId = taskID;
 		   Runnable task = new Runnable() {
 			   public void run() {
-				   String taskId = dj.getString("TaskId");
+				   
 				   String result = null;
+				   ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
+				   
 				   try {
-					   DMExecute.dataExecuteForDataUnitOperators(req);
+					   DMJson dj = new DMJson(request);					   
+					   String appId = dj.getString("AppId");
+					   long splitUnit = dj.getCU();
+					   DMClassLoader dcl = new DMClassLoader();
+					   
+					   if(false == dj.contains("AddJars")) {
+						   log.debug("run() Information only : No additional jars to load. AddJars are not provided.");
+						   Thread.currentThread().setContextClassLoader(dcl);
+					   } else {
+						   log.debug("run() AddJars are provided");
+						   DMExecute.loadAddJars(dcl, dj);
+						   
+						   //=====Debugging purpose only==========
+						   //log.debug("run() Going to load class TestNew");
+						   //Class<?> testNew = dcl.loadClass("test.TestNew");
+						   //log.debug("run() Loaded class TestNew with name : {}", testNew.getName());
+						   //=====================================
+						   
+						   Thread.currentThread().setContextClassLoader(dcl);
+					   }
+					   
+					   long startCommandId = dj.getLongOf("StartCommandId");
+					   log.debug("run() startCommandId : {}", startCommandId);
+					   if (1 == startCommandId) {
+						   DMExecute.dataExecuteForDataUnit(dcl, req, dj);
+					   }
+					   if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
+						   Thread.currentThread().setContextClassLoader(originalLoader);
+						   return;
+					   }
+					   DMExecute.dataExecuteForOperators(dcl, req, dj);
+					   if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
+						   Thread.currentThread().setContextClassLoader(originalLoader);
+						   return;
+					   }
+					   closeDataPartitionsForAppIdSU(appId, splitUnit);
+					   Thread.currentThread().setContextClassLoader(originalLoader);
+					   synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
 				   } catch (Error | RuntimeException e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.1", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+			  			Thread.currentThread().setContextClassLoader(originalLoader);
 				   } catch(Exception e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.2", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+			  			Thread.currentThread().setContextClassLoader(originalLoader);
 				   } catch(Throwable e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.3", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+			  			Thread.currentThread().setContextClassLoader(originalLoader);
 				   }
 			   }
 		   };
 		   Future<?> f = m_threadPool.submit(task);
-		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskId, f); }
+		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskID, f); }
 		   return DMJson.ok();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.DEFD.1", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.DEFD.2", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.DEFD.3", DMUtil.serverErrMsg(e));
 	   }
    }
    
@@ -358,15 +468,15 @@ public class ComputeServer_D2 extends Application {
 				   try {
 					   DMExecute.computeExecuteCode(req);
 				   } catch (Error | RuntimeException e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.1", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Exception e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.2", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Throwable e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.3", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   }
@@ -376,11 +486,11 @@ public class ComputeServer_D2 extends Application {
 		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskId, f); }
 		   return DMJson.ok();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC.1", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC.2", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC.3", DMUtil.serverErrMsg(e));
 	   }
 
    	
@@ -408,15 +518,15 @@ public class ComputeServer_D2 extends Application {
 				   try {
 					   DMExecute.computeExecuteClass(req);
 				   } catch (Error | RuntimeException e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.1", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Exception e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.2", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Throwable e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.3", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   }
@@ -426,11 +536,11 @@ public class ComputeServer_D2 extends Application {
 		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskId, f); }
 		   return DMJson.ok();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC2.1", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC2.2", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEC2.3", DMUtil.serverErrMsg(e));
 	   }
    
    }
@@ -457,15 +567,15 @@ public class ComputeServer_D2 extends Application {
 				   try {
 					   DMExecute.computeExecuteFromObject(req);
 				   } catch (Error | RuntimeException e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.1", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Exception e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.2", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Throwable e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.3", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   }
@@ -475,11 +585,11 @@ public class ComputeServer_D2 extends Application {
 		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskId, f); }
 		   return DMJson.ok();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEFO.1", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEFO.2", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CEFO.3", DMUtil.serverErrMsg(e));
 	   }
    
    }
@@ -506,15 +616,15 @@ public class ComputeServer_D2 extends Application {
 				   try {
 					   DMExecute.computeExecuteClassNameInJar(req);
 				   } catch (Error | RuntimeException e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.1", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Exception e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.2", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   } catch(Throwable e) {
-			  			result = DMJson.error("CSR.SYM.RUN", DMUtil.serverErrMsg(e));
+			  			result = DMJson.error("CSE.RUN.RUN.3", DMUtil.serverErrMsg(e));
 					   	synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 						synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 				   }
@@ -524,17 +634,71 @@ public class ComputeServer_D2 extends Application {
 		   synchronized(m_taskIdFutureMap) { m_taskIdFutureMap.put(taskId, f); }
 		   return DMJson.ok();
 	   } catch (Error | RuntimeException e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CECJ.1", DMUtil.serverErrMsg(e));
 	   } catch(Exception e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSE.CSE.CECJ.2", DMUtil.serverErrMsg(e));
 	   } catch(Throwable e) {
-	   		return DMJson.error("CSR.SYM.RET", DMUtil.serverErrMsg(e));
+	   		return DMJson.error("CSR.CSE.CECJ.3", DMUtil.serverErrMsg(e));
 	   }
    
    }
 
+   private static void init() {
+	   
+		m_localDirPath = System.getProperty("scabi.local.dir");
+		if (null == m_localDirPath || m_localDirPath.length() == 0) {
+			log.error("init() Local directory is not specified in property scabi.local.dir");
+			System.exit(0);
+		}
+		log.debug("init() Property scabi.local.dir, m_localDirPath : {}", m_localDirPath);
+
+		// scabi.local.dir=
+		// scabi.storage.provider=dfs|fuse|nfs|seaweedfs
+		// scabi.dfs.mount.dir=
+		// scabi.fuse.mount.dir=
+		// scabi.nfs.mount.dir=
+		// scabi.seaweedfs.config="failover1_host-failover1_port;failover2_host-failover2_port"
+		
+		m_storageProvider = System.getProperty("scabi.storage.provider");
+		if (m_storageProvider != null && m_storageProvider.length() > 0) {
+	 		log.debug("init() Property scabi.storage.provider, m_storageProvider : {}", m_storageProvider);
+			if (m_storageProvider.equalsIgnoreCase("dfs")) {
+				m_mountDirPath = System.getProperty("scabi.dfs.mount.dir");
+		 		if (null == m_mountDirPath || m_mountDirPath.length() == 0) {
+		 			log.error("init() Mount or storage directory is not specified in property scabi.dfs.mount.dir");
+		 			System.exit(0);
+		 		}
+		 		log.debug("init() Property scabi.dfs.mount.dir, m_mountDirPath : {}", m_mountDirPath);
+			} else if (m_storageProvider.equalsIgnoreCase("seaweedfs")) {
+				m_storageConfig = System.getProperty("scabi.seaweedfs.config");
+		 		if (null == m_storageConfig || m_storageConfig.length() == 0) {
+		 			log.error("init() Config is not specified in property scabi.seaweedfs.config");
+		 			System.exit(0);
+		 		}
+		 		log.debug("init() Property scabi.seaweedfs.config, m_storageConfig : {}", m_storageConfig);
+			} else {
+	 			log.error("init() Invalid Storage Provider is specified in property scabi.storage.provider : {}", m_storageProvider);
+	 			log.error("init() Valid Storage Provider values : dfs, fuse, nfs, seaweedfs");
+	 			System.exit(0);
+			}
+		} else {
+			log.error("init() Storage Provider is not specified in property scabi.storage.provider");
+			System.exit(0);
+		} 
+	   
+   }
+   
    public static void main(String[] args) throws Exception 
    {
+	   // works
+	   // -Dscabi.local.dir="/home/anees/testdata/bigfile/tutorial/testlocal"
+	   // -Dscabi.storage.provider="dfs"
+	   // -Dscabi.dfs.mount.dir="/home/anees/testdata/bigfile/tutorial/teststorage"
+	   
+	   // -Dscabi.storage.provider="seaweedfs"
+	   // -Dscabi.seaweedfs.config="localhost-8888"
+	   // Not used -Dscabi.seaweedfs.config='{ "1" : "{ "Host" : "localhost", "Port" : "8888" }" }'
+	   
        System.out.println("Copyright (c) Dilshad Mustafa 2016. All Rights Reserved.");
 
 	   int port = 0;
@@ -613,6 +777,12 @@ public class ComputeServer_D2 extends Application {
        final Logger log = LoggerFactory.getLogger(ComputeServer_D2.class);
        ComputeServer_D2.log = log;
 
+       	// -Duser.dir="/home/anees/testdata/bigfile/tutorial/"
+ 		// Previous works String userDirPath = DMUtil.getUserDir();
+ 		// Previous works log.debug("userDirPath : {}", userDirPath);
+
+       init();
+       
        //metaHost = System.getProperty("org.dilmus.scabi.Meta.Host");
        //metaPort = System.getProperty("org.dilmus.scabi.Meta.Port");
        
@@ -686,6 +856,21 @@ public class ComputeServer_D2 extends Application {
        //================================
        log.info("ComputeServer started");
        log.info("Copyright (c) Dilshad Mustafa 2016. All Rights Reserved.");
+       
+       // log.info("FtpServer primary starting...");
+       DMFtpServer ftpPrimary = null;
+       try {
+    	   // Future decision ftpPrimary = new DMFtpServer();
+    	   // Future decision log.info("FtpServer primary started");
+       } catch (FtpServerConfigurationException e) {
+    	   if (e.getCause() != null) {
+    		   if (e.getCause() instanceof BindException)
+					log.debug("FtpServer error : Port may be already in use");
+    		   else 
+    			   throw e;
+    	   } else
+    		   throw e;
+       }
        
        // for later implementation Runtime.getRuntime().addShutdownHook(hook);
    }

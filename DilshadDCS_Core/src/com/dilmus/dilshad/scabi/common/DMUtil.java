@@ -78,11 +78,15 @@ and conditions of this license without giving prior notice.
 package com.dilmus.dilshad.scabi.common;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Dilshad Mustafa
@@ -90,6 +94,8 @@ import java.util.ListIterator;
  */
 public class DMUtil {
 
+	private static final Logger log = LoggerFactory.getLogger(DMUtil.class);
+	
 	public static String toHexString(byte[] data){
 	    String hex = "";
 	    for(byte by : data) {
@@ -369,5 +375,148 @@ public class DMUtil {
 			
 	}
 
+	public static long hashString(String s) {
+		byte[] bytea = s.getBytes();
+		int byteaLen = bytea.length;
+		//System.out.println("hashString() byteaLen : " + byteaLen);
+		if (0 == byteaLen)
+			return 0;
+		
+		int j = 0;
+		byte b = 0;
+		long hash = 0;
+		
+		for (int i = 0; i < Long.BYTES; i++) {
+		
+			//System.out.println("hashString() i : " + i);
+			//System.out.println("hashString() j : " + j);
+			if (j >= byteaLen)
+				return hash;
+			//System.out.println("hashString() bytea[j] : " + bytea[j]);
+			if (0 == bytea[j])
+				j++;
+			b = bytea[j];
+
+			if (0 == hash)
+				hash = b;
+			else 
+				hash = (hash << 8) + b;
+			
+			j++;
+		}
+		
+		return hash;
+	}
+	
+	public static int deleteFileDir(String dirPath) {
+		
+		File f = new File(dirPath);
+		
+		if (f.exists() == false)
+			return 0;
+		if (f.isDirectory()) {
+			File[] fa = f.listFiles();
+			for (File e : fa) {
+				if (e.isDirectory())
+					deleteFileDir(e);
+				else if (e.isFile()) {
+					// System.out.println("deleteFileDir(str) Deleting file : " + e);
+					log.debug("deleteFileDir(str) Deleting file : {}", e);
+					e.delete();
+				}
+			}	
+			// System.out.println("deleteFileDir(str) Deleting dir : " + f);
+			log.debug("deleteFileDir(str) Deleting dir : {}", f);
+			f.delete();
+		}	
+		else if (f.isFile()){
+			// System.out.println("deleteFileDir(str) Deleting2 file : " + f);
+			log.debug("deleteFileDir(str) Deleting2 file : {}", f);
+			f.delete();
+		}
+		return 0;
+	}
+		
+	public static int deleteFileDir(File f) {
+		if (f.exists() == false)
+			return 0;
+		if (f.isDirectory()) {
+			File[] fa = f.listFiles();
+			for (File e : fa) {
+				if (e.isDirectory())
+					deleteFileDir(e);
+				else if (e.isFile()) {
+					// System.out.println("deleteFileDir(f) Deleting file : " + e);
+					log.debug("deleteFileDir(f) Deleting file : {}", e);
+					e.delete();
+				}
+			}
+			// System.out.println("deleteFileDir(f) Deleting dir : " + f);
+			log.debug("deleteFileDir(f) Deleting dir : {}", f);
+			f.delete();
+		}	
+		else if (f.isFile()){
+			// System.out.println("deleteFileDir(f) Deleting2 file : " + f);
+			log.debug("deleteFileDir(f) Deleting2 file : {}", f);
+			f.delete();
+		}
+		
+		return 0;
+	}	
+	
+	public static String getUserDir() {
+		// pass specific path through Java VM argument as -Duser.dir="/home/anees/testdata/bigfile/tutorial/"
+		// if no value is set in user.dir property by User, then user.dir property gives current working directory from where java command is run
+		String dirPath = System.getProperty("user.dir");
+		// System.out.println("getUserDir() user.dir : " + dirPath);
+		log.debug("user.dir : {}", dirPath);
+		return dirPath;
+	}
+	
+	public static String getWorkingDir() {
+		File f = new File(".");
+		String fullPath = f.getAbsolutePath();
+		// System.out.println("getWorkingDir() fullPath : " + fullPath);
+		log.debug("fullPath : {}", fullPath);
+		String fPath = fullPath.substring(0, fullPath.length() - 1);
+		if (fPath.charAt(fPath.length() - 1) == File.separatorChar && fPath.charAt(fPath.length() - 2) == File.separatorChar)
+			fPath = fPath.substring(0, fPath.length() - 1);
+        // System.out.println("getWorkingDir() Using File approach : " + fPath);
+        log.debug("Using File approach : {}", fPath);
+        return fPath;
+	}	
+	
+	public static String appendToDirPath(String dirPath, String fileOrDirPath) {
+
+		String path = null;
+		
+		if (dirPath.charAt(dirPath.length() - 1) == File.separatorChar)
+			path = dirPath + fileOrDirPath;
+		else
+			path = dirPath + File.separator + fileOrDirPath;
+		// System.out.println("appendToDirPath() path : " + path);
+		log.debug("path : {}", path);
+		return path;
+	}
+	
+	public static int createDirIfAbsent(String dirPath) throws DScabiException {
+		File f = new File(dirPath);
+		if (f.exists())
+			return 0;
+		if (f.mkdir())
+			return 0;
+		else 
+			throw new DScabiException("Failed to create directory : " + dirPath, "UTL.CDI.1");
+	}
+	
+	public static int createDirsIfAbsent(String dirPath) throws DScabiException {
+		File f = new File(dirPath);
+		if (f.exists())
+			return 0;
+		if (f.mkdirs())
+			return 0;
+		else 
+			throw new DScabiException("Failed to create directories : " + dirPath, "UTL.CDSI.1");
+	}
 	
 }

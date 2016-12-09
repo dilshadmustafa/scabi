@@ -146,8 +146,8 @@ import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 import com.dilmus.dilshad.scabi.core.compute.DComputeAsyncConfig;
-
-// Not used import javax.json.JsonObject;
+import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_1;
+import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_2;
 
 /**
  * @author Dilshad Mustafa
@@ -165,8 +165,8 @@ public class DataNoBlock {
 	private String m_jsonStrInput = null;
 	private HttpHost m_metaTarget = null;
 	private DMeta m_meta = null;
-	private long m_TU = 1;
-	private long m_SU = 1;
+	private long m_TU = 0;
+	private long m_SU = 0;
 	private boolean m_isFaulty = false;
 	
 	private int MAX_REQUESTS = 1000;
@@ -192,6 +192,11 @@ public class DataNoBlock {
 	
 	private IConfig m_config = null;
 	
+	private String m_appName = null;
+	private String m_appId = null;
+	
+	private int m_retryNumber = -1;
+	
 	static {
 		// Previous works m_httpClient = HttpAsyncClients.createDefault();
 
@@ -199,9 +204,31 @@ public class DataNoBlock {
 															.setMaxConnPerRoute(Integer.MAX_VALUE);
         m_httpClient = b.build();
 	
-        // Moved to Data constructor m_httpClient.start();
 	}
 
+	public int setRetryNumber(int retryNumber) {
+		m_retryNumber = retryNumber;
+		return 0;
+	}
+	
+	public int setAppName(String appName) {
+		m_appName = appName;
+		return 0;
+	}
+	
+	public String getAppName() {
+		return m_appName;
+	}
+	
+	public int setAppId(String appId) {
+		m_appId = appId;
+		return 0;
+	}
+	
+	public String getAppId() {
+		return m_appId;
+	}	
+	
 	public int setConfig(IConfig config) {
 		m_config = config;
 		
@@ -313,6 +340,9 @@ public class DataNoBlock {
 		
 		m_startCommandId = -1;
 		m_endCommandId = -1;
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public DataNoBlock(DMeta meta) throws Exception {
@@ -349,6 +379,9 @@ public class DataNoBlock {
 		
 		m_startCommandId = -1;
 		m_endCommandId = -1;
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public int close() throws IOException {
@@ -437,11 +470,6 @@ public class DataNoBlock {
 			return DMJson.error("CNB.GRT.3", "Entity is null");
 		}
 		
-		/* Previous works
-		if (null == jsonString)
-			return DMJson.error("null");
-		*/
-		
 		return jsonString;
 
 	}
@@ -467,7 +495,7 @@ public class DataNoBlock {
 	    postRequest.setEntity(params);
 	            			
 		log.debug("computeAlloc() executing request to " + m_metaTarget + "/Meta/Compute/Alloc");
-		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
+
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_metaTarget, postRequest, null);
 		return futureHttpResponse;
 				
@@ -501,10 +529,22 @@ public class DataNoBlock {
 	}
 
 	public Future<HttpResponse> isDoneProcessing() throws ClientProtocolException, IOException, DScabiException {
+
+		if (0 == m_TU) {
+			log.debug("isDoneProcessing() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "DNB.IDP.1"));			
+		}
+		if (0 == m_SU) {
+			log.debug("isDoneProcessing() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "DNB.IDP.1"));			
+		}
+		
 		HttpPost postRequest = new HttpPost("/Task/IsDoneProcessing");
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -528,17 +568,33 @@ public class DataNoBlock {
 	    //======================================================================
 
 		log.debug("isDoneProcessing() executing request to " + m_target + "/Task/IsDoneProcessing");
-		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
+
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
+
+		m_TU = 0;
+		m_SU = 0;
+		
 		return futureHttpResponse;
 		
 	}	
 	
 	public Future<HttpResponse> retrieveResult() throws ClientProtocolException, IOException, DScabiException {
+
+		if (0 == m_TU) {
+			log.debug("retrieveResult() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "DNB.RRT.1"));			
+		}
+		if (0 == m_SU) {
+			log.debug("retrieveResult() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "DNB.RRT.1"));			
+		}
+		
 		HttpPost postRequest = new HttpPost("/Task/RetrieveResult");
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -562,30 +618,43 @@ public class DataNoBlock {
 	    //======================================================================
 
 		log.debug("retrieveResult() executing request to " + m_target + "/Task/RetrieveResult");
-		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
+
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
+		
+		m_TU = 0;
+		m_SU = 0;
+		
 		return futureHttpResponse;
 		
 	}		
 	
 	public Future<HttpResponse> executeForDataUnitOperators(HashMap<String, DataAsyncConfigNode> commandMap) throws ClientProtocolException, IOException, DScabiException {
 		
+		if (0 == m_TU) {
+			log.debug("executeForDataUnitOperators() m_TU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_TU is not set. m_SU : " + m_SU, "DNB.EFDO.1"));			
+		}
+		if (0 == m_SU) {
+			log.debug("executeForDataUnitOperators() m_SU is not set. m_SU : {}", m_SU);
+			throw new RuntimeException(new DScabiException("m_SU is not set. m_SU : " + m_SU, "DNB.EFDO.1"));			
+		}
 		if (m_startCommandId <= 0) {
 			log.debug("executeForDataUnit() m_startCommandId is not set. m_startCommandId : {}", m_startCommandId);
-			throw new DScabiException("m_startCommandId is not set. m_startCommandId : " + m_startCommandId, "CRN.RUN.1");			
-			// Not used return;
+			throw new DScabiException("m_startCommandId is not set. m_startCommandId : " + m_startCommandId, "DNB.EFDO.1");			
 		}
 		if (m_endCommandId <= 0) {
 			log.debug("executeForDataUnit() m_endCommandId is not set. m_endCommandId : {}", m_endCommandId);
-			throw new DScabiException("m_endCommandId is not set. m_endCommandId : " + m_endCommandId, "CRN.RUN.1");			
-			// Not used return;
+			throw new DScabiException("m_endCommandId is not set. m_endCommandId : " + m_endCommandId, "DNB.EFDO.1");			
 		}
 		if (m_startCommandId > m_endCommandId) {
 			log.debug("executeForDataUnit() m_startCommandId is greater than m_endCommandId. m_startCommandId : {}, m_endCommandId : {}", m_startCommandId, m_endCommandId);
-			throw new DScabiException("m_startCommandId is greater than m_endCommandId. m_startCommandId : " + m_startCommandId + " m_endCommandId : " + m_endCommandId, "CRN.RUN.1");			
-			// Not used return;
+			throw new DScabiException("m_startCommandId is greater than m_endCommandId. m_startCommandId : " + m_startCommandId + " m_endCommandId : " + m_endCommandId, "DNB.EFDO.1");			
 		}
-
+		if (-1 == m_retryNumber) {
+			log.debug("executeForDataUnit() m_retryNumber is not set. m_retryNumber : {}", m_retryNumber);
+			throw new DScabiException("m_retryNumber is not set. m_retryNumber : " + m_retryNumber, "DNB.EFDO.1");			
+		}
+		
 		log.debug("executeForDataUnit() m_startCommandId : {}", m_startCommandId);
 		log.debug("executeForDataUnit() m_endCommandId : {}", m_endCommandId);
 		
@@ -593,10 +662,14 @@ public class DataNoBlock {
          		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		djson1.add("SplitComputeUnit", "" + m_SU);
+		djson1.add("AppName", m_appName);
+		djson1.add("AppId", m_appId);
 		djson1.add("JobId", m_jobId);
 		djson1.add("ConfigId", m_configId);
 		djson1.add("TaskId", m_taskId);
-		djson1.add("JsonInput", m_jsonStrInput);
+		djson1.add("StartCommandId", "" + m_startCommandId);
+		djson1.add("EndCommandId", "" + m_endCommandId);
+		djson1.add("RetryNumber", "" + m_retryNumber);
 		
 		long n = 1;
 		// Not needed Set<String> st = commandMap.keySet();
@@ -613,6 +686,8 @@ public class DataNoBlock {
 			if (DataAsyncConfigNode.CNT_DATAUNIT_CONFIG == configNode.getConfigNodeType()) {
 				DataUnitConfig dataUnitConfig = configNode.getDataUnitConfig();
 				d.add("ConfigType", dataUnitConfig.getConfigType());
+				d.add("DataId", dataUnitConfig.getDataId());
+				d.add("JsonInput", dataUnitConfig.getInput());
 				if (DataUnitConfig.CFG_TYPE_CLASS == dataUnitConfig.getConfigType()) {
 					p = dataUnitConfig.getDataUnitClass();
 				} else if (DataUnitConfig.CFG_TYPE_OBJECT == dataUnitConfig.getConfigType()) {
@@ -620,50 +695,45 @@ public class DataNoBlock {
 				}
 				hexStr = dataUnitConfig.getJavaFileAsHexStr();
 			} else if (DataAsyncConfigNode.CNT_PARTITIONER_CONFIG == configNode.getConfigNodeType()) {
-				DPartitionerConfig partitionerConfig = configNode.getPartitionerConfig();
+				DMPartitionerConfig partitionerConfig = configNode.getPartitionerConfig();
 				d.add("ConfigType", partitionerConfig.getConfigType());
-				if (DPartitionerConfig.CFG_TYPE_CLASS == partitionerConfig.getConfigType()) {
+				d.add("DataId", partitionerConfig.getDataId());
+				d.add("JsonInput", partitionerConfig.getInput());
+				if (DMPartitionerConfig.CFG_TYPE_CLASS == partitionerConfig.getConfigType()) {
 					p = partitionerConfig.getPartitionerClass();
-				} else if (DPartitionerConfig.CFG_TYPE_OBJECT == partitionerConfig.getConfigType()) {
+				} else if (DMPartitionerConfig.CFG_TYPE_OBJECT == partitionerConfig.getConfigType()) {
 					p = partitionerConfig.getPartitionerObject().getClass();
 				}
 				hexStr = partitionerConfig.getJavaFileAsHexStr();
 			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_1 == configNode.getConfigNodeType()) {
-				DOperatorConfig_1_1 operatorConfig_1_1 = configNode.getOperatorConfig_1_1();
+				DMOperatorConfig_1_1 operatorConfig_1_1 = configNode.getOperatorConfig_1_1();
 				d.add("ConfigType", operatorConfig_1_1.getConfigType());
-				if (DOperatorConfig_1_1.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_1.getConfigType()) {
+				d.add("SourceDataId", operatorConfig_1_1.getSourceDataId());
+				d.add("TargetDataId", operatorConfig_1_1.getTargetDataId());
+				d.add("JsonInput", operatorConfig_1_1.getInput());
+				if (DMOperatorConfig_1_1.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_1.getConfigType()) {
 					p = operatorConfig_1_1.getOperatorClassOfInterface();
-				} else if (DOperatorConfig_1_1.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_1_1.getConfigType()) {
+				} else if (DMOperatorConfig_1_1.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_1_1.getConfigType()) {
 					p = operatorConfig_1_1.getOperatorObjectOfInterface().getClass();
 				}
 				hexStr = operatorConfig_1_1.getJavaFileAsHexStr();
 			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2 == configNode.getConfigNodeType()) {
-				DOperatorConfig_1_2 operatorConfig_1_2 = configNode.getOperatorConfig_1_2();
+				DMOperatorConfig_1_2 operatorConfig_1_2 = configNode.getOperatorConfig_1_2();
 				d.add("ConfigType", operatorConfig_1_2.getConfigType());
-				if (DOperatorConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
+				d.add("SourceDataId", operatorConfig_1_2.getSourceDataId());
+				d.add("TargetDataId", operatorConfig_1_2.getTargetDataId());
+				d.add("LambdaMethodName", operatorConfig_1_2.getLambdaMethodName());
+				d.add("JsonInput", operatorConfig_1_2.getInput());
+				if (DMOperatorConfig_1_2.CFG_TYPE_CLASS == operatorConfig_1_2.getConfigType()) {
+					p = operatorConfig_1_2.getOperatorClass();
+				} else if (DMOperatorConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
 					p = operatorConfig_1_2.getOperatorClassOfInterface();
-				} else if (DOperatorConfig_1_2.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
+				} else if (DMOperatorConfig_1_2.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
 					p = operatorConfig_1_2.getOperatorObjectOfInterface().getClass();
 				}
 				hexStr = operatorConfig_1_2.getJavaFileAsHexStr();
-			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_2_1 == configNode.getConfigNodeType()) {
-				DOperatorConfig_2_1 operatorConfig_2_1 = configNode.getOperatorConfig_2_1();
-				d.add("ConfigType", operatorConfig_2_1.getConfigType());
-				if (DOperatorConfig_2_1.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_2_1.getConfigType()) {
-					p = operatorConfig_2_1.getOperatorClassOfInterface();
-				} else if (DOperatorConfig_2_1.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_2_1.getConfigType()) {
-					p = operatorConfig_2_1.getOperatorObjectOfInterface().getClass();
-				}
-				hexStr = operatorConfig_2_1.getJavaFileAsHexStr();
-			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_2_2 == configNode.getConfigNodeType()) {
-				DOperatorConfig_2_2 operatorConfig_2_2 = configNode.getOperatorConfig_2_2();
-				d.add("ConfigType", operatorConfig_2_2.getConfigType());
-				if (DOperatorConfig_2_2.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_2_2.getConfigType()) {
-					p = operatorConfig_2_2.getOperatorClassOfInterface();
-				} else if (DOperatorConfig_2_2.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_2_2.getConfigType()) {
-					p = operatorConfig_2_2.getOperatorObjectOfInterface().getClass();
-				}
-				hexStr = operatorConfig_2_2.getJavaFileAsHexStr();
+			} else {
+				throw new DScabiException("Invalid config node type", "DNB.EFD.1");
 			}
 
 	    	String className = p.getName();
@@ -747,9 +817,14 @@ public class DataNoBlock {
 	    //======================================================================
         			
 		log.debug("executeForDataUnit() executing request to " + m_target + "/Compute/Execute/Class");
-		// Moved to DRangeRunner, DRetryAsyncMonitor incCountRequests();
+
 		Future<HttpResponse> futureHttpResponse = m_httpClient.execute(m_target, postRequest, null);
+		
 		clearCommandIdRange();
+		m_TU = 0;
+		m_SU = 0;
+		m_retryNumber = -1;
+		
 		return futureHttpResponse;
 		
 	}

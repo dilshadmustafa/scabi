@@ -267,7 +267,7 @@ public class ComputeServer_D1 extends Application {
 	  		
 	  		if (proceed) {
 	  			log.debug("dataExecuteForDataUnit() ComputeUnit cast is working ok for this object");
-		  		cuu.load(dson3);
+		  		cuu.load(null, dson3);
 		  		log.debug("dataExecuteForDataUnit() loaded");
 		  		Thread.currentThread().setContextClassLoader(originalLoader);
 		  		dcl = null;
@@ -319,7 +319,7 @@ public class ComputeServer_D1 extends Application {
 		  		Object ob = df2.newInstance();
 		  		Method m = df2.getMethod("load", DataContext.class);
 		
-		 		m.invoke(ob, dson3);
+		 		m.invoke(ob, null, dson3);
 		
 		 		// Release CtClass from ClassPool
 		 		cr.detach();

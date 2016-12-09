@@ -331,6 +331,8 @@ public class DComputeAsyncRun_D2 {
 				*/
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				
@@ -619,6 +621,8 @@ public class DComputeAsyncRun_D2 {
 				}
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				
@@ -923,6 +927,8 @@ public class DComputeAsyncRun_D2 {
 				}
 				
 				m_computeNB.setInput(m_config.getInput());
+				m_computeNB.setAppName(m_config.getAppName());
+				m_computeNB.setAppId(m_config.getAppId());
 				m_computeNB.setJobId(m_config.getJobId());
 				m_computeNB.setConfigId(m_config.getConfigId());
 				

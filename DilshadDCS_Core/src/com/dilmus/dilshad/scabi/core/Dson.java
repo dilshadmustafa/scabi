@@ -242,6 +242,26 @@ public class Dson {
 		m_root.put(key, value);
 	}
 
+	public int clear() {
+		m_root.removeAll();
+		m_isChanged = true;
+		m_jsonString = null;
+		
+		return 0;
+	}
+	
+	public int set(String jsonString) throws IOException {
+		m_root.removeAll();
+		m_isChanged = true;
+		m_jsonString = null;
+		
+		// if below stmt throws exception, then above stmts would have cleared already existing values
+		m_root = (ObjectNode) m_objectMapper.readTree(jsonString);
+		m_jsonString = jsonString;		
+		m_isChanged = false;
+		return 0;
+	}
+	
 	public String getString(String field) {
 		return m_root.get(field).asText();
 	}
@@ -480,12 +500,12 @@ public class Dson {
 			return false;
 	}
 
-	public int getTU() {
-		return getIntOf("TotalComputeUnit");
+	public long getTU() {
+		return getLongOf("TotalComputeUnit");
 	}
 
-	public int getCU() {
-		return getIntOf("SplitComputeUnit");
+	public long getCU() {
+		return getLongOf("SplitComputeUnit");
 	}
 	
 	public int getIntOf(String field) {
@@ -516,8 +536,8 @@ public class Dson {
 		return new Dson(getString("Result"));
 	}
 
-	public int getCount() throws IOException {
-		return Integer.parseInt(getString("Count"));
+	public long getCount() throws IOException {
+		return Long.parseLong(getString("Count"));
 	}
 
 	public boolean contains(String key) {

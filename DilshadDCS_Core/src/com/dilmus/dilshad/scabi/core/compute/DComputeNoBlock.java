@@ -187,6 +187,9 @@ public class DComputeNoBlock {
 	
 	private DComputeAsyncConfig m_config = null;
 	
+	private String m_appName = null;
+	private String m_appId = null;
+	
 	static {
 		// Previous works m_httpClient = HttpAsyncClients.createDefault();
 
@@ -197,6 +200,24 @@ public class DComputeNoBlock {
 		// Moved to DCompute constructor m_httpClient.start();
 	}
 
+	public int setAppName(String appName) {
+		m_appName = appName;
+		return 0;
+	}
+	
+	public String getAppName() {
+		return m_appName;
+	}
+	
+	public int setAppId(String appId) {
+		m_appId = appId;
+		return 0;
+	}
+	
+	public String getAppId() {
+		return m_appId;
+	}		
+	
 	public int setConfig(DComputeAsyncConfig config) {
 		m_config = config;
 		
@@ -293,6 +314,8 @@ public class DComputeNoBlock {
 		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
 		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public DComputeNoBlock(DMeta meta) throws Exception {
@@ -327,6 +350,8 @@ public class DComputeNoBlock {
 		m_configId = DMJson.empty();
 		m_taskId = DMJson.empty();
 
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
 	}
 	
 	public int close() throws IOException {
@@ -483,6 +508,8 @@ public class DComputeNoBlock {
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -517,6 +544,8 @@ public class DComputeNoBlock {
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -551,6 +580,8 @@ public class DComputeNoBlock {
 
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -644,6 +675,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -737,6 +770,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
@@ -820,6 +855,8 @@ public class DComputeNoBlock {
   		
 		DMJson djson1 = new DMJson("TotalComputeUnit", "" + m_TU);
 		DMJson djson2 = djson1.add("SplitComputeUnit", "" + m_SU);
+		djson2.add("AppName", m_appName);
+		djson2.add("AppId", m_appId);
 		djson2.add("JobId", m_jobId);
 		djson2.add("ConfigId", m_configId);
 		djson2.add("TaskId", m_taskId);
