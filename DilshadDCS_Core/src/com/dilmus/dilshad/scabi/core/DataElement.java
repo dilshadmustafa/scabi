@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 15-Sep-2016
  * File Name : DataElement.java

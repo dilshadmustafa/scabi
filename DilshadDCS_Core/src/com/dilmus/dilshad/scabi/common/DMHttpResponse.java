@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 10-Nov-2016
  * File Name : DMHttpResponse.java

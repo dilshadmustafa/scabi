@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 20-Oct-2016
  * File Name : DMStdStorageHandler.java
@@ -85,7 +85,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import com.leansoft.bigqueue.IStorageHandler;
+import com.dilmus.dilshad.storage.IStorageHandler;
 
 /**
  * @author Dilshad Mustafa

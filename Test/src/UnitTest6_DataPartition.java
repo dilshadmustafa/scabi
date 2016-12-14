@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 12-Apr-2016
  * File Name : UnitTest6_DataPartition.java

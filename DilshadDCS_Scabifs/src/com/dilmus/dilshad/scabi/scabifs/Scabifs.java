@@ -1,10 +1,9 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
- * @version 1.0
  * Created 29-Oct-2016
- * File Name : Dpfs.java
+ * File Name : Scabifs.java
  */
 package com.dilmus.dilshad.scabi.scabifs;
 

@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 21-Sep-2016
  * File Name : IForEachDataElement.java

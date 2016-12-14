@@ -130,7 +130,7 @@ import com.dilmus.dilshad.scabi.core.IShuffle2;
 import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
 import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_1;
 import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_2;
-import com.leansoft.bigqueue.IStorageHandler;
+import com.dilmus.dilshad.storage.IStorageHandler;
 
 /**
  * @author Dilshad Mustafa

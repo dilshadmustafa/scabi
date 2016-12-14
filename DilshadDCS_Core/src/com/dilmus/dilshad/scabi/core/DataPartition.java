@@ -1,6 +1,6 @@
 /**
  * @author Dilshad Mustafa
- * (c) Dilshad Mustafa
+ * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 15-Sep-2016
  * File Name : DataPartition.java
@@ -107,11 +107,11 @@ import org.slf4j.LoggerFactory;
 import com.dilmus.dilshad.scabi.common.DMCounter;
 import com.dilmus.dilshad.scabi.common.DMStdStorageHandler;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.dilmus.dilshad.storage.IStorageHandler;
 import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leansoft.bigqueue.BigArrayImpl;
 import com.leansoft.bigqueue.IBigArray;
-import com.leansoft.bigqueue.IStorageHandler;
 
 /**
  * @author Dilshad Mustafa
