@@ -197,7 +197,9 @@ public class Test8_Data implements Serializable {
     	
        	DMeta meta = new DMeta("localhost", "5000");
        	
-    	Dson dson = new Dson("Partitions", "100");
+    	// works Dson dson = new Dson("Partitions", "100");
+    	Dson dson = new Dson("Partitions", "10");
+    	
     	//Dson dson = new Dson("Partitions", "11");
     	HashMap<String, String> out1 = new HashMap<String, String>();
     	Data d = new Data(meta, "mydata", FileUnit.class);  

@@ -77,6 +77,8 @@ and conditions of this license without giving prior notice.
 
 package com.dilmus.dilshad.scabi.core;
 
+import java.io.Serializable;
+
 import com.dilmus.dilshad.scabi.deprecated.DOperatorContext;
 
 /**
@@ -84,9 +86,8 @@ import com.dilmus.dilshad.scabi.deprecated.DOperatorContext;
  *
  */
 
-// Not needed as of 22-Sep-2016 -> IShuffle2 and shuffle for IShuffle2 are not needed
-public interface IShuffle2 {
+public interface IShuffle2 extends Serializable {
 	
-	public long shuffle(DataPartition a, DataPartition b, DOperatorContext ctx) throws Exception;
+	public long groupByValues(DataElement e, DataContext c) throws Exception;
 	
 }

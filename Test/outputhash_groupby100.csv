@@ -1,0 +1,100 @@
+88,{"Result":"[0]=>83 [1]=>83 [2]=>83 [3]=>83 [4]=>83"}
+89,{"Result":"[0]=>84 [1]=>84 [2]=>84 [3]=>84 [4]=>84"}
+90,{"Result":"[0]=>85 [1]=>85 [2]=>85 [3]=>85 [4]=>85"}
+91,{"Result":"[0]=>86 [1]=>86 [2]=>86 [3]=>86 [4]=>86"}
+92,{"Result":"[0]=>87 [1]=>87 [2]=>87 [3]=>87 [4]=>87"}
+93,{"Result":"[0]=>10 [1]=>10 [2]=>10 [3]=>10 [4]=>10 [5]=>88 [6]=>88 [7]=>88 [8]=>88 [9]=>88"}
+94,{"Result":"[0]=>11 [1]=>11 [2]=>11 [3]=>11 [4]=>11 [5]=>89 [6]=>89 [7]=>89 [8]=>89 [9]=>89"}
+95,{"Result":"[0]=>12 [1]=>12 [2]=>12 [3]=>12 [4]=>12"}
+96,{"Result":"[0]=>13 [1]=>13 [2]=>13 [3]=>13 [4]=>13"}
+97,{"Result":"[0]=>14 [1]=>14 [2]=>14 [3]=>14 [4]=>14"}
+10,{"Result":"[0]=>35 [1]=>35 [2]=>35 [3]=>35 [4]=>35"}
+98,{"Result":"[0]=>15 [1]=>15 [2]=>15 [3]=>15 [4]=>15"}
+11,{"Result":"[0]=>36 [1]=>36 [2]=>36 [3]=>36 [4]=>36"}
+99,{"Result":"[0]=>16 [1]=>16 [2]=>16 [3]=>16 [4]=>16"}
+12,{"Result":"[0]=>37 [1]=>37 [2]=>37 [3]=>37 [4]=>37"}
+13,{"Result":"[0]=>38 [1]=>38 [2]=>38 [3]=>38 [4]=>38"}
+14,{"Result":"[0]=>39 [1]=>39 [2]=>39 [3]=>39 [4]=>39"}
+15,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+16,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+17,{"Result":"[0]=>50 [1]=>50 [2]=>50 [3]=>50 [4]=>50"}
+18,{"Result":"[0]=>51 [1]=>51 [2]=>51 [3]=>51 [4]=>51"}
+19,{"Result":"[0]=>52 [1]=>52 [2]=>52 [3]=>52 [4]=>52"}
+1,{"Result":"[0]=>18 [1]=>18 [2]=>18 [3]=>18 [4]=>18 [5]=>100 [6]=>100 [7]=>100 [8]=>100 [9]=>100"}
+2,{"Result":"[0]=>19 [1]=>19 [2]=>19 [3]=>19 [4]=>19 [5]=>101 [6]=>101 [7]=>101 [8]=>101 [9]=>101"}
+3,{"Result":"[0]=>102 [1]=>102 [2]=>102 [3]=>102"}
+4,{"Result":"[0]=>103 [1]=>103 [2]=>103"}
+5,{"Result":"[0]=>30 [1]=>30 [2]=>30 [3]=>30 [4]=>30 [5]=>104 [6]=>104"}
+6,{"Result":"[0]=>31 [1]=>31 [2]=>31 [3]=>31 [4]=>31 [5]=>105"}
+7,{"Result":"[0]=>32 [1]=>32 [2]=>32 [3]=>32 [4]=>32"}
+8,{"Result":"[0]=>33 [1]=>33 [2]=>33 [3]=>33 [4]=>33"}
+9,{"Result":"[0]=>34 [1]=>34 [2]=>34 [3]=>34 [4]=>34"}
+20,{"Result":"[0]=>53 [1]=>53 [2]=>53 [3]=>53 [4]=>53"}
+21,{"Result":"[0]=>54 [1]=>54 [2]=>54 [3]=>54 [4]=>54"}
+22,{"Result":"[0]=>55 [1]=>55 [2]=>55 [3]=>55 [4]=>55"}
+23,{"Result":"[0]=>56 [1]=>56 [2]=>56 [3]=>56 [4]=>56"}
+24,{"Result":"[0]=>57 [1]=>57 [2]=>57 [3]=>57 [4]=>57"}
+25,{"Result":"[0]=>58 [1]=>58 [2]=>58 [3]=>58 [4]=>58"}
+26,{"Result":"[0]=>59 [1]=>59 [2]=>59 [3]=>59 [4]=>59"}
+27,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+28,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+29,{"Result":"[0]=>70 [1]=>70 [2]=>70 [3]=>70 [4]=>70"}
+30,{"Result":"[0]=>71 [1]=>71 [2]=>71 [3]=>71 [4]=>71"}
+31,{"Result":"[0]=>72 [1]=>72 [2]=>72 [3]=>72 [4]=>72"}
+32,{"Result":"[0]=>73 [1]=>73 [2]=>73 [3]=>73 [4]=>73"}
+33,{"Result":"[0]=>74 [1]=>74 [2]=>74 [3]=>74 [4]=>74"}
+34,{"Result":"[0]=>75 [1]=>75 [2]=>75 [3]=>75 [4]=>75"}
+35,{"Result":"[0]=>76 [1]=>76 [2]=>76 [3]=>76 [4]=>76"}
+36,{"Result":"[0]=>77 [1]=>77 [2]=>77 [3]=>77 [4]=>77"}
+37,{"Result":"[0]=>78 [1]=>78 [2]=>78 [3]=>78 [4]=>78"}
+38,{"Result":"[0]=>79 [1]=>79 [2]=>79 [3]=>79 [4]=>79"}
+39,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+40,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+41,{"Result":"[0]=>90 [1]=>90 [2]=>90 [3]=>90 [4]=>90"}
+42,{"Result":"[0]=>91 [1]=>91 [2]=>91 [3]=>91 [4]=>91"}
+43,{"Result":"[0]=>92 [1]=>92 [2]=>92 [3]=>92 [4]=>92"}
+44,{"Result":"[0]=>93 [1]=>93 [2]=>93 [3]=>93 [4]=>93"}
+45,{"Result":"[0]=>94 [1]=>94 [2]=>94 [3]=>94 [4]=>94"}
+46,{"Result":"[0]=>95 [1]=>95 [2]=>95 [3]=>95 [4]=>95"}
+47,{"Result":"[0]=>96 [1]=>96 [2]=>96 [3]=>96 [4]=>96"}
+48,{"Result":"[0]=>97 [1]=>97 [2]=>97 [3]=>97 [4]=>97"}
+49,{"Result":"[0]=>20 [1]=>20 [2]=>20 [3]=>20 [4]=>20 [5]=>98 [6]=>98 [7]=>98 [8]=>98 [9]=>98"}
+50,{"Result":"[0]=>21 [1]=>21 [2]=>21 [3]=>21 [4]=>21 [5]=>99 [6]=>99 [7]=>99 [8]=>99 [9]=>99"}
+51,{"Result":"[0]=>2 [1]=>22 [2]=>22 [3]=>22 [4]=>22 [5]=>22"}
+52,{"Result":"[0]=>3 [1]=>3 [2]=>23 [3]=>23 [4]=>23 [5]=>23 [6]=>23"}
+53,{"Result":"[0]=>4 [1]=>4 [2]=>4 [3]=>24 [4]=>24 [5]=>24 [6]=>24 [7]=>24"}
+54,{"Result":"[0]=>5 [1]=>5 [2]=>5 [3]=>5 [4]=>25 [5]=>25 [6]=>25 [7]=>25 [8]=>25"}
+55,{"Result":"[0]=>6 [1]=>6 [2]=>6 [3]=>6 [4]=>6 [5]=>26 [6]=>26 [7]=>26 [8]=>26 [9]=>26"}
+56,{"Result":"[0]=>7 [1]=>7 [2]=>7 [3]=>7 [4]=>7 [5]=>27 [6]=>27 [7]=>27 [8]=>27 [9]=>27"}
+57,{"Result":"[0]=>8 [1]=>8 [2]=>8 [3]=>8 [4]=>8 [5]=>28 [6]=>28 [7]=>28 [8]=>28 [9]=>28"}
+58,{"Result":"[0]=>9 [1]=>9 [2]=>9 [3]=>9 [4]=>9 [5]=>29 [6]=>29 [7]=>29 [8]=>29 [9]=>29"}
+59,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+60,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+61,{"Result":"[0]=>40 [1]=>40 [2]=>40 [3]=>40 [4]=>40"}
+62,{"Result":"[0]=>41 [1]=>41 [2]=>41 [3]=>41 [4]=>41"}
+63,{"Result":"[0]=>42 [1]=>42 [2]=>42 [3]=>42 [4]=>42"}
+64,{"Result":"[0]=>43 [1]=>43 [2]=>43 [3]=>43 [4]=>43"}
+65,{"Result":"[0]=>44 [1]=>44 [2]=>44 [3]=>44 [4]=>44"}
+66,{"Result":"[0]=>45 [1]=>45 [2]=>45 [3]=>45 [4]=>45"}
+67,{"Result":"[0]=>46 [1]=>46 [2]=>46 [3]=>46 [4]=>46"}
+68,{"Result":"[0]=>47 [1]=>47 [2]=>47 [3]=>47 [4]=>47"}
+69,{"Result":"[0]=>48 [1]=>48 [2]=>48 [3]=>48 [4]=>48"}
+70,{"Result":"[0]=>49 [1]=>49 [2]=>49 [3]=>49 [4]=>49"}
+71,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+72,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+73,{"Result":"[0]=>60 [1]=>60 [2]=>60 [3]=>60 [4]=>60"}
+74,{"Result":"[0]=>61 [1]=>61 [2]=>61 [3]=>61 [4]=>61"}
+75,{"Result":"[0]=>62 [1]=>62 [2]=>62 [3]=>62 [4]=>62"}
+76,{"Result":"[0]=>63 [1]=>63 [2]=>63 [3]=>63 [4]=>63"}
+77,{"Result":"[0]=>64 [1]=>64 [2]=>64 [3]=>64 [4]=>64"}
+78,{"Result":"[0]=>65 [1]=>65 [2]=>65 [3]=>65 [4]=>65"}
+79,{"Result":"[0]=>66 [1]=>66 [2]=>66 [3]=>66 [4]=>66"}
+100,{"Result":"[0]=>17 [1]=>17 [2]=>17 [3]=>17 [4]=>17"}
+80,{"Result":"[0]=>67 [1]=>67 [2]=>67 [3]=>67 [4]=>67"}
+81,{"Result":"[0]=>68 [1]=>68 [2]=>68 [3]=>68 [4]=>68"}
+82,{"Result":"[0]=>69 [1]=>69 [2]=>69 [3]=>69 [4]=>69"}
+83,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+84,{"ErrorCode":"CSE.EXE.DEFO.1","Error":"java.lang.StringIndexOutOfBoundsException: String index out of range: -1 Message : String index out of range: -1 Cause is null  StackTrace : java.lang.String.substring(String.java:1967) com.dilmus.dilshad.scabi.core.DataPartition.prettyPrint(DataPartition.java:1657) com.dilmus.dilshad.scabi.cs.D2.DMExecute.dataExecuteForOperators(DMExecute.java:604) com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2$1.run(ComputeServer_D2.java:409) java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) java.util.concurrent.FutureTask.run(FutureTask.java:266) java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) java.lang.Thread.run(Thread.java:745)"}
+85,{"Result":"[0]=>80 [1]=>80 [2]=>80 [3]=>80 [4]=>80"}
+86,{"Result":"[0]=>81 [1]=>81 [2]=>81 [3]=>81 [4]=>81"}
+87,{"Result":"[0]=>82 [1]=>82 [2]=>82 [3]=>82 [4]=>82"}

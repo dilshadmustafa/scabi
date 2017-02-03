@@ -29,7 +29,7 @@ Software. You should not create and/or redistribute any straight forward
 translation and/or implementation of this Software source code to same and/or 
 another programming language, either partially or fully. You should not redistribute 
 embedded modified versions of this Software source code and/or its compiled object 
-binary in any form, both within as well as outside your organization, company, 
+binary in any form, within and/or outside your organization, company, 
 legal entity and/or individual. 
 
 6. You should not embed any modification of this Software source code and/or 

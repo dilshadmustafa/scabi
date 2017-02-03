@@ -83,6 +83,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -106,6 +107,8 @@ import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.IOperator;
+import com.dilmus.dilshad.scabi.core.IShuffle;
+import com.dilmus.dilshad.scabi.core.data.DMShuffle;
 import com.dilmus.dilshad.scabi.core.data.DataAsyncConfigNode;
 import com.dilmus.dilshad.storage.IStorageHandler;
 
@@ -133,6 +136,22 @@ public class DMExecute {
 	private static final DMCounter M_DMCOUNTER = new DMCounter();
 
 	private static final DMCounter m_gcCounter = new DMCounter();
+	
+	private static String getStorageAppIdDirPath(String storageDirPath, String appId) {
+		
+		appId = appId.replace("_", "");
+		
+		String appDirPath = null;
+		if (storageDirPath.endsWith(File.separator)) {
+			appDirPath = storageDirPath + appId;
+		} else {
+			appDirPath = storageDirPath + File.separator + appId;
+		}
+		
+		log.debug("getStorageAppIdDirPath() Storage AppId Dir path  appDirPath : {}", appDirPath);
+		
+		return appDirPath;
+	}
 	
 	public static int createDirs(String dirPath) throws DScabiException {
 		
@@ -196,8 +215,10 @@ public class DMExecute {
 				throw new DScabiException("CommandId is not 1 for first ConfigNode entry in Json", "EXE.DEFD.1");
 			}
 			
-			int retryNumber = dj.getIntOf("RetryNumber");
+			long retryNumber = dj.getLongOf("RetryNumber");
 			log.debug("dataExecuteForDataUnit() retryNumber : {}", retryNumber);
+			long maxRetry = dj.getLongOf("MaxRetry");
+			log.debug("dataExecuteForDataUnit() maxRetry : {}", maxRetry);
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
@@ -206,10 +227,25 @@ public class DMExecute {
 	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
 	    	dctx1.add("TaskId", dj.getString("TaskId"));
 	    	dctx1.add("JsonInput", djson.getString("JsonInput"));
+	    	dctx1.setRetryNumber(retryNumber);
+	    	dctx1.setMaxRetry(maxRetry);
 	    	
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
+			String localDPDirPathForThisSplitRetryNum = null;
 			
-			String appId = dj.getString("AppId");
+	  		if (localDPDirPath.endsWith(File.separator))
+	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + dj.getCU() + "_" + retryNumber;
+	  		else
+	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
+	  		
+	  		log.debug("dataExecuteForDataUnit() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
+	  		File f = new File(localDPDirPathForThisSplitRetryNum);
+	  		if (false == f.exists()) {
+		  		if (false == f.mkdir())
+		  			throw new DScabiException("Error creating local directory for split " + localDPDirPathForThisSplitRetryNum, "EXE.EFD.1");
+	  		}
+	  		
+	  		String appId = dj.getString("AppId");
 			log.debug("dataExecuteForDataUnit() AppId : {}", appId);
 	  		
 	  		String storageDPDirPath = null;
@@ -223,6 +259,7 @@ public class DMExecute {
 				|| storageProvider.equalsIgnoreCase("nfs")) 
 			{
 	  			storageDPDirPath = ComputeServer_D2.getStorageDirPath();
+	  			storageDPDirPath = getStorageAppIdDirPath(storageDPDirPath, appId);
 	  			storageHandler = new DMStdStorageHandler();
 			} else if (storageProvider.equalsIgnoreCase("seaweedfs")) {
 				storageDPDirPath = appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
@@ -248,6 +285,7 @@ public class DMExecute {
 			synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { ComputeServer_D2.m_splitAppIdIStorageHandlerMap.put(splitAppId, storageHandler); }
 			
 			if (retryNumber > 0) {
+				/* cw
 				log.debug("dataExecuteForDataUnit() retryNumber {} > 0. Proceeding with isPartitionExists() check", retryNumber);
 				boolean check = DataPartition.isPartitionExists(appId, dataId, dj.getCU(), storageDPDirPath, storageHandler);
 				
@@ -257,9 +295,11 @@ public class DMExecute {
 					DataPartition.deletePartition(appId, dataId, dj.getCU(), storageDPDirPath, storageHandler);
 					log.debug("dataExecuteForDataUnit() Done Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId, dj.getCU(), storageDPDirPath);					
 				}
+				*/
 			}
 			
-			dp = new DataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, storageHandler);
+			// cw dp = new DataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
+			dp = DataPartition.allowCreateDataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);			
 			synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId, dp); }
 			
 		   	String hexStr = djson.getString("ClassBytes");
@@ -294,6 +334,7 @@ public class DMExecute {
 	  			log.debug("dataExecuteForDataUnit() ComputeUnit cast is working ok for this object");
 		  		try { 
 		  			cuu.load(dp, dctx1);
+		  			result = DMJson.ok();
 		  		} catch(Throwable e) {
 			   		result = DMJson.error("CSE.EXE.DEFD.2", DMUtil.serverErrMsg(e));
 			   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
@@ -346,6 +387,7 @@ public class DMExecute {
 		  		// OR try ((DataUnit) ob).load(dp, dctx3);
 		  		try {
 		  			m.invoke(ob, dp, dctx1);
+		  			result = DMJson.ok();
 		  		} catch(Throwable e) {
 			  		cr.detach();
 			 		ct.detach();
@@ -385,10 +427,13 @@ public class DMExecute {
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
 	   		return result;
 	   	}
-		String s = dp.prettyPrint();
-		result = DMJson.result(s);
-		// Later result = DMJson.ok();
 		
+	   	String status = null;
+		synchronized(ComputeServer_D2.m_taskIdStatusMap) { status = ComputeServer_D2.m_taskIdStatusMap.get(taskId); }
+		if (false == status.equals(ComputeServer_D2.S_EXECUTION_ERROR)) {
+			String s = dp.prettyPrint();
+			result = DMJson.result(s);
+		}
 		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
 		// CW synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
 	   
@@ -409,11 +454,19 @@ public class DMExecute {
 			taskId = dj.getString("TaskId");
 			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_STARTED); }
 
-			long configCount = dj.getLong("ConfigCount");
-			if (configCount < 2) {
-				log.debug("dataExecuteForOperators() configCount < 2. No operators.");
+			long startCommandId = dj.getLongOf("StartCommandId");
+			log.debug("dataExecuteForOperators() startCommandId : {}", startCommandId);
+			
+			long configCount = dj.getLongOf("ConfigCount");
+			if (configCount < 2 && 1 == startCommandId) {
+				log.debug("dataExecuteForOperators() configCount < 2 and startCommandId is 1. No operators.");
 				return DMJson.ok();
 			}
+
+			long retryNumber = dj.getLongOf("RetryNumber");
+			log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
+			long maxRetry = dj.getLongOf("MaxRetry");
+			log.debug("dataExecuteForDataUnit() maxRetry : {}", maxRetry);
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
@@ -421,9 +474,24 @@ public class DMExecute {
 	  		dctx1.add("JobId", dj.getString("JobId"));
 	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
 	    	dctx1.add("TaskId", dj.getString("TaskId"));
+			dctx1.setRetryNumber(retryNumber);
+			dctx1.setMaxRetry(maxRetry);
 			
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
+			String localDPDirPathForThisSplitRetryNum = null;
 			
+	  		if (localDPDirPath.endsWith(File.separator))
+	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + dj.getCU() + "_" + retryNumber;
+	  		else
+	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
+	  		
+	  		log.debug("dataExecuteForOperators() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
+	  		File f = new File(localDPDirPathForThisSplitRetryNum);
+	  		if (false == f.exists()) {
+		  		if (false == f.mkdir())
+		  			throw new DScabiException("Error creating local directory for split " + localDPDirPathForThisSplitRetryNum, "EXE.EFO.1");
+	  		}
+	  		
 			String appId = dj.getString("AppId");
 			log.debug("AppId : {}", appId);
 	  		
@@ -434,21 +502,25 @@ public class DMExecute {
 			// Pass the storage directory path through m_mountDir from ComputeServer_D2.getStorageDirPath() in case of DMHdfsStorageSystem
 			if (storageProvider.equalsIgnoreCase("dfs") 
 				|| storageProvider.equalsIgnoreCase("fuse")
-				|| storageProvider.equalsIgnoreCase("nfs"))
+				|| storageProvider.equalsIgnoreCase("nfs")) {
 	  			storageDPDirPath = ComputeServer_D2.getStorageDirPath();
-			else 
+	  			storageDPDirPath = getStorageAppIdDirPath(storageDPDirPath, appId);	
+			}
+			else {
 				storageDPDirPath = appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
-	  		
-			long startCommandId = dj.getLongOf("StartCommandId");
-			log.debug("dataExecuteForOperators() startCommandId : {}", startCommandId);
+			}
 			long endCommandId = dj.getLongOf("EndCommandId");
 			log.debug("dataExecuteForOperators() endCommandId : {}", endCommandId);
-			int retryNumber = dj.getIntOf("RetryNumber");
-			log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
+			// cw int retryNumber = dj.getIntOf("RetryNumber");
+			// cw log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
 			String splitAppId = dj.getCU() + "_" + appId.replace("_", "");
 			log.debug("dataExecuteForOperators() splitAppId : {}", splitAppId);
 
-		   	for (long i = 2; i <= configCount; i++) {
+			long i = 1;
+			if (1 == startCommandId)
+				i = 2;
+			
+		   	for (/*cw long i = 2*/; i <= configCount; i++) {
 
 			String jsonStr = dj.getString("" + i);
 		   	DMJson djson = new DMJson(jsonStr);
@@ -497,19 +569,31 @@ public class DMExecute {
 			   	}
 
 			   	if (null == dp1) {
-			   		// log.debug("dataExecuteForOperators() Reconstruct source data partition - dp1 is null");
+			   		log.debug("dataExecuteForOperators() Reconstruct source data partition - dp1 is null");
+			   		/* cw
 			   		log.debug("dataExecuteForOperators() Reconstruct source data partition - dp1 is null. Proceeding with isPartitionExists() check");			   		
 			   		boolean check = DataPartition.isPartitionExists(appId, dataId1, dj.getCU(), storageDPDirPath, storageHandler);
 					
 					if (check) {
 						log.debug("dataExecuteForOperators() Reconstruct source data partition - isPartitionExists() check. Partition already exists for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId1, dj.getCU(), storageDPDirPath);
-						dp1 = new DataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPath, storageHandler);
+						dp1 = new DataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
 						synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
 					} else {
 					   	throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in Storage system", "EXE.EFO.1");
 					}
+					*/
+			   		/* cw
+			  		File f = new File(localDPDirPathForThisSplit);
+			  		if (false == f.exists()) {
+				  		if (false == f.mkdir())
+				  			throw new DScabiException("Error creating local directory for split " + localDPDirPathForThisSplit, "EXE.EFD.1");
+			  		}
+			  		*/
+					dp1 = DataPartition.readDataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);
+					synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }					
 			   	}
 
+			   	/* cw
 				log.debug("dataExecuteForOperators() retryNumber {} > 0. Proceeding with isPartitionExists() check", retryNumber);
 				boolean check2 = DataPartition.isPartitionExists(appId, dataId2, dj.getCU(), storageDPDirPath, storageHandler);
 				
@@ -519,17 +603,34 @@ public class DMExecute {
 					DataPartition.deletePartition(appId, dataId2, dj.getCU(), storageDPDirPath, storageHandler);
 					log.debug("dataExecuteForOperators() Done Deleting Partition for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId2, dj.getCU(), storageDPDirPath);					
 				}
-			   	
+			   	*/
 			} else {
 			   	if (null == storageHandler)
 			   		throw new DScabiException("splitAppId : " + splitAppId + " is not found in ComputeServer_D2.m_splitAppIdIStorageHandlerMap", "EXE.EFO.2");	
 			   	
-			   	if (null == dp1)
-			   		throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in ComputeServer_D2.m_partitionIdDataPartitionMap", "EXE.EFO.1");
+			   	if (null == dp1) {
+			   		// throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in ComputeServer_D2.m_partitionIdDataPartitionMap", "EXE.EFO.1");
+			   		log.debug("dataExecuteForOperators() Else part - Reconstruct source data partition - dp1 is null");
+			   		/* cw
+			   		log.debug("dataExecuteForOperators() Else part - Reconstruct source data partition - dp1 is null. Proceeding with isPartitionExists() check");			   		
+			   		boolean check3 = DataPartition.isPartitionExists(appId, dataId1, dj.getCU(), storageDPDirPath, storageHandler);
+					
+					if (check3) {
+						log.debug("dataExecuteForOperators() Else part - Reconstruct source data partition - isPartitionExists() check. Partition already exists for appId : {}, dataId : {}, dj.getCU() : {}, storageDPDirPath : {}", appId, dataId1, dj.getCU(), storageDPDirPath);
+						dp1 = new DataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
+						synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
+					} else {
+					   	throw new DScabiException("Source DataPartition dataID : " + dataId1 + " partitionId : " + partitionId1 + " is not found in Storage system", "EXE.EFO.1");
+					}	
+					*/
+					dp1 = DataPartition.readDataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);
+					synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
+			   	}	
 			}
 			
-		   	dp2 = new DataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPath, storageHandler);
-			synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
+		   	// cw dp2 = new DataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
+		   	dp2 = DataPartition.allowCreateDataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);			
+		   	synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
 			
 		   	String hexStr = djson.getString("ClassBytes");
 		   	// log.debug("dataExecuteForOperators() Hex string is : {}", hexStr);
@@ -546,9 +647,9 @@ public class DMExecute {
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2) {
 		   		result = dataExecuteForOperator_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1) {
-		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPath, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2) {
-		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
+		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPath, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_1) {
 		   		result = dataExecuteForComparator_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
 		   	} 
@@ -561,8 +662,12 @@ public class DMExecute {
 		   	
 		   	} // End For
 	  		
-		   	String s = dp2.prettyPrint();
-		   	result = DMJson.result(s);	
+		   	String status = null;
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { status = ComputeServer_D2.m_taskIdStatusMap.get(taskId); }
+			if (false == status.equals(ComputeServer_D2.S_EXECUTION_ERROR)) {
+			   	String s = dp2.prettyPrint();
+			   	result = DMJson.result(s);	
+			}
 		   	
 	   	} catch (Error | RuntimeException e) {
   			result = DMJson.error("CSE.EXE.DEFO.1", DMUtil.serverErrMsg(e));
@@ -780,12 +885,239 @@ public class DMExecute {
 		
 	}
 	
-	public static String dataExecuteForShuffle_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+	public static String dataExecuteForShuffle_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPath, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
 
+  		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
+  		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
+  		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
+  		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
+  		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
+		
+		ClassPool pool = null;
+		String result = null;
+  		boolean proceed = false;
+  		IShuffle cuu = null;
+  		try {
+  			Class<?> df = dcl.findClass(className, b2);
+	  		cuu = (IShuffle) df.newInstance();
+	  		proceed = true;
+  		} catch (SecurityException | InstantiationException | IllegalAccessException e) {
+  			// e.printStackTrace();
+  			proceed = false;
+  		} catch (ClassCastException e) {
+  			result = DMJson.error("CSE.EXE.DEFS.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+  		}
+  		
+  		log.debug("dataExecuteForShuffle_1_1() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForShuffle_1_1() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForShuffle_1_1() JsonInput : {}", djson.getString("JsonInput"));
+		
+		long tu = dj.getTU();
+		long cu = dj.getCU();
+		
+		long retryNumber = dj.getLongOf("RetryNumber");
+		log.debug("dataExecuteForShuffle_1_1() retryNumber : {}", retryNumber);
+
+		String localDPDirPathForThisSplitRetryNum = null;
+		
+  		if (localDPDirPath.endsWith(File.separator))
+  			localDPDirPathForThisSplitRetryNum = localDPDirPath + dj.getCU() + "_" + retryNumber;
+  		else
+  			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
+  		
+  		log.debug("dataExecuteForShuffle_1_1() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
+
+		String appId = dj.getString("AppId");
+		log.debug("dataExecuteForShuffle_1_1() AppId : {}", appId);
+		String dataId1 = djson.getString("SourceDataId");
+		log.debug("dataExecuteForShuffle_1_1() DataId1 : {}", dataId1);
+		
+  		if (proceed) {
+  			log.debug("dataExecuteForShuffle_1_1() ComputeUnit cast is working ok for this object");
+	  		try { 
+	  			// TODO set a read only attribute to dp1.setReadOnly()
+
+	  			// create DataPartition object for other source dp with partition id dataid1_i_appid of source dataset dataId1
+	  			for (int i = 1; i <= tu; i++) {
+	  				
+	  				if (i == cu) {
+	  					// use dp1
+	  		  			dp1.shuffleBy(cuu);
+	  					// add filtered entries from dp1 to dp2
+	  		  			dp1.begin();
+	  		  			while (dp1.hasNext()) {
+	  		  				DataElement e = dp1.next();
+	  		  				if (dp1.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  					dp2.append(e);
+	  		  				}
+	  		  			}
+	  		  			dp1.clearShuffle();
+	  				} else {
+	  					// check if other source dp exists and create DataPartition object if other source dp exists
+	  					String partitionIdOther = dataId1 + "_" + i + "_" + appId.replace("_", "");
+	  					log.debug("dataExecuteForShuffle_1_1() PartitionIdOther : {}", partitionIdOther);
+	  					DataPartition dpSourceOther = null;
+	  					/* cw
+				   		log.debug("dataExecuteForShuffle_1_1() Proceeding with isPartitionExists() check for partition id : {}", partitionIdOther);			   		
+				   		boolean check = DataPartition.isPartitionExists(appId, dataId1, i, storageDPDirPath, storageHandler);
+						
+				   		DataPartition dpSourceOther = null;
+						if (check) {
+							log.debug("dataExecuteForShuffle_1_1() Partition exists for appId : {}, dataId : {}, i : {}, storageDPDirPath : {}", appId, dataId1, i, storageDPDirPath);
+							dpSourceOther = new DataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
+						} else {
+						   	throw new DScabiException("Source DataPartition for partitionId : " + partitionIdOther + " is not found in Storage system", "EXE.EFS.1");
+						}
+						*/
+						dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);						
+						
+						dpSourceOther.shuffleBy(cuu);
+	  					// add filtered entries from dpSourceOther to dp2
+						dpSourceOther.begin();
+	  		  			while (dpSourceOther.hasNext()) {
+	  		  				DataElement e = dpSourceOther.next();
+	  		  				if (dpSourceOther.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  					dp2.append(e);
+	  		  				}
+	  		  			}
+	  		  			dpSourceOther.close();
+	  		  			dpSourceOther = null;
+	  				}
+	  			}
+ 			
+	  		} catch(Throwable e) {
+		   		result = DMJson.error("CSE.EXE.DEFS.2", DMUtil.serverErrMsg(e));
+		   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+		   		return result;
+		   	}
+	  		log.debug("dataExecuteForShuffle_1_1() operation done");
+  		} else {
+  			log.debug("dataExecuteForShuffle_1_1() IOperator cast is not working for this object. So proceeding with Class copy.");
+  			InputStream fis = new ByteArrayInputStream(b2);
+	
+			// Previous works ClassPool pool = ClassPool.getDefault();
+			pool = new ClassPool(true);
+			pool.appendSystemPath();
+			// Reference pool.appendClassPath(new LoaderClassPath(_extraLoader));
+			pool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+			// Reference pool.importPackage("com.dilmus.dilshad.scabi.client.Dson");
+			CtClass cr = pool.makeClass(fis);
+	  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
+	  		log.debug("dataExecuteForShuffle_1_1() modifiers : {}", cr.getModifiers());
+	  		
+	  		log.debug("dataExecuteForShuffle_1_1() DMOperatorTemplate.class.getCanonicalName() : {}", DMOperatorTemplate.class.getCanonicalName());
+	  		CtClass ct = pool.getAndRename(DMOperatorTemplate.class.getCanonicalName(), "OT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
+		    CtMethod ctmethods[] = ct.getDeclaredMethods();
+		    for (CtMethod ctmethod : ctmethods)
+		  		   ct.removeMethod(ctmethod);
+	  		   
+		    CtMethod amethods[] = cr.getDeclaredMethods();
+		    for (CtMethod amethod : amethods) {
+		    	CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+		    	
+		    	// OR
+		    	//CtMethod bmethod = new CtMethod(pool.get(String.class.getCanonicalName()), "compute", new CtClass[] {pool.get(Dson.class.getCanonicalName())}, ct);
+		    	//bmethod.setBody(amethod, null);
+		    	//bmethod.setModifiers(bmethod.getModifiers() | Modifier.PUBLIC);
+		    	// OR
+		    	//CtMethod bmethod = CtMethod.make(amethod.getMethodInfo(), ct);
+		    	
+		    	ct.addMethod(bmethod);
+		    }
+		    
+		    CtField afields[] = cr.getDeclaredFields();
+		    for (CtField afield : afields) {
+		    	CtField bfield = new CtField(afield, ct);
+			    ct.addField(bfield);
+		    }
+		    
+		    // Notes : Anonymous class can not define constructor. So no need to copy constructor
+		    
+	  		Class<?> df2 = ct.toClass();
+	  		Object ob = df2.newInstance();
+	  		Method m = df2.getMethod("groupByValues", DataElement.class, DataContext.class);
+	  		
+	  		DMShuffle shuffleObj = new DMShuffle(m, ob);
+  		
+	  		/* OR try
+	  		IOperator  iob = (IOperator) ob;
+	  		iob.operate(dp1, dp2, dctx3);
+	  		*/
+	  		try {
+	  			// TODO set a read only attribute to dp1.setReadOnly()
+	  		
+	  			// create DataPartition object for other source dp with partition id dataid1_i_appid of source dataset dataId1
+	  			for (int i = 1; i <= tu; i++) {
+	  				
+	  				if (i == cu) {
+	  					// use dp1
+	  		  			dp1.shuffleBy(shuffleObj);
+	  					// add filtered entries from dp1 to dp2
+	  		  			dp1.begin();
+	  		  			while (dp1.hasNext()) {
+	  		  				DataElement e = dp1.next();
+	  		  				if (dp1.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  					dp2.append(e);
+	  		  				}
+	  		  			}
+	  		  			dp1.clearShuffle();
+	  				} else {
+	  					// check if other source dp exists and create DataPartition object if other source dp exists
+	  					String partitionIdOther = dataId1 + "_" + i + "_" + appId.replace("_", "");
+	  					log.debug("dataExecuteForShuffle_1_1() PartitionId1 : {}", partitionIdOther);
+	  					DataPartition dpSourceOther = null;
+	  					/* cw
+				   		log.debug("dataExecuteForShuffle_1_1() Proceeding with isPartitionExists() check for partition id : {}", partitionIdOther);			   		
+				   		boolean check = DataPartition.isPartitionExists(appId, dataId1, i, storageDPDirPath, storageHandler);
+						
+				   		DataPartition dpSourceOther = null;
+						if (check) {
+							log.debug("dataExecuteForShuffle_1_1() Partition exists for appId : {}, dataId : {}, i : {}, storageDPDirPath : {}", appId, dataId1, i, storageDPDirPath);
+							dpSourceOther = new DataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
+						} else {
+						   	throw new DScabiException("Source DataPartition for partitionId : " + partitionIdOther + " is not found in Storage system", "EXE.EFS.1");
+						}
+						*/
+						dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);  					
+						dpSourceOther.shuffleBy(shuffleObj);
+	  					// add filtered entries from dpSourceOther to dp2
+						dpSourceOther.begin();
+	  		  			while (dpSourceOther.hasNext()) {
+	  		  				DataElement e = dpSourceOther.next();
+	  		  				if (dpSourceOther.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  					dp2.append(e);
+	  		  				}
+	  		  			}
+	  		  			dpSourceOther.close();
+	  		  			dpSourceOther = null;
+	  				}
+	  			}
+	  		
+	  		} catch(Throwable e) {
+		  		cr.detach();
+		 		ct.detach();
+	  			pool = null;
+	  			fis.close();
+		   		result = DMJson.error("CSE.EXE.DEFO2.3", DMUtil.serverErrMsg(e));
+		   		synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+				synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+		   		return result;
+		   	}
+	 		// Release CtClass from ClassPool
+	  		cr.detach();
+	 		ct.detach();
+	 		pool = null;
+	 		fis.close();
+	  		log.debug("dataExecuteForShuffle_1_1() operation done");
+  		}	
 		return DMJson.ok();
 	}
 
-	public static String dataExecuteForShuffle_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+	public static String dataExecuteForShuffle_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPath, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
 	
 		return DMJson.ok();
 	}

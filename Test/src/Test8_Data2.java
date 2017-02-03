@@ -119,6 +119,7 @@ import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.IOperator;
+import com.dilmus.dilshad.scabi.core.IShuffle;
 import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
 import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeBlock_D1;
 import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeSync_D1;
@@ -196,8 +197,9 @@ public class Test8_Data2 implements Serializable {
     	*/
     	
        	DMeta meta = new DMeta("localhost", "5000");
-       	
-    	Dson dson = new Dson("Partitions", "100");
+       	// works Dson dson = new Dson("Partitions", "100");
+       	// Dson dson = new Dson("Partitions", "3");
+       	Dson dson = new Dson("Partitions", "10");
     	//Dson dson = new Dson("Partitions", "11");
     	HashMap<String, String> out1 = new HashMap<String, String>();
     	Data d = new Data(meta, "mydata", FileUnit.class);  
@@ -220,6 +222,7 @@ public class Test8_Data2 implements Serializable {
     		
     	};
     	//works d.operate("mydata", "newdata", iob);
+    	/* works
     	d.operate("mydata", "newdata", (a, b, c) -> { 
     												  b.append("Hello from DU " + c.getDU());
 													  for (DataElement e : a) {
@@ -227,20 +230,37 @@ public class Test8_Data2 implements Serializable {
 													  }
 													  return; 
 													 });
+		*/											 
     	//IOperator iob2 = (a, b, c) -> { return; };
     	//iob2.operate(null, null, null);
     	// loadJavaFileAsHexStr() className  : Test8_Data$$Lambda$2/1375995437
     	// 2016-10-05 22:06:25:591 +0530 [main] [DEBUG] com.dilmus.dilshad.scabi.core.data.DOperatorConfig_1_1 - loadJavaFileAsHexStr() classAsPath  : Test8_Data$$Lambda$2/1375995437.class
     	
     	
-    	d.perform();
+    	// works d.perform();
+    	
+    	IShuffle ishuffle = new IShuffle() {
+
+			@Override
+			public Iterable<String> groupByValues(DataElement e, DataContext c) throws Exception {
+				
+				ArrayList<String> alist = new ArrayList<String>();
+				alist.add(e.getString());
+				return alist;
+			}
+    		
+    	};
+    	
     	try {
-	    	d.finish();
+	    	// works d.finish();
+	    	d.groupBy("mydata", "newdata2", ishuffle);
+	    	
 	    	timeTillFinish = System.currentTimeMillis();
 	    	System.out.println("Time taken till finish() : " + (timeTillFinish - time1)); 
 	    	long n = d.getNoOfSplits();
 	    	for (long i = 1; i <= n; i++) {
-		    	DataPartition dp = d.getDataPartition("newdata", i);
+		    	DataPartition dp = d.getDataPartition("newdata2", i);
+		    	// DataPartition dp = d.getDataPartition("mydata", i);
 		    	System.out.println("");
 		    	System.out.print("dp-" + i + " : ");
 		    	for (DataElement e : dp) {
@@ -252,7 +272,7 @@ public class Test8_Data2 implements Serializable {
 	    	}
 	    	System.out.println("");
 	    	d.deleteData("mydata");
-	    	d.deleteData("newdata");
+	    	d.deleteData("newdata2");
 	    	d.close();
 	    	meta.close();
     	} catch (Throwable e) {

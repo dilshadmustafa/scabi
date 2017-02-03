@@ -191,7 +191,7 @@ public class Test_BigArray {
 			//assertTrue(bigArray.isEmpty());
 			bigArray.flushFiles();
 			bigArray.close();
-			DataPartition.deletePartition("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", storageHandler);
+			DataPartition.deletePartition("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
 			storageHandler.close();
 			System.out.println("done");
 		} catch (Exception e) {

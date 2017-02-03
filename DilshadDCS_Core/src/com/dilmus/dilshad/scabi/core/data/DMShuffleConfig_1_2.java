@@ -95,8 +95,8 @@ import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 import com.dilmus.dilshad.scabi.core.IOperator;
-import com.dilmus.dilshad.scabi.core.IOperator2;
 import com.dilmus.dilshad.scabi.core.IShuffle2;
+import com.dilmus.dilshad.scabi.deprecated.IOperator2;
 
 /**
  * @author Dilshad Mustafa
@@ -110,11 +110,13 @@ public class DMShuffleConfig_1_2 {
 	public final static int CFG_TYPE_OBJECT_OF_INTERFACE = 4;
 	
 	private final Logger log = LoggerFactory.getLogger(DMShuffleConfig_1_2.class);
-	private IShuffle2 m_shuffleObjOfInterface = null;
-	private Class<?> m_shuffleClassOfInterface = null;
+
 	// Not used private String m_code = null;
 	// Not used private String m_jarFilePath = null;
 	// Not used private String m_classNameInJar = null;
+	
+	private Class<?> m_shuffleClass = null;
+	private String m_lambdaMethodName = null;
 	
 	private int m_configType = 0;
 	private String m_jsonStrInput = null;
@@ -158,6 +160,15 @@ public class DMShuffleConfig_1_2 {
 	
 	public String getJavaFileAsHexStr() {
 		return m_javaFileHexStr;
+	}
+	
+	public int setLambdaMethodName(String lambdaMethodName) {
+		m_lambdaMethodName = lambdaMethodName;
+		return 0;
+	}
+	
+	public String getLambdaMethodName() {
+		return m_lambdaMethodName;
 	}
 	
 	public int setSourceDataId(String sourceDataId) {
@@ -205,28 +216,10 @@ public class DMShuffleConfig_1_2 {
 	public DMClassLoader getComputeUnitJars() {
 		return m_dcl;
 	}
-		
-	public DMShuffleConfig_1_2(IShuffle2 unit) throws IOException {
-		m_shuffleObjOfInterface = unit;
-		m_configType = DMShuffleConfig_1_2.CFG_TYPE_OBJECT_OF_INTERFACE;
-		m_maxSplit = 1;
-		
-		m_jarFilePathList = new LinkedList<String>();
-		m_jsonStrInput = DMJson.empty();
-		
-		m_jobId = DMJson.empty();
-		
-		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
-		// Previous works m_configId = m_configId.replace('-', '_');
-		
-		m_configId = DMJson.empty();
-		
-		loadJavaFileAsHexStr(unit.getClass());
-	}
 	
-	public DMShuffleConfig_1_2(Class<?> cls) {
-		m_shuffleClassOfInterface = cls;
-		m_configType = DMShuffleConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE;
+	public DMShuffleConfig_1_2(Class<?> cls) throws IOException {
+		m_shuffleClass = cls;
+		m_configType = DMShuffleConfig_1_2.CFG_TYPE_CLASS;
 		m_maxSplit = 1;
 		
 		m_jarFilePathList = new LinkedList<String>();
@@ -238,6 +231,10 @@ public class DMShuffleConfig_1_2 {
 		// Previous works m_configId = m_configId.replace('-', '_');
 		
 		m_configId = DMJson.empty();
+		
+		loadJavaFileAsHexStr(cls);
+		
+		m_lambdaMethodName = DMJson.empty();
 	}
 
 	public boolean isJarFilePathListSet() {
@@ -258,23 +255,9 @@ public class DMShuffleConfig_1_2 {
 		return m_configType;
 	}
 	
-	public IShuffle2 getShuffleObjectOfInterface() {
-		return m_shuffleObjOfInterface;
-	}
-
-	public Class<?> getShuffleClassOfInterface() {
-		return m_shuffleClassOfInterface;
-	}
-	
-	/* TODO for future DShuffle2 class
-	public DShuffle2 getShuffleObject() {
-		return m_shuffleObj;
-	}
-
 	public Class<?> getShuffleClass() {
 		return m_shuffleClass;
 	}
-	*/
 	
 	public int setInput(String jsonInput) {
 		m_jsonStrInput = jsonInput;

@@ -93,7 +93,7 @@ import org.slf4j.LoggerFactory;
  * @author Dilshad Mustafa
  *
  */
-public class Test6 {
+public class Test6_Compute {
 
 	   public static void main(String[] args) throws Exception {
 	        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
@@ -104,7 +104,7 @@ public class Test6 {
 	  		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
 	  		//System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
 	    	//System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
-	  		final Logger log = LoggerFactory.getLogger(Test6.class);
+	  		final Logger log = LoggerFactory.getLogger(Test6_Compute.class);
 		   
 	  		/* The examples below use DComputeAsync class which internally uses asynchronous non-blocking network I/O
 		    * and can submit very large number of split jobs / Compute Units

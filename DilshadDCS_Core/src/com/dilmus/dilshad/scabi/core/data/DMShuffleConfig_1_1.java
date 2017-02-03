@@ -223,7 +223,7 @@ public class DMShuffleConfig_1_1 {
 		loadJavaFileAsHexStr(unit.getClass());
 	}
 	
-	public DMShuffleConfig_1_1(Class<?> cls) {
+	public DMShuffleConfig_1_1(Class<?> cls) throws IOException {
 		m_shuffleClassOfInterface = cls;
 		m_configType = DMShuffleConfig_1_1.CFG_TYPE_CLASS_OF_INTERFACE;
 		m_maxSplit = 1;
@@ -237,6 +237,8 @@ public class DMShuffleConfig_1_1 {
 		// Previous works m_configId = m_configId.replace('-', '_');
 		
 		m_configId = DMJson.empty();
+		
+		loadJavaFileAsHexStr(cls);
 	}
 
 	public boolean isJarFilePathListSet() {

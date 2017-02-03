@@ -78,13 +78,14 @@ and conditions of this license without giving prior notice.
 package com.dilmus.dilshad.scabi.core;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public interface IShuffle {
+public interface IShuffle extends Serializable {
 	
 	// example code for word count
 	// List<String> values = new List<String>();
@@ -102,6 +103,6 @@ public interface IShuffle {
 	// return values;
 	
 	// this method can be overridden by end users to create more complex groupings
-	public Iterable<String> groupValues(DataElement e, DataContext c) throws Exception;
+	public Iterable<String> groupByValues(DataElement e, DataContext c) throws Exception;
 
 }

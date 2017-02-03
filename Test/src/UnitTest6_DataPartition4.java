@@ -107,15 +107,19 @@ public class UnitTest6_DataPartition4 {
 
 		DataContext c = DataContext.dummy();
 		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
-		DataPartition dp = new DataPartition(c, "mydata", "mydata_1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata_1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+		// cw DataPartition dp = new DataPartition(c, "mydata", "mydata_1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata_1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata", "mydata_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+
+		
 		dp.append("test");
-		dp.deletePartition();
+		//dp.deletePartition();
 		dp.close();
-		boolean check = DataPartition.isPartitionExists("1", "mydata", 1, "/home/anees/testdata/bigfile/tutorial/teststorage", storageHandler);
+		dp.operationsSuccess();
+		boolean check = DataPartition.isPartitionIdFileExists("app1", "mydata", 1, "/home/anees/testdata/bigfile/tutorial/teststorage", storageHandler);
 		
 		if (check) {
 			System.out.println("Data Partition Exists");
-			DataPartition.deletePartition("1", "mydata", 1, "/home/anees/testdata/bigfile/tutorial/teststorage", storageHandler);
+			DataPartition.deletePartition("app1", "mydata", 1, "/home/anees/testdata/bigfile/tutorial/teststorage", "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
 		} else {
 			System.out.println("Data Partition doesn't exist");
 		}

@@ -95,6 +95,7 @@ import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.compute.DCompute;
 import com.dilmus.dilshad.scabi.deprecated.DFieldGroup;
+import com.dilmus.dilshad.storage.IStorageHandler;
 import com.dilmus.dilshad.scabi.core.IShuffle;
 
 /**
@@ -131,17 +132,31 @@ public class UnitTest6_DataPartition3 {
 		// NOTE : change this filename before every run "test_for_CU_13". No need if calling .close()
 		DataContext c = DataContext.dummy();
 		
-		// works DMStdStorageHandler storageHandler = new DMStdStorageHandler();
+		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
 		
 		// it's fixed --> simulate local dir not deleted case --> DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "teststorage" /*"/home/anees/testdata/bigfile/tutorial/teststorage"*/, "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		//DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "teststorage" /*"/home/anees/testdata/bigfile/tutorial/teststorage"*/, "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		// simulate error if storage doesn't exist DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "teststorage" /*"/home/anees/testdata/bigfile/tutorial/teststorage"*/, "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
 		
-		// works DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
-		
+		// cw DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		DataPartition dp = null;
+		try {
+		dp = DataPartition.createDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		} catch (Exception e) {
+			e.printStackTrace();
+			dp = DataPartition.readDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		}
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
-		DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
-		DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "teststorage", "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
-
+		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
+		// works for Seaweed DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "teststorage", "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+		/* for Seaweed
+		try {
+		dp = DataPartition.createDataPartition(c, "mydata3", "mydata3_1_app1", "teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		} catch (Exception e) {
+			e.printStackTrace();
+			dp = DataPartition.readDataPartition(c, "mydata3", "mydata3_1_app1", "teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		}
+		*/
+		
 		/*
 		// To simulate bigarray.get(long) doesn't read from meta-data page file and so doesn't copy to local meta-data page file
 		// and so local meta-data folder is not created
@@ -168,6 +183,9 @@ public class UnitTest6_DataPartition3 {
 		exportFileTest(dp);
 		importFileTest(dp);
 		dp.close();
+		dp.operationsSuccess();
+		String details = DataPartition.getPartitionIdFileData("/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		System.out.println("details : " + details);
 		storageHandler.close();
 		
 		System.out.println("done");
@@ -200,7 +218,7 @@ public class UnitTest6_DataPartition3 {
 		dp.shuffleBy(new IShuffle() {
 
 			@Override
-			public Iterable<String> groupValues(DataElement e, DataContext c) throws IOException {
+			public Iterable<String> groupByValues(DataElement e, DataContext c) throws IOException {
 				// TODO Auto-generated method stub
 				List<String> list = new LinkedList<String>();
 				list.add(e.getField("word"));
@@ -219,7 +237,7 @@ public class UnitTest6_DataPartition3 {
 		
 	}
 
-	public static void importFileTest(DataPartition dp) throws IOException, DScabiException {
+	public static void importFileTest(DataPartition dp) throws Exception {
 		
 		dp.importFromFile("/home/anees/testdata/bigfile/dpexported/myfirstexport.txt");
 		

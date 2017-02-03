@@ -78,16 +78,19 @@ and conditions of this license without giving prior notice.
 package com.dilmus.dilshad.scabi.core.data;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,12 +127,12 @@ import com.dilmus.dilshad.scabi.core.IComparator;
 import com.dilmus.dilshad.scabi.core.IForEachDataElement;
 import com.dilmus.dilshad.scabi.core.IForEachDataPartition;
 import com.dilmus.dilshad.scabi.core.IOperator;
-import com.dilmus.dilshad.scabi.core.IOperator2;
 import com.dilmus.dilshad.scabi.core.IShuffle;
 import com.dilmus.dilshad.scabi.core.IShuffle2;
 import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
 import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_1;
 import com.dilmus.dilshad.scabi.deprecated.DOperatorConfig_2_2;
+import com.dilmus.dilshad.scabi.deprecated.IOperator2;
 import com.dilmus.dilshad.storage.IStorageHandler;
 
 /**
@@ -139,6 +142,7 @@ import com.dilmus.dilshad.storage.IStorageHandler;
 public class Data implements Runnable {
 
 	private final Logger log = LoggerFactory.getLogger(Data.class);
+	private static final Logger logs = LoggerFactory.getLogger(Data.class);
 	private ExecutorService m_threadPool = null;
 	private DMeta m_meta = null;
 	private long m_commandID = 2;
@@ -150,7 +154,8 @@ public class Data implements Runnable {
 	private long m_maxThreads = 0; //1;
 	private long m_splitTotal = 0;
 	private DataAsyncConfigNode m_configNode = null;
-	private boolean m_isPerformInProgress = false;
+	private boolean m_isRunInProgress = false;
+	private boolean m_isFirstRunCompleted = false;
 	private boolean m_crunListReady = false;
 	private boolean m_futureListReady = false;
 
@@ -159,6 +164,7 @@ public class Data implements Runnable {
 	private LinkedList<DataNoBlock> m_cnbList = null;
 	
 	private LinkedList<Future<?>> m_futureList = null;
+	private LinkedList<DataRangeRunner_D2> m_rrList = null;
 	private HashMap<Future<?>, DataRangeRunner_D2> m_futureRRunMap = null;
 	
 	private Future<?> m_futureCompute = null;
@@ -222,10 +228,78 @@ public class Data implements Runnable {
 	private String m_storageProvider = null;
 	private String m_mountDirPath = null;
 	private String m_storageConfig = null;
+	private String m_storageDirPath = null;
 	private IStorageHandler m_storageHandler = null;
 	
 	private boolean m_isSpecificInput = false;
 	private String m_specificJsonStrInput = null;
+	
+
+	
+	private String createStorageAppIdDirIfAbsent(String storageDirPath, String appId, IStorageHandler storageHandler) throws IOException {
+		
+		appId = appId.replace("_", "");
+		
+		String appDirPath = null;
+		if (storageDirPath.endsWith(File.separator)) {
+			appDirPath = storageDirPath + appId;
+		} else {
+			appDirPath = storageDirPath + File.separator + appId;
+		}
+		
+		try {
+			storageHandler.mkdirIfAbsent(appDirPath);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+		
+		log.debug("createStorageAppIdDirIfAbsent() StorageAppIdDir done : {}", appDirPath);
+		
+		return appDirPath;
+	}
+	
+	private int createAppIdFile(String storageDirPath, String appId, String localDirPath, IStorageHandler storageHandler, String detailsStr) throws IOException {
+		
+		appId = appId.replace("_", "");
+		String localFilePath = null;
+		if (localDirPath.endsWith(File.separator)) {
+			localFilePath = localDirPath + appId + ".txt";
+		} else {
+			localFilePath = localDirPath + File.separator + appId + ".txt";
+		}
+		
+		FileOutputStream fos = new FileOutputStream(localFilePath);
+		OutputStreamWriter osw = new OutputStreamWriter(fos);
+		BufferedWriter bw = new BufferedWriter(osw);
+
+		// cw Date d = new Date();
+		// cw bw.write(d.toString());
+		bw.write(detailsStr);
+		
+		bw.close();
+		osw.close();
+		fos.close();
+		
+		String appFilePath = null;
+		if (storageDirPath.endsWith(File.separator)) {
+			appFilePath = storageDirPath + appId + ".txt";
+		} else {
+			appFilePath = storageDirPath + File.separator + appId + ".txt";
+		}
+		
+		try {
+			storageHandler.copyFromLocal(appFilePath, localFilePath);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+		
+		Path path = Paths.get(localFilePath);
+		Files.deleteIfExists(path);
+		
+		log.debug("createAppIdFile() App Id file created : {}", appFilePath);
+		
+		return 0;
+	}
 	
 	public static int deleteData(String appId, String dataId, IStorageHandler storageHandler) throws Exception {
 		// TODO yet to be unit tested
@@ -301,16 +375,23 @@ public class Data implements Runnable {
 			throw new DScabiException("Unknown StorageProvider : " + storageProvider, "DAA.GDP.1");
 		}
 			
+		String localDirPath = System.getProperty("scabi.local.dir");
+		
     	long n = noOfsplits;
     	for (long splitUnit = 1; splitUnit <= n; splitUnit++) {
-	    	DataPartition.deletePartition(appId, dataId, splitUnit, storageDPDirPath, storageHandler);
+	    	DataPartition.deletePartition(appId, dataId, splitUnit, storageDPDirPath, localDirPath, storageHandler);
     	}
 	    	
     	return 0;
 	}
 	
 	public int deleteData(String dataId) throws DScabiException, IOException {
+
+		if (m_isRunInProgress) {
+			throw new DScabiException("Can't delete while run()/perform() in progress", "DAA.DDA.1");
+		}
 		
+		/* cw
 		String storageDPDirPath = null;
 		
   		// For storage system that can create directory
@@ -325,10 +406,11 @@ public class Data implements Runnable {
 		} else {
 			throw new DScabiException("Unknown StorageProvider : " + m_storageProvider, "DAA.GDP.1");
 		}
-		
+		*/
     	long n = m_splitTotal;
     	for (long splitUnit = 1; splitUnit <= n; splitUnit++) {
-	    	DataPartition.deletePartition(m_appId, dataId, splitUnit, storageDPDirPath, m_storageHandler);
+	    	// cw DataPartition.deletePartition(m_appId, dataId, splitUnit, storageDPDirPath, m_localDirPath, m_storageHandler);
+	    	DataPartition.deletePartition(m_appId, dataId, splitUnit, m_storageDirPath, m_localDirPath, m_storageHandler);
     	}
     	
     	return 0;
@@ -339,11 +421,10 @@ public class Data implements Runnable {
 	}
 	
 	public DataPartition getDataPartition(String dataId, long splitUnit) throws Exception {
-		
+		/* cw
   		String localDPDirPath = m_localDirPath;
   		
 		String storageDPDirPath = null;
-		IStorageHandler  storageHandler = null;
 		
   		// For storage system that can create directory
 		// Pass the storage directory path through m_mountDir from ComputeServer_D2.getStorageDir() in case of DMHdfsStorageHandler
@@ -357,10 +438,30 @@ public class Data implements Runnable {
 		} else {
 			throw new DScabiException("Unknown StorageProvider : " + m_storageProvider, "DAA.GDP.1");
 		}
-
-		DataContext dctx = DataContext.dummy();
+		*/
+		
+		DataContext dctx = new DataContext(); 
+		dctx.setMaxRetry(m_maxRetry);
+		// cw DataContext dctx = DataContext.dummy();
 		String partitionId = dataId + "_" + splitUnit + "_" + m_appId.replace("_", "");
-		DataPartition dp = new DataPartition(dctx, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, m_storageHandler);
+		
+		log.debug("getDataPartition() partitionId : {}", partitionId);
+		DataPartition dp = null;
+		/* cw
+   		log.debug("getDataPartition() Proceeding with isPartitionExists() check for partition id : {}", partitionId);			   		
+   		boolean check = DataPartition.isPartitionExists(m_appId, dataId, splitUnit, storageDPDirPath, m_storageHandler);
+		
+   		DataPartition dp = null;
+		if (check) {
+			log.debug("getDataPartition() Partition exists for appId : {}, dataId : {}, splitUnit : {}, storageDPDirPath : {}", m_appId, dataId, splitUnit, storageDPDirPath);
+			dp = new DataPartition(dctx, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, m_storageHandler);
+		} else {
+		   	throw new DScabiException("DataPartition for partitionId : " + partitionId + " is not found in Storage system", "DAA.GDP.1");
+		}
+		*/
+		
+		// cw dp = DataPartition.readDataPartition(dctx, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, m_storageHandler);	
+		dp = DataPartition.readDataPartition(dctx, dataId, partitionId, m_storageDirPath, partitionId, 64 * 1024 * 1024, m_localDirPath, m_storageHandler);	
 
 		return dp;
 	}
@@ -409,8 +510,23 @@ public class Data implements Runnable {
  			System.exit(0);
  		}
  		
+  		// For storage system that can create directory
+		// Pass the storage directory path through m_mountDir from ComputeServer_D2.getStorageDir() in case of DMHdfsStorageHandler
+		if (m_storageProvider.equalsIgnoreCase("dfs") 
+			|| m_storageProvider.equalsIgnoreCase("fuse")
+			|| m_storageProvider.equalsIgnoreCase("nfs")) 
+		{
+  			m_storageDirPath = m_mountDirPath;
+  			m_storageDirPath = createStorageAppIdDirIfAbsent(m_storageDirPath, m_appId, m_storageHandler);
+		} else if (m_storageProvider.equalsIgnoreCase("seaweedfs")) {
+			m_storageDirPath = m_appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
+		} else {
+			log.error("init() Cannot assign m_storageDirPath - Invalid Storage Provider is specified in property scabi.storage.provider : {}", m_storageProvider);
+			log.error("init() Cannot assign m_storageDirPath - Valid Storage Provider values : dfs, fuse, nfs, seaweedfs");
+			System.exit(0);
+		}
+ 		
 	}
-	
 	
 	public LinkedList<DataAsyncConfigNode> getConfigNodeList() {
 		return m_configNodeList;
@@ -557,8 +673,6 @@ public class Data implements Runnable {
 	
 	public Data(DMeta meta, String dataId, Class<?> cls) throws DScabiException, IOException {
 		
-		init();
-		
 		boolean isClassMatchFound = false;
     	log.debug("Data() Super class : {}", cls.getGenericSuperclass());
     	Type typeSuper = cls.getGenericSuperclass();
@@ -603,6 +717,7 @@ public class Data implements Runnable {
 		m_cnbList = new LinkedList<DataNoBlock>();
 		
 		m_futureList = new LinkedList<Future<?>>();
+		m_rrList = new LinkedList<DataRangeRunner_D2>();
 		m_futureRRunMap = new HashMap<Future<?>, DataRangeRunner_D2>();
 		
 		m_jarFilePathList = new LinkedList<String>();
@@ -622,12 +737,24 @@ public class Data implements Runnable {
 		
 		m_appId = UUID.randomUUID().toString();
 		m_appId = m_appId.replace('-', '_');
+		
+		init();
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		
+		DMJson djson = new DMJson();
+		djson.add("Status", "INIT");
+		djson.add("StatusDateTime", inst.toString());
+		djson.add("StatusTimestamp", "" + nano);
+		
+		String detailsStr = djson.toString();
+
+		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 	}	
 	
 	public Data(DMeta meta, String dataId, DataUnit dataUnitObj) throws DScabiException, IOException {
 
-		init();
-		
 		m_meta = meta;
 		m_commandMap = new HashMap<String, DataAsyncConfigNode>();
 		
@@ -641,6 +768,7 @@ public class Data implements Runnable {
 		m_cnbList = new LinkedList<DataNoBlock>();
 		
 		m_futureList = new LinkedList<Future<?>>();
+		m_rrList = new LinkedList<DataRangeRunner_D2>();
 		m_futureRRunMap = new HashMap<Future<?>, DataRangeRunner_D2>();
 		
 		m_jarFilePathList = new LinkedList<String>();
@@ -666,12 +794,24 @@ public class Data implements Runnable {
 		
 		m_appId = UUID.randomUUID().toString();
 		m_appId = m_appId.replace('-', '_');
+		
+		init();
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		
+		DMJson djson = new DMJson();
+		djson.add("Status", "INIT");
+		djson.add("StatusDateTime", inst.toString());
+		djson.add("StatusTimestamp", "" + nano);
+		
+		String detailsStr = djson.toString();
+
+		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 	}	
 	
 	public Data(DMeta meta, String dataId, DPartitioner partitionerObj) throws DScabiException, IOException {
 
-		init();
-		
 		m_meta = meta;
 		m_commandMap = new HashMap<String, DataAsyncConfigNode>();
 		
@@ -685,6 +825,7 @@ public class Data implements Runnable {
 		m_cnbList = new LinkedList<DataNoBlock>();
 		
 		m_futureList = new LinkedList<Future<?>>();
+		m_rrList = new LinkedList<DataRangeRunner_D2>();
 		m_futureRRunMap = new HashMap<Future<?>, DataRangeRunner_D2>();
 		
 		m_jarFilePathList = new LinkedList<String>();
@@ -710,12 +851,24 @@ public class Data implements Runnable {
 		
 		m_appId = UUID.randomUUID().toString();
 		m_appId = m_appId.replace('-', '_');
+		
+		init();
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		
+		DMJson djson = new DMJson();
+		djson.add("Status", "INIT");
+		djson.add("StatusDateTime", inst.toString());
+		djson.add("StatusTimestamp", "" + nano);
+		
+		String detailsStr = djson.toString();
+
+		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 	}	
 	
 	public Data(DMeta meta, String dataId) throws IOException {
 
-		init();
-		
 		m_meta = meta;
 		m_commandMap = new HashMap<String, DataAsyncConfigNode>();
 		
@@ -729,6 +882,7 @@ public class Data implements Runnable {
 		m_cnbList = new LinkedList<DataNoBlock>();
 		
 		m_futureList = new LinkedList<Future<?>>();
+		m_rrList = new LinkedList<DataRangeRunner_D2>();
 		m_futureRRunMap = new HashMap<Future<?>, DataRangeRunner_D2>();
 		
 		m_jarFilePathList = new LinkedList<String>();
@@ -754,13 +908,27 @@ public class Data implements Runnable {
 		
 		m_appId = UUID.randomUUID().toString();
 		m_appId = m_appId.replace('-', '_');
+		
+		init();
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		
+		DMJson djson = new DMJson();
+		djson.add("Status", "INIT");
+		djson.add("StatusDateTime", inst.toString());
+		djson.add("StatusTimestamp", "" + nano);
+		
+		String detailsStr = djson.toString();
+
+		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 	}
 	
 	public int initialize() throws InterruptedException {
 		
 		m_configNode = null;
 		
-		m_isPerformInProgress = false;
+		m_isRunInProgress = false;
 		m_futureListReady = false;
 
 		synchronized (this) {
@@ -786,6 +954,18 @@ public class Data implements Runnable {
 		}
 		closeCNBConnections();
 		DataNoBlock.closeHttpAsyncService();
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		
+		DMJson djson = new DMJson();
+		djson.add("Status", "SUCCESS");
+		djson.add("StatusDateTime", inst.toString());
+		djson.add("StatusTimestamp", "" + nano);
+		
+		String detailsStr = djson.toString();
+
+		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 		
 		m_storageHandler.close();
 		
@@ -973,7 +1153,7 @@ public class Data implements Runnable {
 		// repartition is an action because all source Data Partitions in the source Data object
 		// should be ready
 		
-		if (m_isPerformInProgress) {
+		if (m_isRunInProgress) {
 			throw new DScabiException("Perform already in progress", "DAA.OPE.1");
 		}
 		
@@ -990,7 +1170,7 @@ public class Data implements Runnable {
 	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
 	public Data operate(String dataId1, String dataId2, IOperator unit) throws Exception {
 	
-		if (m_isPerformInProgress) {
+		if (m_isRunInProgress) {
 			throw new DScabiException("Perform already in progress", "DAA.OPE.1");
 		}
 
@@ -1035,61 +1215,90 @@ public class Data implements Runnable {
 	
 	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
 	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
-	private Data lambda(String dataId1, String dataId2, IOperator2 unit) throws DScabiException, IOException {
+	public Data groupBy(String dataId1, String dataId2, IShuffle unit) throws Exception {
 		
-		if (m_isPerformInProgress) {
-			throw new DScabiException("Perform already in progress", "DAA.OPE.1");
-		}
-
-		if (m_configNode != null) {
-			if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_1 == m_configNode.getConfigNodeType()) {
-				setForOperatorConfig_1_1(m_configNode.getOperatorConfig_1_1());
-			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2 == m_configNode.getConfigNodeType()) {
-				setForOperatorConfig_1_2(m_configNode.getOperatorConfig_1_2());
+		// this is needed for the below if (m_startCommandId <= m_endCommandId) condition
+		if (m_configNode != null)
+			m_endCommandId = m_commandID;
+		else
+			m_endCommandId = m_commandID - 1;
+		
+		// this is to .perform() of previous operations
+		if (m_startCommandId <= m_endCommandId) {
+			perform();
+			finish();
+			
+			// This is just to help debugging, to see when finish block-1 completed
+			for (int i = 0; i < 200; i++) {
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
 			}
 			
-			m_commandMap.put("" + m_commandID, m_configNode);
-			m_commandID++;
+			Set<String> st = m_outputMap.keySet();
+			String ok = DMJson.ok();
 			
-			m_configNodeList.add(m_configNode);
-			
-			m_configNode = null;
-			m_configNodeType = 0;
-			
-			m_dataId1 = null;
-			m_dataId2 = null;
+			for (String s : st) {
+				// TODO later use dedicated result map and set it inside config.setResult() method
+				// because m_outputMap is supplied by user
+				String result = m_outputMap.get(s);
+
+				// TODO remove this if before release and uncomment below if (false == result.equals(ok)) condition
+				if (result.contains("Error")) {
+					log.debug("Result for split : {} is not ok. Result is : {}", s, result);
+					throw new DScabiException("Result for split : " + s + " is not ok. Result is : " + result, "DAA.GBY.1");
+				}
+
+				/* TODO uncomment before release
+				if (false == result.equals(ok)) {
+					log.debug("Result for split : {} is not ok. Result is : {}", s, result);
+					throw new DScabiException("Result for split : " + s + " is not ok. Result is : " + result, "DAA.GBY.1");
+				}
+				*/
+			}
 			
 		}
 		
-		m_configNodeType = DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2;
-		DMOperatorConfig_1_2 config = new DMOperatorConfig_1_2(unit);
-		m_configNode = new DataAsyncConfigNode(config);
-		m_dataId1 = dataId1;
-		m_dataId2 = dataId2;
+		if (unit.getClass().getName().contains("$$Lambda$")) {
+			m_lambdaMethodName = DMLambdaUtil.getMethodName(unit);
+			Class<?> cls = DMLambdaUtil.getImplClass(unit);
+
+			m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2;
+			DMShuffleConfig_1_2 config = new DMShuffleConfig_1_2(cls);
+			m_configNode = new DataAsyncConfigNode(config);
+			config.setSourceDataId(dataId1);
+			config.setTargetDataId(dataId2);
+			config.setOutput(m_outputMap);
+			config.setMaxSplit(m_maxSplit);
+			config.setMaxRetry(m_maxRetry);
+			//System.exit(0);
+		} else {
+			m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1;
+			DMShuffleConfig_1_1 config = new DMShuffleConfig_1_1(unit);
+			m_configNode = new DataAsyncConfigNode(config);
+			config.setSourceDataId(dataId1);
+			config.setTargetDataId(dataId2);
+			config.setOutput(m_outputMap);
+			config.setMaxSplit(m_maxSplit);
+			config.setMaxRetry(m_maxRetry);
+		}
 		
-		return this;
-	}	
-	
-	// TODO handy method at partition level
-	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
-	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
-	public Data foreachPartition(String dataId1, IForEachDataPartition fe) {
-	
-		return this;
-	}
-	
-	// TODO handy method at DataElement level
-	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
-	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
-	public Data foreachElement(String dataId1, IForEachDataElement fe) {
+		m_commandMap.put("" + m_commandID, m_configNode);
+		m_commandID++;
 		
-		return this;
-	}
-	
-	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
-	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
-	public Data groupBy(String dataId1, String dataId2, IShuffle unit) throws DScabiException, IOException {
-		shuffle(dataId1, dataId2, unit);
+		m_configNodeList.add(m_configNode);
+		
+		m_configNode = null;
+		m_configNodeType = 0;
+		
+		m_dataId1 = null;
+		m_dataId2 = null;
+		
+		perform();
+		finish();
+		
 		return this;
 	}
 	
@@ -1157,10 +1366,10 @@ public class Data implements Runnable {
 		
 		// Create shuffle config
 		m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2;
-		DMShuffleConfig_1_2 config = new DMShuffleConfig_1_2(unit);
-		m_configNode = new DataAsyncConfigNode(config);
-		config.setSourceDataId(dataId1);
-		config.setTargetDataId(dataId2);
+		// TODO DMShuffleConfig_1_2 config = new DMShuffleConfig_2_1(unit);
+		//TODO m_configNode = new DataAsyncConfigNode(config);
+		//TODO config.setSourceDataId(dataId1);
+		//TODO config.setTargetDataId(dataId2);
 
 		m_commandMap.put("" + m_commandID, m_configNode);
 		m_commandID++;
@@ -1221,6 +1430,22 @@ public class Data implements Runnable {
 	
 		return this;
 	}
+	
+	// TODO handy method at partition level
+	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
+	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
+	public Data foreachPartition(String dataId1, IForEachDataPartition fe) {
+	
+		return this;
+	}
+	
+	// TODO handy method at DataElement level
+	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
+	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
+	public Data foreachElement(String dataId1, IForEachDataElement fe) {
+		
+		return this;
+	}	
 	
 	public Data input(String jsonStrInput) {
 		m_jsonStrInput = jsonStrInput;
@@ -1307,6 +1532,11 @@ public class Data implements Runnable {
 	
 	public void run() {
 		
+		if (m_isFirstRunCompleted) {
+			runAgain();
+			return;
+		}
+		
         long k = 0;
 
 		try {
@@ -1377,6 +1607,7 @@ public class Data implements Runnable {
         	Future<?> f = m_threadPool.submit(rr);
         	addToFutureList(f);
         	putFutureRRunMap(f, rr);
+        	m_rrList.add(rr);
         	
         	k = endCRun + 1;
         	if (k >= totalCRun) {
@@ -1394,8 +1625,61 @@ public class Data implements Runnable {
                
 	}
 
+	//============================runAgain===============================
+	
+	public void runAgain() {
+		
+		log.debug("runAgain() m_cnbListSize : {}", m_cnbListSize);
+		for (DataNoBlock cnb : m_cnbList) {
+        	log.debug("runAgain() Compute is {}", cnb);
+        }
+
+        log.debug("runAgain() m_crunListSize : {}", m_crunListSize); 
+        log.debug("runAgain() m_startCommandId : {}", m_startCommandId); 
+        log.debug("runAgain() m_endCommandId : {}", m_endCommandId); 
+        
+		ListIterator<DataAsyncRun_D2> itrcrun = m_crunList.listIterator();
+		for (long i = 1; i <= m_splitTotal; i++) {	
+    		log.debug("runAgain() Inside split for loop");
+        	
+    		DataAsyncRun_D2 crun = null;
+    		if (itrcrun.hasNext())
+            	crun = itrcrun.next();
+    		else
+    			throw new RuntimeException(new DScabiException("m_splitTotal is not equal to no. of cruns. cruns are missing", "DAA.RAN.1"));
+    		
+    		crun.initialize();
+    		crun.setCommandIdRange(m_startCommandId, m_endCommandId);
+        	
+     	}
+        
+        log.debug("runAgain() m_noOfRangeRunners : {}", m_noOfRangeRunners);
+		ListIterator<DataRangeRunner_D2> itrrr = m_rrList.listIterator();
+        
+		m_futureList.clear();
+		m_futureRRunMap.clear();
+		
+		for (long i = 0; i < m_noOfRangeRunners; i++) {
+
+        	DataRangeRunner_D2 rr = null;
+    		if (itrrr.hasNext())
+            	rr = itrrr.next();
+    		else
+    			throw new RuntimeException(new DScabiException("m_noOfRangeRunners is not equal to actual no. of DataRangeRunners. DataRangeRunners are missing", "DAA.RAN.2"));
+
+        	Future<?> f = m_threadPool.submit(rr);
+        	addToFutureList(f);
+        	putFutureRRunMap(f, rr);
+        	
+        }
+        m_futureListReady = true;
+        
+        m_futureRetry = m_threadPool.submit(m_retryAsyncMonitor);
+               
+	}
+	
 	public boolean finish() throws DScabiException, ExecutionException, InterruptedException {
-		if (false == m_isPerformInProgress)
+		if (false == m_isRunInProgress)
 			return true;
 		log.debug("finish() m_splitTotal : {}", m_splitTotal);
 		log.debug("finish() m_crunListSize : {}", m_crunListSize);
@@ -1469,6 +1753,12 @@ public class Data implements Runnable {
 		closeCNBConnections();
  		log.debug("finish() Exiting finish()");
  		initialize();
+ 		
+ 		if (false == m_isFirstRunCompleted)
+ 			m_isFirstRunCompleted = true;
+ 		
+ 		m_startCommandId = m_commandID;
+ 		
  		return true;
 	
 	}
@@ -1496,7 +1786,10 @@ public class Data implements Runnable {
 	}
 	
 	public boolean finish(long checkTillNanoSec) throws Exception {
-		if (false == m_isPerformInProgress)
+		
+		boolean res = false;
+		
+		if (false == m_isRunInProgress)
 			return true;
 		long time1 = System.nanoTime();
 		log.debug("finish(nanosec) m_splitTotal : {}", m_splitTotal);
@@ -1506,6 +1799,7 @@ public class Data implements Runnable {
 
 		try {
 			m_futureCompute.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
+			res = m_futureCompute.isDone();
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			// e.printStackTrace();
 			closeCNBConnections();
@@ -1529,7 +1823,8 @@ public class Data implements Runnable {
        	
        		try {
 				f.get(checkTillNanoSec, TimeUnit.NANOSECONDS);
-					
+				if (f.isDone() == false)
+					res = false;	
 			} catch (CancellationException | InterruptedException | ExecutionException e) {
 				// e.printStackTrace();
 				String errorJsonStr = DMJson.error(DMUtil.clientErrMsg(e));
@@ -1565,21 +1860,32 @@ public class Data implements Runnable {
         
 		try {
 			m_futureRetry.get();
+			if (m_futureRetry.isDone() == false)
+				res = false;
 		} catch (CancellationException | InterruptedException | ExecutionException e) {
 			// e.printStackTrace();
 			closeCNBConnections();
 			throw e;
 		}
 
+		if (false == res)
+			return false;
+		
         closeCNBConnections();
 		log.debug("finish(nanosec) Exiting finish()");
 		initialize();
+		
+ 		if (false == m_isFirstRunCompleted)
+ 			m_isFirstRunCompleted = true;
+		
+ 		m_startCommandId = m_commandID;
+ 		
 		return true;
 
 	}
 
 	public boolean isDone() {
-		if (false == m_isPerformInProgress)
+		if (false == m_isRunInProgress)
 			return true;
 		log.debug("isDone() m_splitTotal : {}", m_splitTotal);
 		log.debug("isDone() m_crunListSize : {}", m_crunListSize);
@@ -1590,7 +1896,8 @@ public class Data implements Runnable {
 		boolean check = true;
 
 		check = m_futureCompute.isDone();
-		check = m_futureRetry.isDone();
+		if (m_futureRetry.isDone() == false)
+			check = false;
 		
 		log.debug("isDone() m_futureListSize : {}", m_futureListSize);
 		int gap = 0;
@@ -1603,7 +1910,8 @@ public class Data implements Runnable {
 		log.debug("isDone() m_futureListSize : {}", m_futureListSize);
 		
 		for (Future<?> f : m_futureList) {
-  			check = f.isDone();
+  			if (f.isDone() == false)
+  				check = false;
         }
 
 		log.debug("isDone() Exiting finish()");
@@ -1613,8 +1921,13 @@ public class Data implements Runnable {
 	
 	public Data perform() throws DScabiException, IOException {
 
-		if (false == m_isPerformInProgress)
-			m_isPerformInProgress = true;
+		if (m_isFirstRunCompleted) {
+			performAgain();
+			return this;
+		}
+		
+		if (false == m_isRunInProgress)
+			m_isRunInProgress = true;
 		else {
 			throw new DScabiException("Perform already in progress", "DAA.PEM.1");
 		}
@@ -1650,7 +1963,8 @@ public class Data implements Runnable {
 		if (DIT_DATAUNIT_CLASS == m_dataInitiatorType) {
 			try {
 				DataUnit du = (DataUnit) m_dataUnitClass.newInstance(); 
-				DataContext dataCtx = DataContext.dummy();
+				// cw DataContext dataCtx = DataContext.dummy();
+				DataContext dataCtx = new DataContext();
 				dataCtx.add("JsonInput", m_jsonStrInput);
 				m_splitTotal = du.count(dataCtx);
 			} catch (Exception ex) {
@@ -1658,7 +1972,8 @@ public class Data implements Runnable {
 			}
 		} else if (DIT_DATAUNIT_OBJECT == m_dataInitiatorType) {
 			try {
-				DataContext dataCtx = DataContext.dummy();
+				// cw DataContext dataCtx = DataContext.dummy();
+				DataContext dataCtx = new DataContext();
 				dataCtx.add("JsonInput", m_jsonStrInput);
 				m_splitTotal = m_dataUnitObject.count(dataCtx);
 			} catch (Exception ex) {
@@ -1667,7 +1982,8 @@ public class Data implements Runnable {
 		} else if (DIT_PARTITIONER_CLASS == m_dataInitiatorType) {
 			try {
 				DPartitioner p = (DPartitioner) m_partitionerClass.newInstance(); 
-				DataContext dataCtx = DataContext.dummy();
+				// cw DataContext dataCtx = DataContext.dummy();
+				DataContext dataCtx = new DataContext();
 				dataCtx.add("JsonInput", m_jsonStrInput);
 				m_splitTotal = p.count(dataCtx);
 			} catch (Exception ex) {
@@ -1675,7 +1991,8 @@ public class Data implements Runnable {
 			}
 		} else if (DIT_PARTITIONER_OBJECT == m_dataInitiatorType) {
 			try {
-				DataContext dataCtx = DataContext.dummy();
+				// cw DataContext dataCtx = DataContext.dummy();
+				DataContext dataCtx = new DataContext();
 				dataCtx.add("JsonInput", m_jsonStrInput);
 				m_splitTotal = m_partitionerObject.count(dataCtx);
 			} catch (Exception ex) {
@@ -1805,6 +2122,58 @@ public class Data implements Runnable {
 		log.debug("m_noOfRangeRunners : {}", m_noOfRangeRunners);
         log.debug("m_startCommandId : {}", m_startCommandId);
         log.debug("m_endCommandId : {}", m_endCommandId);
+        
+		m_futureCompute = m_threadPool.submit(this);
+		
+		return this;
+	}
+	
+	//=======================PERFORM AGAIN==========================
+	
+	public Data performAgain() throws DScabiException, IOException {
+
+		if (false == m_isRunInProgress)
+			m_isRunInProgress = true;
+		else {
+			throw new DScabiException("Perform already in progress", "DAA.PEM.1");
+		}
+		
+		if (m_configNode != null) {
+			if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_1 == m_configNode.getConfigNodeType()) {
+				setForOperatorConfig_1_1(m_configNode.getOperatorConfig_1_1());
+			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2 == m_configNode.getConfigNodeType()) {
+				setForOperatorConfig_1_2(m_configNode.getOperatorConfig_1_2());
+			}
+
+			m_commandMap.put("" + m_commandID, m_configNode);
+			m_commandID++;
+
+			m_configNodeList.add(m_configNode);
+			
+			m_configNode = null;
+			
+		}
+
+		log.debug("performAgain() m_splitTotal : {}", m_splitTotal);
+		// just redundant check
+		if (null == m_commandMap.get("1")) {
+			throw new DScabiException("Data cluster initiator is not set", "Driver.DAA.PEM.1");
+		}
+		// just redundant check
+    	if (DataAsyncConfigNode.CNT_DATAUNIT_CONFIG != m_commandMap.get("1").getConfigNodeType() &&
+    		DataAsyncConfigNode.CNT_PARTITIONER_CONFIG != m_commandMap.get("1").getConfigNodeType())
+			throw new DScabiException("Config Type is not Data unit or Partitioner Config for item 1 in Command Map", "Driver.DAA.PEM.3");
+
+		if (0 == m_splitTotal) {
+			log.debug("m_splitTotal is zero. Cannot proceed with perform()");
+			throw new DScabiException("m_splitTotal is zero. Cannot proceed with perform()", "COE.PEM.2");
+		}
+		
+		m_endCommandId = m_commandID - 1;
+		
+		log.debug("performAgain() m_noOfRangeRunners : {}", m_noOfRangeRunners);
+        log.debug("performAgain() m_startCommandId : {}", m_startCommandId);
+        log.debug("performAgain() m_endCommandId : {}", m_endCommandId);
         
 		m_futureCompute = m_threadPool.submit(this);
 		

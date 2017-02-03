@@ -95,7 +95,7 @@ import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 import com.dilmus.dilshad.scabi.core.IOperator;
-import com.dilmus.dilshad.scabi.core.IOperator2;
+import com.dilmus.dilshad.scabi.deprecated.IOperator2;
 
 /**
  * @author Dilshad Mustafa
@@ -109,8 +109,8 @@ public class DMOperatorConfig_1_2 {
 	public final static int CFG_TYPE_OBJECT_OF_INTERFACE = 4;
 	
 	private final Logger log = LoggerFactory.getLogger(DMOperatorConfig_1_2.class);
-	private IOperator2 m_operatorObjOfInterface = null;
-	private Class<?> m_operatorClassOfInterface = null;
+	// Not used private IOperator2 m_operatorObjOfInterface = null;
+	// Not used private Class<?> m_operatorClassOfInterface = null;
 	private Class<?> m_operatorClass = null;
 	private String m_lambdaMethodName = null;
 	// Not used private String m_code = null;
@@ -216,6 +216,7 @@ public class DMOperatorConfig_1_2 {
 		return m_dcl;
 	}
 		
+	/* Not used
 	public DMOperatorConfig_1_2(IOperator2 unit) throws IOException {
 		m_operatorObjOfInterface = unit;
 		m_configType = DMOperatorConfig_1_2.CFG_TYPE_OBJECT_OF_INTERFACE;
@@ -235,6 +236,7 @@ public class DMOperatorConfig_1_2 {
 		
 		m_lambdaMethodName = DMJson.empty();
 	}
+	*/
 	
 	public DMOperatorConfig_1_2(Class<?> cls) throws IOException {
 		m_operatorClass = cls;
@@ -256,7 +258,7 @@ public class DMOperatorConfig_1_2 {
 		m_lambdaMethodName = DMJson.empty();
 	}
 
-	/*
+	/* Not used
 	public DOperatorConfig_1_2(Class<?> cls) {
 		m_operatorClassOfInterface = cls;
 		m_configType = DOperatorConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE;
@@ -294,6 +296,7 @@ public class DMOperatorConfig_1_2 {
 		return m_configType;
 	}
 	
+	/* Not used
 	public IOperator2 getOperatorObjectOfInterface() {
 		return m_operatorObjOfInterface;
 	}
@@ -301,8 +304,9 @@ public class DMOperatorConfig_1_2 {
 	public Class<?> getOperatorClassOfInterface() {
 		return m_operatorClassOfInterface;
 	}
+	*/
 	
-	/* TODO for future DOperator2 class
+	/* Not used - for future DOperator2 class
 	public DOperator2 getOperatorObject() {
 		return m_operatorObj;
 	}

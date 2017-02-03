@@ -103,23 +103,26 @@ public class UnitTest6_DataPartition2 {
 		// NOTE : change this filename before every run "test_for_CU_13"
 		DataContext c = DataContext.dummy();
 
-		// works DMStdStorageHandler storageHandler = new DMStdStorageHandler();
-		// works DataPartition dp = new DataPartition(c, "mydata2", "mydata2_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-
+		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
+		// cw DataPartition dp = new DataPartition(c, "mydata2", "mydata2_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata2", "mydata2_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+	
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
-		DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
-		DataPartition dp = new DataPartition(c, "mydata2", "mydata2_1", "teststorage", "mydata2_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		
+		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
+		// works for Seaweed DataPartition dp = new DataPartition(c, "mydata2", "mydata2_1", "teststorage", "mydata2_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		// for Seaweed DataPartition dp = DataPartition.createDataPartition(c, "mydata2", "mydata2_1_app1", "teststorage", "mydata2_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+
 		exportFileTest(dp);
 		importFileTest(dp);
 		dp.close();
+		dp.operationsSuccess();
 		dp.deletePartition();
 		storageHandler.close();
 		
 		System.out.println("done");
 	}
 	
-	public static void exportFileTest(DataPartition dp) throws IOException {
+	public static void exportFileTest(DataPartition dp) throws Exception {
 		
 		dp.appendField("word", "drive4");
 		dp.appendField("wordtype", "[verb, present]");
@@ -143,7 +146,7 @@ public class UnitTest6_DataPartition2 {
 		
 	}
 
-	public static void importFileTest(DataPartition dp) throws IOException, DScabiException {
+	public static void importFileTest(DataPartition dp) throws Exception {
 		
 		dp.importFromFile("/home/anees/testdata/bigfile/dpexported/myfirstexport.txt");
 		

@@ -100,7 +100,7 @@ public class FileUnit extends DataUnit{
 		return noOfPartitions;
 	}
 	
-	public void load(DataPartition a, DataContext c) throws IOException {
+	public void load(DataPartition a, DataContext c) throws Exception {
 		System.out.println("load from : " + c.getDU());
 		a.append(c.getDU() + 1);
 		a.append(c.getDU() + 2);

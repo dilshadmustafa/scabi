@@ -114,12 +114,14 @@ public class UnitTest6_DataPartition {
 		// NOTE : change this filename before every run "test_for_CU_13"
 		DataContext c = DataContext.dummy();
 		
-		// works DMStdStorageHandler storageHandler = new DMStdStorageHandler();
-		// works DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
+		// cw DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
 		
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
-		DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
-		DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
+		// works for Seaweed DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		// for Seaweed DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
 		
 		HashMap<String, String> m = new HashMap<String, String>();
 		m.put("1", "hello");
@@ -144,6 +146,7 @@ public class UnitTest6_DataPartition {
 		
 		dp.flushFiles();
 		dp.close();
+		dp.operationsSuccess();
 		dp.deletePartition();
 		storageHandler.close();
 		System.out.println("done");

@@ -105,6 +105,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import com.dilmus.dilshad.scabi.common.DScabiException;
+
 /**
  * @author Dilshad Mustafa
  *
@@ -119,6 +121,9 @@ public class DataContext {
 	
 	private String m_jsonString = null;
 	private boolean m_isDsonEmpty = false;
+	
+	private long m_retryNumber = -1;
+	private long m_maxRetry = -1;
 	
 	public DataContext(String jsonString) throws IOException {
 		m_jsonString = jsonString;
@@ -512,6 +517,9 @@ public class DataContext {
 		DataContext dson2 = dson1.add("SplitComputeUnit", "0");
 		DataContext dson3 = dson2.add("JsonInput", DataContext.empty());
 
+		dson3.setRetryNumber(0);
+		dson3.setMaxRetry(100);
+		
 		return dson3;
 	}
 
@@ -523,6 +531,32 @@ public class DataContext {
 		return dson3.toString();
 	}
 
+	public int setRetryNumber(long retryNumber) {
+		m_retryNumber = retryNumber;
+		
+		return 0;
+	}
+	
+	public long getRetryNumber() throws DScabiException {
+		if (-1 == m_retryNumber)
+			throw new DScabiException("Retry Number in data context is not set", "DCT.GRN.1");
+		
+		return m_retryNumber;
+	}
+	
+	public int setMaxRetry(long maxRetry) {
+		m_maxRetry = maxRetry;
+		
+		return 0;
+	}
+	
+	public long getMaxRetry() throws DScabiException {
+		if (-1 == m_maxRetry)
+			throw new DScabiException("Max Retry in data context is not set", "DCT.GMR.1");
+		
+		return m_maxRetry;
+	}
+	
 }
 
 

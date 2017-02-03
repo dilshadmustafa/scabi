@@ -79,6 +79,9 @@ and conditions of this license without giving prior notice.
  * @author Dilshad Mustafa
  *
  */
+
+import com.dilmus.dilshad.scabi.common.DMUtil;
+
 public class UnitTest8_Hash {
 
 	public static void main(String[] args) throws Exception {
@@ -89,7 +92,9 @@ public class UnitTest8_Hash {
 		// "drive678"  hash is : 7237963508362917688
 		// "drive6781" hash is : 7237963508362917688
 		
-		
+		System.out.println("hash of 17 : " + DMUtil.hashString("17"));
+		System.out.println("hash of drive678 : " + DMUtil.hashString("drive678"));
+		System.out.println("hash of drive6781 : " + DMUtil.hashString("drive6781"));
 		
 	}
 	

@@ -75,9 +75,12 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+package com.dilmus.dilshad.scabi.deprecated;
 
 import java.io.Serializable;
+
+import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataPartition;
 
 /**
  * @author Dilshad Mustafa

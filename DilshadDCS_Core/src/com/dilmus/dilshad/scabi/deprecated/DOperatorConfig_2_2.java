@@ -95,7 +95,7 @@ import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DataUnit;
 import com.dilmus.dilshad.scabi.core.IOperator;
-import com.dilmus.dilshad.scabi.core.IOperator2;
+//import com.dilmus.dilshad.scabi.core.IOperator2;
 
 /**
  * @author Dilshad Mustafa

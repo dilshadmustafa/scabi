@@ -401,6 +401,7 @@ public class DataAsyncRun_D2 {
 				m_computeNB.setConfigId(m_config.getConfigId());
 				m_computeNB.setCommandIdRange(m_startCommandId, m_endCommandId);
 				m_computeNB.setRetryNumber(m_retriesTillNow);
+				m_computeNB.setMaxRetry(m_maxRetry);
 				
 				/* Previous works
 				if (m_config.isComputeUnitJarsSet()) {

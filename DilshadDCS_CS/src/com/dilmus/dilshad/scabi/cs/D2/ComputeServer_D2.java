@@ -210,7 +210,7 @@ public class ComputeServer_D2 extends Application {
 		return m_storageConfig;
 	}
 	
-	public static int closeDataPartitionsForAppIdSU(String appId, long splitUnit) throws IOException {
+	public static int closeDataPartitionsForAppIdSU(String appId, long splitUnit) throws Exception {
 		
 		LinkedList<DataPartition> dpList = new LinkedList<DataPartition>();
 		LinkedList<String> partitionList = new LinkedList<String>();
@@ -235,6 +235,7 @@ public class ComputeServer_D2 extends Application {
 		// hence this call is outside the synchronized (m_partitionIdDataPartitionMap) code block
 		for (DataPartition dp : dpList) {
 			dp.close();
+			dp.operationsSuccessWithAppStatusCheck();
 		}
 		
 		synchronized (m_partitionIdDataPartitionMap) {
@@ -402,12 +403,18 @@ public class ComputeServer_D2 extends Application {
 					   if (1 == startCommandId) {
 						   DMExecute.dataExecuteForDataUnit(dcl, req, dj);
 					   }
-					   if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
+					   String status = null;
+					   synchronized(ComputeServer_D2.m_taskIdStatusMap) { status = ComputeServer_D2.m_taskIdStatusMap.get(taskId); }
+					   if (status.equals(ComputeServer_D2.S_EXECUTION_ERROR)) {
+					   // cw if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
 						   Thread.currentThread().setContextClassLoader(originalLoader);
 						   return;
 					   }
 					   DMExecute.dataExecuteForOperators(dcl, req, dj);
-					   if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
+					   status = null;
+					   synchronized(ComputeServer_D2.m_taskIdStatusMap) { status = ComputeServer_D2.m_taskIdStatusMap.get(taskId); }
+					   if (status.equals(ComputeServer_D2.S_EXECUTION_ERROR)) {
+					   // cw if (ComputeServer_D2.S_EXECUTION_ERROR == ComputeServer_D2.m_taskIdStatusMap.get(taskId)) {
 						   Thread.currentThread().setContextClassLoader(originalLoader);
 						   return;
 					   }

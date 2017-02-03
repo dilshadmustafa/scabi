@@ -195,7 +195,8 @@ public class DataNoBlock {
 	private String m_appName = null;
 	private String m_appId = null;
 	
-	private int m_retryNumber = -1;
+	private long m_retryNumber = -1;
+	private long m_maxRetry = -1;
 	
 	static {
 		// Previous works m_httpClient = HttpAsyncClients.createDefault();
@@ -206,8 +207,13 @@ public class DataNoBlock {
 	
 	}
 
-	public int setRetryNumber(int retryNumber) {
+	public int setRetryNumber(long retryNumber) {
 		m_retryNumber = retryNumber;
+		return 0;
+	}
+	
+	public int setMaxRetry(long maxRetry) {
+		m_maxRetry = maxRetry;
 		return 0;
 	}
 	
@@ -654,6 +660,10 @@ public class DataNoBlock {
 			log.debug("executeForDataUnit() m_retryNumber is not set. m_retryNumber : {}", m_retryNumber);
 			throw new DScabiException("m_retryNumber is not set. m_retryNumber : " + m_retryNumber, "DNB.EFDO.1");			
 		}
+		if (-1 == m_maxRetry) {
+			log.debug("executeForDataUnit() m_maxRetry is not set. m_maxRetry : {}", m_maxRetry);
+			throw new DScabiException("m_maxRetry is not set. m_maxRetry : " + m_maxRetry, "DNB.EFDO.1");			
+		}
 		
 		log.debug("executeForDataUnit() m_startCommandId : {}", m_startCommandId);
 		log.debug("executeForDataUnit() m_endCommandId : {}", m_endCommandId);
@@ -670,11 +680,13 @@ public class DataNoBlock {
 		djson1.add("StartCommandId", "" + m_startCommandId);
 		djson1.add("EndCommandId", "" + m_endCommandId);
 		djson1.add("RetryNumber", "" + m_retryNumber);
+		djson1.add("MaxRetry", "" + m_maxRetry);
 		
 		long n = 1;
 		// Not needed Set<String> st = commandMap.keySet();
 		
 		for (long i = m_startCommandId; i <= m_endCommandId; i++) {
+			
 			Class<?> p = null;
 			DMJson d = new DMJson();
 			String hexStr = null;
@@ -726,12 +738,38 @@ public class DataNoBlock {
 				d.add("JsonInput", operatorConfig_1_2.getInput());
 				if (DMOperatorConfig_1_2.CFG_TYPE_CLASS == operatorConfig_1_2.getConfigType()) {
 					p = operatorConfig_1_2.getOperatorClass();
-				} else if (DMOperatorConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
+				} 
+				/* Not used
+				else if (DMOperatorConfig_1_2.CFG_TYPE_CLASS_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
 					p = operatorConfig_1_2.getOperatorClassOfInterface();
 				} else if (DMOperatorConfig_1_2.CFG_TYPE_OBJECT_OF_INTERFACE == operatorConfig_1_2.getConfigType()) {
 					p = operatorConfig_1_2.getOperatorObjectOfInterface().getClass();
 				}
+				*/
 				hexStr = operatorConfig_1_2.getJavaFileAsHexStr();
+			} else if (DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1 == configNode.getConfigNodeType()) {
+				DMShuffleConfig_1_1 shuffleConfig_1_1 = configNode.getShuffleConfig_1_1();
+				d.add("ConfigType", shuffleConfig_1_1.getConfigType());
+				d.add("SourceDataId", shuffleConfig_1_1.getSourceDataId());
+				d.add("TargetDataId", shuffleConfig_1_1.getTargetDataId());
+				d.add("JsonInput", shuffleConfig_1_1.getInput());
+				if (DMShuffleConfig_1_1.CFG_TYPE_CLASS_OF_INTERFACE == shuffleConfig_1_1.getConfigType()) {
+					p = shuffleConfig_1_1.getShuffleClassOfInterface();
+				} else if (DMShuffleConfig_1_1.CFG_TYPE_OBJECT_OF_INTERFACE == shuffleConfig_1_1.getConfigType()) {
+					p = shuffleConfig_1_1.getShuffleObjectOfInterface().getClass();
+				}
+				hexStr = shuffleConfig_1_1.getJavaFileAsHexStr();
+			} else if (DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2 == configNode.getConfigNodeType()) {
+				DMShuffleConfig_1_2 shuffleConfig_1_2 = configNode.getShuffleConfig_1_2();
+				d.add("ConfigType", shuffleConfig_1_2.getConfigType());
+				d.add("SourceDataId", shuffleConfig_1_2.getSourceDataId());
+				d.add("TargetDataId", shuffleConfig_1_2.getTargetDataId());
+				d.add("LambdaMethodName", shuffleConfig_1_2.getLambdaMethodName());
+				d.add("JsonInput", shuffleConfig_1_2.getInput());
+				if (DMShuffleConfig_1_2.CFG_TYPE_CLASS == shuffleConfig_1_2.getConfigType()) {
+					p = shuffleConfig_1_2.getShuffleClass();
+				} 
+				hexStr = shuffleConfig_1_2.getJavaFileAsHexStr();
 			} else {
 				throw new DScabiException("Invalid config node type", "DNB.EFD.1");
 			}
@@ -824,6 +862,7 @@ public class DataNoBlock {
 		m_TU = 0;
 		m_SU = 0;
 		m_retryNumber = -1;
+		m_maxRetry = -1;
 		
 		return futureHttpResponse;
 		

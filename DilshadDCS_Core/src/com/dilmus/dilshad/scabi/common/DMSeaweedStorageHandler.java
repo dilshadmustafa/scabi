@@ -200,11 +200,11 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 	 * 
 	 * Seaweed commands used in testing:-
 	 * 
-	 * ./weed master -idleTimeout=1000000 -volumeSizeLimitMB=350
+	 * ./weed master -volumeSizeLimitMB=350 or for seaweedfs v0.70, ./weed master -idleTimeout=1000000 -volumeSizeLimitMB=350
 	 * ./weed volume -idleTimeout=1000000 -max=10000 -mserver="localhost:9333" -dir="/home/<user>/mystorage/mystorage1"
 	 * ./weed filer -dir="/home/<user>/mystorage/forfiler"
 	 */
-	private static Semaphore m_semaphore = new Semaphore(2); // 1
+	private static Semaphore m_semaphore = new Semaphore(2); // 100 works for seaweedfs 0.74, cw 2 for seaweedfs v0.70
 	
 	private CloseableHttpClient m_syncClient = null;
 	
@@ -1028,8 +1028,9 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 			
 			System.out.println("executeAndGet(HttpGet request) retry : " + retry);
 			try {
-				double rand = Math.random();
-				Thread.sleep((long)(rand * 60000));
+				// cw double rand = Math.random();
+				// cw Thread.sleep((long)(rand * 60000));
+				Thread.sleep(1000);
 			} catch (Exception e) {
 				// do nothing
 			}
@@ -1102,8 +1103,9 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 			
 			System.out.println("executeAndGetForExistsCheckOnly(HttpGet request) retry : " + retry);
 			try {
-				double rand = Math.random();
-				Thread.sleep((long)(rand * 60000));
+				// cw double rand = Math.random();
+				// cw Thread.sleep((long)(rand * 60000));
+				Thread.sleep(1000);
 			} catch (Exception e) {
 				// do nothing
 			}
@@ -1257,6 +1259,7 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 			// In case of 201 response code, "return httpResponse" is in above code. If control still comes here
 			// then Content-Length of HTTP POST and HTTP GET don't match. So proceed with sending HTTP DELETE request
 			
+			/* cw Do we need this HTTP DELETE below? Do we really need to delete? Can't we just proceed with re-upload of file?
 			HttpDelete delRequest = null;
 			String delError = null;
 			try {
@@ -1264,10 +1267,6 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 				delRequest = new HttpDelete(request.getURI());
 				
 				HttpResponse httpResponse2 = executeAndGet(delRequest);
-					
-				// As of now, Seaweed filer doesn't return 404 for HTTP DELETE request
-				if (httpResponse2.getStatusLine().getStatusCode() != 202 && httpResponse2.getStatusLine().getStatusCode() != 404) 
-					delError = DMJson.error("SSH.EAG2.2", "Unable to delete file if exists of failed upload. Delete Request is : " + delRequest.getURI().toString() + " Response Status Code is " + httpResponse2.getStatusLine().getStatusCode() + " Status line : " + httpResponse2.getStatusLine());
 				
 			}  catch (Error | RuntimeException e) {
 				e.printStackTrace();
@@ -1287,13 +1286,14 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 			
 			if (delError != null)
 				throw new DScabiException("Unable to delete file if exists of failed upload. Delete Request is : " + delRequest.getURI().toString() + " Delete Error : " + delError + " Error from last HTTP POST try of this file upload : " + lastError, "SSH.EAG2.1");			
-			
+			*/
 			//==========================End of code for delete file if exists of failed upload=========
 			
 			System.out.println("executeAndGet(HttpPost request) retry : " + retry);
 			try {
-				double rand = Math.random();
-				Thread.sleep((long)(rand * 60000));
+				// cw double rand = Math.random();
+				// cw Thread.sleep((long)(rand * 60000));
+				Thread.sleep(1000);
 			} catch (Exception e) {
 				// do nothing
 			}
@@ -1348,11 +1348,44 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 				*/
 				
 				// As of now, Seaweed filer doesn't return 404 for HTTP DELETE request
+				/* cw for seaweedfs v0.70
 				if (202 == httpResponse.getStatusLine().getStatusCode() || 404 == httpResponse.getStatusLine().getStatusCode())
+					log.debug("executeAndGet(HttpDelete request) Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
 					return httpResponse;
-				else
+				else {
+					log.debug("executeAndGet(HttpDelete request) Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
 					lastError = DMJson.error("SSH.EAG3.2", "Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
+				}
+				*/
 				
+				// This is for seaweedfs v0.74
+				if (500 == httpResponse.getStatusLine().getStatusCode() || 202 == httpResponse.getStatusLine().getStatusCode() || 404 == httpResponse.getStatusLine().getStatusCode()) {
+					log.debug("executeAndGet(HttpDelete request) Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
+					if (500 == httpResponse.getStatusLine().getStatusCode()) {
+						HttpEntity getEntity = httpResponse.getEntity();
+						if (getEntity != null) {
+							byte[] byteaGet = EntityUtils.toByteArray(getEntity);
+							String s = new String(byteaGet);
+							log.debug("executeAndGet(HttpDelete request) Content for request : " + request + " s : " + s);	
+							if (s.contains("no entry"))
+								return httpResponse;
+						}
+					} else
+						return httpResponse;
+				}
+				else {
+					log.debug("executeAndGet(HttpDelete request) Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
+					lastError = DMJson.error("SSH.EAG3.2", "Delete Request is : " + request.getURI().toString() + "Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
+				
+					HttpEntity getEntity = httpResponse.getEntity();
+					if (getEntity != null) {
+						byte[] byteaGet = EntityUtils.toByteArray(getEntity);
+						String s = new String(byteaGet);
+						log.debug("executeAndGet(HttpDelete request) Content for request : " + request + " s : " + s);	
+					} else {
+						lastError = DMJson.error("SSH.EAG3.3", "Entity is null. Delete Request is : " + request.getURI().toString() + " Response Status Code is " + httpResponse.getStatusLine().getStatusCode() + " Status line : " + httpResponse.getStatusLine());
+					}
+				}
 			}  catch (Error | RuntimeException e) {
 				e.printStackTrace();
 				String error = DMUtil.serverErrMsg(e);
@@ -1371,8 +1404,9 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 			
 			System.out.println("executeAndGet(HttpDelete request) retry : " + retry);
 			try {
-				double rand = Math.random();
-				Thread.sleep((long)(rand * 60000));
+				// cw double rand = Math.random();
+				// cw Thread.sleep((long)(rand * 60000));
+				Thread.sleep(1000);
 			} catch (Exception e) {
 				// do nothing
 			}

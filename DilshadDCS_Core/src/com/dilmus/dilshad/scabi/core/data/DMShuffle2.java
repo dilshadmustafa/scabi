@@ -83,7 +83,7 @@ import java.lang.reflect.Method;
 
 import com.dilmus.dilshad.scabi.core.DataContext;
 import com.dilmus.dilshad.scabi.core.DataElement;
-import com.dilmus.dilshad.scabi.core.IShuffle;
+import com.dilmus.dilshad.scabi.core.IShuffle2;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 
 /**
@@ -93,26 +93,26 @@ import com.dilmus.dilshad.scabi.common.DScabiException;
 
 // Wrapper class to wrap a lambda method if Data.groupBy() is sent as a lambda function 
 
-public class DMShuffle implements IShuffle {
+public class DMShuffle2 implements IShuffle2 {
 
 	private Method m_method = null;
 	private Object m_object = null;
 	
-	public DMShuffle(Method m, Object obj) {
+	public DMShuffle2(Method m, Object obj) {
 		m_method = m;
 		m_object = obj;
 	}
 
-	public Iterable<String> groupByValues(DataElement e, DataContext c) throws IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, DScabiException {
+	public long groupByValues(DataElement e, DataContext c) throws IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, DScabiException {
 
 		Object ret = m_method.invoke(m_object, e, c);
 		
-		if (ret instanceof Iterable<?>)
-			return (Iterable<String>) ret;
+		if (ret instanceof Long)
+			return ((Long) ret).longValue();
 		else {
-			throw new DScabiException("Cannot type cast to (Iterable<String>)", "SHE.GBV.1");
+			throw new DScabiException("Cannot type cast to (Long>)", "SHE2.GBV.1");
 		}
-
+		
 	}
 
 }
