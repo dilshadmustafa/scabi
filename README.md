@@ -11,7 +11,7 @@ Introduction
 > **Objectives:**
 
 > - Process Petabytes to Exabytes+ of data using billions of massively parallel Scabi Data Units (DU).
-> - Create Ensemble Machine Learning models for super massive data sets with algorithm and ML library of your choice.
+> - Create Ensemble Machine Learning models for super massive datasets with algorithm and ML library of your choice.
 > - Use Data-driven and Compute-driven framework to implement iterative and complex Map/Reduce and parallel algorithms at Web Scale.
 > - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
 
