@@ -29,18 +29,18 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 
 #### <i class="icon-file"></i> HOW TO QUICKLY RUN SCABI
 
-(1) Install Oracle Java 8 Java SE 1.8.0_66
-(2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
-(3) Create data folder for MongoDB, /home/(username)/data/db
-(4) Start MongoDB server, sudo mongod --dbpath /home/(username)/data/db
-(5) Download scabi.tar.gz from Download folder in Scabi's GitHub project
-(6) Unzip scabi.tar.gz to a folder /home/(username)/scabi
-(7) cd /home/(username)/scabi
+1. Install Oracle Java 8 Java SE 1.8.0_66
+2. Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
+3. Create data folder for MongoDB, /home/(username)/data/db
+4. Start MongoDB server, sudo mongod --dbpath /home/(username)/data/db
+5. Download scabi.tar.gz from Download folder in Scabi's GitHub project
+6. Unzip scabi.tar.gz to a folder /home/(username)/scabi
+7. cd /home/(username)/scabi
 
-(8) Start Meta Server, 
+8. Start Meta Server, 
 	./start_meta.sh
 
-(9) Start Compute Servers,
+9. Start Compute Servers,
 	./start_compute.sh 5001 localhost 5000 1000
 	./start_compute.sh 5002 localhost 5000 1000
 
@@ -51,7 +51,7 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 	start_meta.bat
 	start_compute.bat 5001 localhost 5000 1000
 
-(10) Run example code inside the examples folder in /home/[username]/scabi,
+10. Run example code inside the examples folder in /home/[username]/scabi,
 
 	cd examples
 	java -cp "../dependency-jars/*":"../*":. Example1
@@ -63,7 +63,7 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 	java -cp "../dependency-jars/*":"../*":. Example4
 	java -cp "../dependency-jars/*":"../*":. Example5
 
-(11) Commandline arguments
+11. Commandline arguments
 
 **./start_meta.sh**
 
@@ -83,12 +83,12 @@ Usage :
 
 Initial Setup
 
-(1) Install Oracle Java 8 Java SE 1.8.0_66
-(2) Install Git
-(3) Install Maven
-(4) Create folder /home/(username)/scabi
-(5) cd to scabi folder
-(6) Run command
+1. Install Oracle Java 8 Java SE 1.8.0_66
+2. Install Git
+3. Install Maven
+4. Create folder /home/(username)/scabi
+5. cd to scabi folder
+6. Run command
 	git clone https://www.github.com/dilshadmustafa/scabi.git
 
 Build Scabi Core scabi_core.jar
