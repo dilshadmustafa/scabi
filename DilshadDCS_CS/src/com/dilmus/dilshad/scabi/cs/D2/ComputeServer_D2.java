@@ -169,7 +169,8 @@ public class ComputeServer_D2 extends Application {
 	public static final HashMap<String, String> m_taskIdStatusMap = new HashMap<String, String>();
 	public static final HashMap<String, Future<?>> m_taskIdFutureMap = new HashMap<String, Future<?>>();
 	public static final HashMap<String, String> m_taskIdResultMap = new HashMap<String, String>();
-	public static final HashMap<String, DataPartition> m_partitionIdDataPartitionMap = new HashMap<String, DataPartition>();
+	// cw public static final HashMap<String, DataPartition> m_partitionIdDataPartitionMap = new HashMap<String, DataPartition>();
+	public static final HashMap<String, DataPartition> m_partitionIdRPSEDataPartitionMap = new HashMap<String, DataPartition>();
 	public static final HashMap<String, IStorageHandler> m_splitAppIdIStorageHandlerMap = new HashMap<String, IStorageHandler>();	
 	
 	public static ExecutorService m_threadPool = null;
@@ -210,6 +211,54 @@ public class ComputeServer_D2 extends Application {
 		return m_storageConfig;
 	}
 	
+	public static int closeDataPartitionsForSUAppIdRPSE(DMJson dj, String appId, long splitUnit) throws Exception {
+		
+		LinkedList<DataPartition> dpList = new LinkedList<DataPartition>();
+		LinkedList<String> partitionList = new LinkedList<String>();
+		
+		long retryNumber = dj.getLongOf("RetryNumber");
+		log.debug("closeDataPartitionsForSUAppIdRPSE() retryNumber : {}", retryNumber);
+		long parallelNumber = dj.getLongOf("ParallelNumber");
+		log.debug("closeDataPartitionsForSUAppIdRPSE() parallelNumber : {}", parallelNumber);
+		long startCommandId = dj.getLongOf("StartCommandId");
+		log.debug("closeDataPartitionsForSUAppIdRPSE() startCommandId : {}", startCommandId);
+		long endCommandId = dj.getLongOf("EndCommandId");
+		log.debug("closeDataPartitionsForSUAppIdRPSE() endCommandId : {}", endCommandId);
+  		String suffix = "_R" + retryNumber + "_P" + parallelNumber + "_S" + startCommandId + "_E" + endCommandId;
+		
+		// Prefix "_" is required to prevent incorrect matches like "11_<appId>", "21_<appId>", etc 
+		// matching with "1_<appId>"
+		String search = "_" + splitUnit + "_" + appId.replace("_", "") + suffix;
+		
+		synchronized (m_partitionIdRPSEDataPartitionMap) {
+			Set<String> keys = m_partitionIdRPSEDataPartitionMap.keySet();
+			for (String s : keys) {
+				if (s.contains(search)) {
+					log.debug("closeDataPartitionsForAppId() partitionId matches : {}", s);
+					DataPartition dp = m_partitionIdRPSEDataPartitionMap.get(s);
+					dpList.add(dp);
+					partitionList.add(s);
+				}
+			}
+		}
+		
+		// dp.close() internally calls dp.flushFiles() and hence may be slow
+		// hence this call is outside the synchronized (m_partitionIdDataPartitionMap) code block
+		for (DataPartition dp : dpList) {
+			dp.close();
+			dp.operationsSuccessWithAppStatusCheck();
+		}
+		
+		synchronized (m_partitionIdRPSEDataPartitionMap) {
+			for (String s : partitionList) {
+				m_partitionIdRPSEDataPartitionMap.remove(s);
+			}
+		}
+	
+		return 0;
+	}
+	
+	/* cw
 	public static int closeDataPartitionsForAppIdSU(String appId, long splitUnit) throws Exception {
 		
 		LinkedList<DataPartition> dpList = new LinkedList<DataPartition>();
@@ -246,6 +295,7 @@ public class ComputeServer_D2 extends Application {
 	
 		return 0;
 	}
+	*/
 	
 	public ComputeServer_D2() throws DScabiException {
 		//classesSet.add(ApplicationCommandResource.class);
@@ -418,7 +468,8 @@ public class ComputeServer_D2 extends Application {
 						   Thread.currentThread().setContextClassLoader(originalLoader);
 						   return;
 					   }
-					   closeDataPartitionsForAppIdSU(appId, splitUnit);
+					   // cw closeDataPartitionsForAppIdSU(appId, splitUnit);
+					   closeDataPartitionsForSUAppIdRPSE(dj, appId, splitUnit);
 					   Thread.currentThread().setContextClassLoader(originalLoader);
 					   synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_COMPLETED); }
 				   } catch (Error | RuntimeException e) {

@@ -219,6 +219,16 @@ public class DMExecute {
 			log.debug("dataExecuteForDataUnit() retryNumber : {}", retryNumber);
 			long maxRetry = dj.getLongOf("MaxRetry");
 			log.debug("dataExecuteForDataUnit() maxRetry : {}", maxRetry);
+	  		String appId = dj.getString("AppId");
+			log.debug("dataExecuteForDataUnit() AppId : {}", appId);
+			long parallelNumber = dj.getLongOf("ParallelNumber");
+			log.debug("dataExecuteForDataUnit() parallelNumber : {}", parallelNumber);
+			long maxParallel = dj.getLongOf("MaxParallel");
+			log.debug("dataExecuteForDataUnit() maxNumber : {}", maxParallel);
+			long startCommandId = dj.getLongOf("StartCommandId");
+			log.debug("dataExecuteForDataUnit() startCommandId : {}", startCommandId);
+			long endCommandId = dj.getLongOf("EndCommandId");
+			log.debug("dataExecuteForDataUnit() endCommandId : {}", endCommandId);
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
@@ -231,13 +241,36 @@ public class DMExecute {
 	    	dctx1.setMaxRetry(maxRetry);
 	    	
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
-			String localDPDirPathForThisSplitRetryNum = null;
+	  		String localDPDirPathForThisAppId = null;
 			
+	  		if (localDPDirPath.endsWith(File.separator))
+	  			localDPDirPathForThisAppId = localDPDirPath + appId.replace("_", "");
+	  		else
+	  			localDPDirPathForThisAppId = localDPDirPath + File.separator + appId.replace("_", "");
+	  		
+	  		log.debug("dataExecuteForDataUnit() localDPDirPathForThisAppId : {}", localDPDirPathForThisAppId);
+	  		File fAppId = new File(localDPDirPathForThisAppId);
+	  		if (false == fAppId.exists()) {
+		  		if (false == fAppId.mkdir()) {
+		  			// this is required if two DUs try to create directory at same time, one DU creates dir and returns true 
+		  			// and the other DU fails to create dir and returns false
+		  			if (false == fAppId.exists()) {
+		  				throw new DScabiException("Error creating local directory for App Id " + localDPDirPathForThisAppId, "EXE.EFD.1");
+		  			}
+		  		}
+		  	}
+
+	  		String localDPDirPathForThisSplitRetryNum = null;
+	  		String suffix = "_R" + retryNumber + "_P" + parallelNumber + "_S" + startCommandId + "_E" + endCommandId;
+  			localDPDirPathForThisSplitRetryNum = localDPDirPathForThisAppId + File.separator + dj.getCU() + suffix;
+
+  			/* cw
 	  		if (localDPDirPath.endsWith(File.separator))
 	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + dj.getCU() + "_" + retryNumber;
 	  		else
 	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
-	  		
+	  		*/
+  			
 	  		log.debug("dataExecuteForDataUnit() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
 	  		File f = new File(localDPDirPathForThisSplitRetryNum);
 	  		if (false == f.exists()) {
@@ -245,8 +278,8 @@ public class DMExecute {
 		  			throw new DScabiException("Error creating local directory for split " + localDPDirPathForThisSplitRetryNum, "EXE.EFD.1");
 	  		}
 	  		
-	  		String appId = dj.getString("AppId");
-			log.debug("dataExecuteForDataUnit() AppId : {}", appId);
+	  		// cw String appId = dj.getString("AppId");
+			// cw log.debug("dataExecuteForDataUnit() AppId : {}", appId);
 	  		
 	  		String storageDPDirPath = null;
 	  		IStorageHandler storageHandler = null;
@@ -300,7 +333,8 @@ public class DMExecute {
 			
 			// cw dp = new DataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
 			dp = DataPartition.allowCreateDataPartition(dctx1, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);			
-			synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId, dp); }
+			// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId, dp); }
+			synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.put(partitionId + suffix, dp); }
 			
 		   	String hexStr = djson.getString("ClassBytes");
 		   	// log.debug("dataExecuteForDataUnit() Hex string is : {}", hexStr);
@@ -466,7 +500,15 @@ public class DMExecute {
 			long retryNumber = dj.getLongOf("RetryNumber");
 			log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
 			long maxRetry = dj.getLongOf("MaxRetry");
-			log.debug("dataExecuteForDataUnit() maxRetry : {}", maxRetry);
+			log.debug("dataExecuteForOperators() maxRetry : {}", maxRetry);
+			String appId = dj.getString("AppId");
+			log.debug("dataExecuteForOperators() AppId : {}", appId);
+			long parallelNumber = dj.getLongOf("ParallelNumber");
+			log.debug("dataExecuteForOperators() parallelNumber : {}", parallelNumber);
+			long maxParallel = dj.getLongOf("MaxParallel");
+			log.debug("dataExecuteForOperators() maxNumber : {}", maxParallel);
+			long endCommandId = dj.getLongOf("EndCommandId");
+			log.debug("dataExecuteForOperators() endCommandId : {}", endCommandId);
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
@@ -478,13 +520,36 @@ public class DMExecute {
 			dctx1.setMaxRetry(maxRetry);
 			
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
-			String localDPDirPathForThisSplitRetryNum = null;
+	  		String localDPDirPathForThisAppId = null;
 			
+	  		if (localDPDirPath.endsWith(File.separator))
+	  			localDPDirPathForThisAppId = localDPDirPath + appId.replace("_", "");
+	  		else
+	  			localDPDirPathForThisAppId = localDPDirPath + File.separator + appId.replace("_", "");
+	  		
+	  		log.debug("dataExecuteForOperators() localDPDirPathForThisAppId : {}", localDPDirPathForThisAppId);
+	  		File fAppId = new File(localDPDirPathForThisAppId);
+	  		if (false == fAppId.exists()) {
+		  		if (false == fAppId.mkdir()) {
+		  			// this is required if two DUs try to create directory at same time, one DU creates dir and returns true 
+		  			// and the other DU fails to create dir and returns false
+		  			if (false == fAppId.exists()) {
+		  				throw new DScabiException("Error creating local directory for App Id " + localDPDirPathForThisAppId, "EXE.EFD.1");
+		  			}
+		  		}
+		  	}
+	  		
+			String localDPDirPathForThisSplitRetryNum = null;
+	  		String suffix = "_R" + retryNumber + "_P" + parallelNumber + "_S" + startCommandId + "_E" + endCommandId;
+  			localDPDirPathForThisSplitRetryNum = localDPDirPathForThisAppId + File.separator + dj.getCU() + suffix;
+  			
+			/* cw
 	  		if (localDPDirPath.endsWith(File.separator))
 	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + dj.getCU() + "_" + retryNumber;
 	  		else
 	  			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
-	  		
+	  		*/
+			
 	  		log.debug("dataExecuteForOperators() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
 	  		File f = new File(localDPDirPathForThisSplitRetryNum);
 	  		if (false == f.exists()) {
@@ -492,8 +557,8 @@ public class DMExecute {
 		  			throw new DScabiException("Error creating local directory for split " + localDPDirPathForThisSplitRetryNum, "EXE.EFO.1");
 	  		}
 	  		
-			String appId = dj.getString("AppId");
-			log.debug("AppId : {}", appId);
+			// cw String appId = dj.getString("AppId");
+			// cw log.debug("AppId : {}", appId);
 	  		
 			String storageDPDirPath = null;
 					
@@ -509,8 +574,8 @@ public class DMExecute {
 			else {
 				storageDPDirPath = appId; // For storage system that can not create directory, for example DMSeaweedStorageHandler
 			}
-			long endCommandId = dj.getLongOf("EndCommandId");
-			log.debug("dataExecuteForOperators() endCommandId : {}", endCommandId);
+			// cw long endCommandId = dj.getLongOf("EndCommandId");
+			// cw log.debug("dataExecuteForOperators() endCommandId : {}", endCommandId);
 			// cw int retryNumber = dj.getIntOf("RetryNumber");
 			// cw log.debug("dataExecuteForOperators() retryNumber : {}", retryNumber);
 			String splitAppId = dj.getCU() + "_" + appId.replace("_", "");
@@ -546,8 +611,9 @@ public class DMExecute {
 			String partitionId2 = dataId2 + "_" + dj.getCU() + "_" + appId.replace("_", "");
 			log.debug("dataExecuteForOperators() PartitionId2 : {}", partitionId2);
 			
-		   	synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { dp1 = ComputeServer_D2.m_partitionIdDataPartitionMap.get(partitionId1); }
-
+		   	// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { dp1 = ComputeServer_D2.m_partitionIdDataPartitionMap.get(partitionId1); }
+		   	synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { dp1 = ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.get(partitionId1 + suffix); }
+		   	
 			IStorageHandler storageHandler = null;
 			synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { storageHandler = ComputeServer_D2.m_splitAppIdIStorageHandlerMap.get(splitAppId); }			
 			
@@ -590,7 +656,8 @@ public class DMExecute {
 			  		}
 			  		*/
 					dp1 = DataPartition.readDataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);
-					synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }					
+					// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }	
+					synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.put(partitionId1 + suffix, dp1); }	
 			   	}
 
 			   	/* cw
@@ -624,14 +691,16 @@ public class DMExecute {
 					}	
 					*/
 					dp1 = DataPartition.readDataPartition(dctx1, dataId1, partitionId1, storageDPDirPath, partitionId1, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);
-					synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
+					// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId1, dp1); }
+					synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.put(partitionId1 + suffix, dp1); }
 			   	}	
 			}
 			
 		   	// cw dp2 = new DataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPathForThisSplit, storageHandler);
 		   	dp2 = DataPartition.allowCreateDataPartition(dctx1, dataId2, partitionId2, storageDPDirPath, partitionId2, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler);			
-		   	synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
-			
+		   	// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
+		   	synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.put(partitionId2 + suffix, dp2); }
+		   			   	
 		   	String hexStr = djson.getString("ClassBytes");
 		   	// log.debug("dataExecuteForOperators() Hex string is : {}", hexStr);
 		   	String className = djson.getString("ClassName");
@@ -647,9 +716,9 @@ public class DMExecute {
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2) {
 		   		result = dataExecuteForOperator_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1) {
-		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPath, storageHandler);
+		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPathForThisSplitRetryNum, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2) {
-		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPath, storageHandler);
+		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPathForThisSplitRetryNum, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_1) {
 		   		result = dataExecuteForComparator_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
 		   	} 
@@ -885,7 +954,7 @@ public class DMExecute {
 		
 	}
 	
-	public static String dataExecuteForShuffle_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPath, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+	public static String dataExecuteForShuffle_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPathForThisSplitRetryNum, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
 
   		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
   		log.debug("dataExecuteForShuffle_1_1() INSIDE dataExecuteForShuffle_1_1");
@@ -921,6 +990,7 @@ public class DMExecute {
 		long retryNumber = dj.getLongOf("RetryNumber");
 		log.debug("dataExecuteForShuffle_1_1() retryNumber : {}", retryNumber);
 
+		/* cw
 		String localDPDirPathForThisSplitRetryNum = null;
 		
   		if (localDPDirPath.endsWith(File.separator))
@@ -929,7 +999,8 @@ public class DMExecute {
   			localDPDirPathForThisSplitRetryNum = localDPDirPath + File.separator + dj.getCU() + "_" + retryNumber;
   		
   		log.debug("dataExecuteForShuffle_1_1() localDPDirPathForThisSplitRetryNum : {}", localDPDirPathForThisSplitRetryNum);
-
+		*/
+		
 		String appId = dj.getString("AppId");
 		log.debug("dataExecuteForShuffle_1_1() AppId : {}", appId);
 		String dataId1 = djson.getString("SourceDataId");

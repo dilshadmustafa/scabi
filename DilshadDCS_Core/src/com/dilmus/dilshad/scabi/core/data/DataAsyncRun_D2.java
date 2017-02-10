@@ -131,6 +131,11 @@ public class DataAsyncRun_D2 {
 	private long m_startCommandId = -1;
 	private long m_endCommandId = -1;
 	
+	private long m_parallelNumber = -1;
+	private long m_maxParallel = -1;
+	private long m_numOfParallels = 0;
+	private DataAsyncRun_D2 m_parentRun = null;
+	
 	public void initialize() {
 		
 		m_isDone = false;
@@ -215,6 +220,68 @@ public class DataAsyncRun_D2 {
 	public int setMaxRetry(int maxRetry) {
 		m_maxRetry = maxRetry;
 		return 0;
+	}
+	
+	public int setParallelNumber(long parallelNumber) {
+		m_parallelNumber = parallelNumber;
+		return 0;
+	}
+	
+	public int setMaxParallel(long maxParallel) {
+		m_maxParallel = maxParallel;
+		return 0;
+	}
+	
+	// This is given default access
+	long increaseNumOfParallels() throws DScabiException {
+		if (m_numOfParallels + 1 > m_maxParallel) {
+			throw new DScabiException("Max Parallel reached : m_numOfParallels : " + m_numOfParallels + " m_maxParallel : " + m_maxParallel, "DAR.INP.1");
+		} else
+			m_numOfParallels++;
+		
+		return m_numOfParallels;
+	}
+	
+	// This is given default access
+	int setParentRun(DataAsyncRun_D2 parentRun) {
+		m_parentRun = parentRun;
+		
+		return 0;
+	}
+	
+	public DataAsyncRun_D2 getParentRun() {
+		return m_parentRun;
+	}
+	
+	public DataAsyncRun_D2 createParallel() throws DScabiException {
+		// TODO not yet unit tested
+		DataAsyncRun_D2 new_crun = new DataAsyncRun_D2();
+		new_crun.setCommandMap(m_commandMap);
+		new_crun.setConfig(m_config);
+		new_crun.setTU(m_TU);
+		new_crun.setSU(m_SU);
+		new_crun.setMaxRetry(m_maxRetry);
+		new_crun.setCommandIdRange(m_startCommandId, m_endCommandId);
+		new_crun.setMaxParallel(m_maxParallel);
+		// should be set by user with different computeNB for each parallel new_crun.setComputeNB(different computeNB);
+
+		if (null == m_parentRun) {
+			new_crun.setParentRun(this);
+			long parallelNumber = -1;
+			synchronized (this) {
+				parallelNumber = increaseNumOfParallels();
+			}
+			new_crun.setParallelNumber(parallelNumber);
+		} else {
+			new_crun.setParentRun(m_parentRun);
+			long parallelNumber = -1;
+			synchronized (m_parentRun) {
+				parallelNumber = m_parentRun.increaseNumOfParallels();
+			}
+			new_crun.setParallelNumber(parallelNumber);
+		}
+		
+		return new_crun;
 	}
 
 	public int setCommandIdRange(long startCommandId, long endCommandId) {
@@ -355,6 +422,18 @@ public class DataAsyncRun_D2 {
 			log.debug("submitTask() m_startCommandId is greater than m_endCommandId. m_startCommandId : {}, m_endCommandId : {}", m_startCommandId, m_endCommandId);
 			throw new RuntimeException(new DScabiException("m_startCommandId is greater than m_endCommandId. m_startCommandId : " + m_startCommandId + " m_endCommandId : " + m_endCommandId, "CRN.RUN.1"));			
 		}
+		if (-1 == m_parallelNumber) {
+			log.debug("submitTask() m_parallelNumber is not set. m_parallelNumber : {}", m_parallelNumber);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is not set. m_parallelNumber : " + m_parallelNumber, "CRN.RUN.1"));			
+		}
+		if (-1 == m_maxParallel) {
+			log.debug("submitTask() m_maxParallel is not set. m_maxParallel : {}", m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_maxParallel is not set. m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
+		}
+		if (m_parallelNumber > m_maxParallel) {
+			log.debug("submitTask() m_parallelNumber is greater than m_maxParallel. m_parallelNumber : {}, m_maxParallel : {}", m_parallelNumber, m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is greater than m_maxParallel. m_parallelNumber : " + m_parallelNumber + " m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
+		}
 		if (null == m_taskId)
 			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU + "_CMDID_" + m_startCommandId + "_" + m_endCommandId;
 		
@@ -402,6 +481,9 @@ public class DataAsyncRun_D2 {
 				m_computeNB.setCommandIdRange(m_startCommandId, m_endCommandId);
 				m_computeNB.setRetryNumber(m_retriesTillNow);
 				m_computeNB.setMaxRetry(m_maxRetry);
+				
+				m_computeNB.setParallelNumber(m_parallelNumber);
+				m_computeNB.setMaxParallel(m_maxParallel);
 				
 				/* Previous works
 				if (m_config.isComputeUnitJarsSet()) {
@@ -649,6 +731,18 @@ public class DataAsyncRun_D2 {
 		if (m_startCommandId > m_endCommandId) {
 			log.debug("submitIsDoneProcessing() m_startCommandId is greater than m_endCommandId. m_startCommandId : {}, m_endCommandId : {}", m_startCommandId, m_endCommandId);
 			throw new RuntimeException(new DScabiException("m_startCommandId is greater than m_endCommandId. m_startCommandId : " + m_startCommandId + " m_endCommandId : " + m_endCommandId, "CRN.RUN.1"));			
+		}
+		if (-1 == m_parallelNumber) {
+			log.debug("submitIsDoneProcessing() m_parallelNumber is not set. m_parallelNumber : {}", m_parallelNumber);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is not set. m_parallelNumber : " + m_parallelNumber, "CRN.RUN.1"));			
+		}
+		if (-1 == m_maxParallel) {
+			log.debug("submitIsDoneProcessing() m_maxParallel is not set. m_maxParallel : {}", m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_maxParallel is not set. m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
+		}
+		if (m_parallelNumber > m_maxParallel) {
+			log.debug("submitIsDoneProcessing() m_parallelNumber is greater than m_maxParallel. m_parallelNumber : {}, m_maxParallel : {}", m_parallelNumber, m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is greater than m_maxParallel. m_parallelNumber : " + m_parallelNumber + " m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
 		}
 		if (null == m_taskId)
 			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU + "_CMDID_" + m_startCommandId + "_" + m_endCommandId;
@@ -966,6 +1060,18 @@ public class DataAsyncRun_D2 {
 		if (m_startCommandId > m_endCommandId) {
 			log.debug("submitRetrieveResult() m_startCommandId is greater than m_endCommandId. m_startCommandId : {}, m_endCommandId : {}", m_startCommandId, m_endCommandId);
 			throw new RuntimeException(new DScabiException("m_startCommandId is greater than m_endCommandId. m_startCommandId : " + m_startCommandId + " m_endCommandId : " + m_endCommandId, "CRN.RUN.1"));			
+		}
+		if (-1 == m_parallelNumber) {
+			log.debug("submitRetrieveResult() m_parallelNumber is not set. m_parallelNumber : {}", m_parallelNumber);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is not set. m_parallelNumber : " + m_parallelNumber, "CRN.RUN.1"));			
+		}
+		if (-1 == m_maxParallel) {
+			log.debug("submitRetrieveResult() m_maxParallel is not set. m_maxParallel : {}", m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_maxParallel is not set. m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
+		}
+		if (m_parallelNumber > m_maxParallel) {
+			log.debug("submitRetrieveResult() m_parallelNumber is greater than m_maxParallel. m_parallelNumber : {}, m_maxParallel : {}", m_parallelNumber, m_maxParallel);
+			throw new RuntimeException(new DScabiException("m_parallelNumber is greater than m_maxParallel. m_parallelNumber : " + m_parallelNumber + " m_maxParallel : " + m_maxParallel, "CRN.RUN.1"));			
 		}
 		if (null == m_taskId)
 			m_taskId = m_config.getConfigId() + "_" + m_TU + "_" + m_SU + "_CMDID_" + m_startCommandId + "_" + m_endCommandId;

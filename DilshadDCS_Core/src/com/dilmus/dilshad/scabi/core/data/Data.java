@@ -234,7 +234,7 @@ public class Data implements Runnable {
 	private boolean m_isSpecificInput = false;
 	private String m_specificJsonStrInput = null;
 	
-
+	private long m_maxParallel = 0;
 	
 	private String createStorageAppIdDirIfAbsent(String storageDirPath, String appId, IStorageHandler storageHandler) throws IOException {
 		
@@ -1488,6 +1488,11 @@ public class Data implements Runnable {
 		return this;
 	}
 	
+	public Data maxParallel(int maxParallel) {
+		m_maxParallel = maxParallel;
+		return this;
+	}
+	
 	public Data maxThreads(long maxThreads) {
 		m_maxThreads = maxThreads;
 		return this;
@@ -1569,6 +1574,9 @@ public class Data implements Runnable {
         	crun.setSU(i);
         	crun.setMaxRetry(m_maxRetry);
         	crun.setCommandIdRange(m_startCommandId, m_endCommandId);
+        	
+        	crun.setParallelNumber(0);
+        	crun.setMaxParallel(m_maxParallel);
         	
     		if (itr.hasNext())
             	crun.setComputeNB(itr.next());

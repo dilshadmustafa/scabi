@@ -197,6 +197,9 @@ public class DataNoBlock {
 	
 	private long m_retryNumber = -1;
 	private long m_maxRetry = -1;
+
+	private long m_parallelNumber = -1;
+	private long m_maxParallel = -1;
 	
 	static {
 		// Previous works m_httpClient = HttpAsyncClients.createDefault();
@@ -214,6 +217,16 @@ public class DataNoBlock {
 	
 	public int setMaxRetry(long maxRetry) {
 		m_maxRetry = maxRetry;
+		return 0;
+	}
+	
+	public int setParallelNumber(long parallelNumber) {
+		m_parallelNumber = parallelNumber;
+		return 0;
+	}
+	
+	public int setMaxParallel(long maxParallel) {
+		m_maxParallel = maxParallel;
 		return 0;
 	}
 	
@@ -664,6 +677,14 @@ public class DataNoBlock {
 			log.debug("executeForDataUnit() m_maxRetry is not set. m_maxRetry : {}", m_maxRetry);
 			throw new DScabiException("m_maxRetry is not set. m_maxRetry : " + m_maxRetry, "DNB.EFDO.1");			
 		}
+		if (-1 == m_parallelNumber) {
+			log.debug("executeForDataUnit() m_parallelNumber is not set. m_parallelNumber : {}", m_parallelNumber);
+			throw new DScabiException("m_parallelNumber is not set. m_parallelNumber : " + m_parallelNumber, "DNB.EFDO.1");			
+		}
+		if (-1 == m_maxParallel) {
+			log.debug("executeForDataUnit() m_maxParallel is not set. m_maxParallel : {}", m_maxParallel);
+			throw new DScabiException("m_maxParallel is not set. m_maxParallel : " + m_maxParallel, "DNB.EFDO.1");			
+		}
 		
 		log.debug("executeForDataUnit() m_startCommandId : {}", m_startCommandId);
 		log.debug("executeForDataUnit() m_endCommandId : {}", m_endCommandId);
@@ -681,7 +702,9 @@ public class DataNoBlock {
 		djson1.add("EndCommandId", "" + m_endCommandId);
 		djson1.add("RetryNumber", "" + m_retryNumber);
 		djson1.add("MaxRetry", "" + m_maxRetry);
-		
+		djson1.add("ParallelNumber", "" + m_parallelNumber);
+		djson1.add("MaxParallel", "" + m_maxParallel);
+	
 		long n = 1;
 		// Not needed Set<String> st = commandMap.keySet();
 		
@@ -863,6 +886,8 @@ public class DataNoBlock {
 		m_SU = 0;
 		m_retryNumber = -1;
 		m_maxRetry = -1;
+		m_parallelNumber = -1;
+		m_maxParallel = -1;
 		
 		return futureHttpResponse;
 		
