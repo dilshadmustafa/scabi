@@ -125,6 +125,9 @@ public class DataContext {
 	private long m_retryNumber = -1;
 	private long m_maxRetry = -1;
 	
+	private long m_parallelNumber = -1;
+	private long m_maxParallel = -1;
+	
 	public DataContext(String jsonString) throws IOException {
 		m_jsonString = jsonString;
 		
@@ -555,6 +558,32 @@ public class DataContext {
 			throw new DScabiException("Max Retry in data context is not set", "DCT.GMR.1");
 		
 		return m_maxRetry;
+	}
+	
+	public int setParallelNumber(long parallelNumber) {
+		m_parallelNumber = parallelNumber;
+		
+		return 0;
+	}
+	
+	public long getParallelNumber() throws DScabiException {
+		if (-1 == m_parallelNumber)
+			throw new DScabiException("Parallel Number in data context is not set", "DCT.GRN.1");
+		
+		return m_parallelNumber;
+	}
+	
+	public int setMaxParallel(long maxParallel) {
+		m_maxParallel = maxParallel;
+		
+		return 0;
+	}
+	
+	public long getMaxParallel() throws DScabiException {
+		if (-1 == m_maxParallel)
+			throw new DScabiException("Max Parallel in data context is not set", "DCT.GMR.1");
+		
+		return m_maxParallel;
 	}
 	
 }

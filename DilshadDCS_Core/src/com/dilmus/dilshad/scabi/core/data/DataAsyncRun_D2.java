@@ -149,7 +149,9 @@ public class DataAsyncRun_D2 {
 		m_taskId = null;
 		
 		m_startCommandId = -1;
-		m_endCommandId = -1;		
+		m_endCommandId = -1;
+		
+		m_numOfParallels = 0;
 	}
 	
 	String getTaskId() {
