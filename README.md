@@ -11,9 +11,9 @@ Scabi is a simple, light-weight cluster computing and storage framework for Big 
 > **Objectives:**
 
 > - Process Petabytes to Exabytes+ of data using billions of massively parallel Scabi Data Units (DU).
-> - Create Ensemble Machine Learning models for massive data sets.
-> - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, RedHat Gluster, SeaweedFS,  Minio, IBM Cleversafe, etc.
-> - Use Data-driven and Compute-driven frameworks to create parallel algorithms, Map/Reduce algorithms at scale.
+> - Create Ensemble Machine Learning models for super massive data sets with algorithm and ML library of your choice.
+> - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
+> - Use Data-driven and Compute-driven frameworks to implement iterative and complex parallel algorithms, Map/Reduce algorithms at Web Scale.
 
 ## Architectural Design ##
 
@@ -23,7 +23,7 @@ Scabi is a simple, light-weight cluster computing and storage framework for Big 
 
 ![Architectural Design_3](https://raw.githubusercontent.com/dilshadmustafa/scabi/v0.2.3/Documentation/Scabi_3.jpg)
 
-#### <i class="icon-file"></i> HOW TO QUICKLY RUN SCABI:-
+#### <i class="icon-file"></i> HOW TO QUICKLY RUN SCABI
 
 (1) Install Oracle Java 8 Java SE 1.8.0_66
 (2) Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
@@ -49,28 +49,28 @@ Scabi is a simple, light-weight cluster computing and storage framework for Big 
 
 (10) Run example code inside the examples folder in /home/[username]/scabi,
 
-cd examples
-java -cp "../dependency-jars/*":"../*":. Example1
-java -cp "../dependency-jars/*":"../*":. Example1_2
-java -cp "../dependency-jars/*":"../*":. Example1_3
-java -cp "../dependency-jars/*":"../*":. Example1_4
-java -cp "../dependency-jars/*":"../*":. Example2
-java -cp "../dependency-jars/*":"../*":. Example3
-java -cp "../dependency-jars/*":"../*":. Example4
-java -cp "../dependency-jars/*":"../*":. Example5
+	cd examples
+	java -cp "../dependency-jars/*":"../*":. Example1
+	java -cp "../dependency-jars/*":"../*":. Example1_2
+	java -cp "../dependency-jars/*":"../*":. Example1_3
+	java -cp "../dependency-jars/*":"../*":. Example1_4
+	java -cp "../dependency-jars/*":"../*":. Example2
+	java -cp "../dependency-jars/*":"../*":. Example3
+	java -cp "../dependency-jars/*":"../*":. Example4
+	java -cp "../dependency-jars/*":"../*":. Example5
 
 (11) Commandline arguments
 
-./start_meta.sh
+**./start_meta.sh**
 
 Usage : 
 ./start_meta.sh (No arguments) to use default settings, local host, port 5000, connect to local MongoDB server and port
 
 ./start_meta.sh (MetaServer_Port) [debug]
 
-./start_meta.sh (MetaServer_Port) (Database_HostName) (Database_Port)[debug]
+./start_meta.sh (MetaServer_Port) (Database_HostName) (Database_Port) [debug]
 
-./start_compute.sh
+**./start_compute.sh**
 
 Usage : 
 ./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
@@ -124,18 +124,18 @@ To compile examples,
 
 To compile from local download folder:-
 
-1. cd /home/(username)/scabi or your local download extract folder
-2. cd examples
-3. Include scabi_core.jar in java classpath before compiling
-4. javac -cp "../dependency-jars/*":"../*":. Example1
+	1. cd /home/(username)/scabi or your local download extract folder
+	2. cd examples
+	3. Include scabi_core.jar in java classpath before compiling
+	4. javac -cp "../dependency-jars/*":"../*":. Example1
 
 Or to compile from local git clone folder, follow steps as below:-
 
-1. cd /home/(username)/scabi/ or your local git clone folder
-2. cd DilshadDCS_Examples
-3. mvn package, scabi_core.jar file and dependency-jars folder will be created
-4. cd target/classes
-5. javac -cp "../dependency-jars/*":"../*":. Example1
+	1. cd /home/(username)/scabi/ or your local git clone folder
+	2. cd DilshadDCS_Examples
+	3. mvn package, scabi_core.jar file and dependency-jars folder will be created
+	4. cd target/classes
+	5. javac -cp "../dependency-jars/*":"../*":. Example1
 
 Copyright
 -------------------
