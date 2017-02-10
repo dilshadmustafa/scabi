@@ -53,15 +53,15 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 
 10. Run example code inside the examples folder in /home/[username]/scabi,
 
-	cd examples
-	java -cp "../dependency-jars/*":"../*":. Example1
-	java -cp "../dependency-jars/*":"../*":. Example1_2
-	java -cp "../dependency-jars/*":"../*":. Example1_3
-	java -cp "../dependency-jars/*":"../*":. Example1_4
-	java -cp "../dependency-jars/*":"../*":. Example2
-	java -cp "../dependency-jars/*":"../*":. Example3
-	java -cp "../dependency-jars/*":"../*":. Example4
-	java -cp "../dependency-jars/*":"../*":. Example5
+		cd examples
+		java -cp "../dependency-jars/*":"../*":. Example1
+		java -cp "../dependency-jars/*":"../*":. Example1_2
+		java -cp "../dependency-jars/*":"../*":. Example1_3
+		java -cp "../dependency-jars/*":"../*":. Example1_4
+		java -cp "../dependency-jars/*":"../*":. Example2
+		java -cp "../dependency-jars/*":"../*":. Example3
+		java -cp "../dependency-jars/*":"../*":. Example4
+		java -cp "../dependency-jars/*":"../*":. Example5
 
 11. Commandline arguments
 
