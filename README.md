@@ -6,14 +6,14 @@ Welcome to Scabi
 Introduction
 -------------
 
-**Scabi** (**Scale**-out **big**-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning in pure Java, with Data-driven cluster, Map/Reduce, supports parallel algorithms, Ensemble Machine Learning, Data Ring for any storage Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
+**Scabi** (**Scale**-out **big**-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning and Map/Reduce in pure Java. With Scabi's Data-driven cluster, create Ensemble Machine Learning models for super massive datasets, implement iterative and complex Map/Reduce and parallel algorithms and configure Scabi's Data Ring to use any storage: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
 
 > **Objectives:**
 
 > - Process Petabytes to Exabytes+ of data using billions of massively parallel Scabi Data Units (DU).
 > - Create Ensemble Machine Learning models for super massive data sets with algorithm and ML library of your choice.
+> - Use Data-driven and Compute-driven framework to implement iterative and complex Map/Reduce and parallel algorithms at Web Scale.
 > - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
-> - Use Data-driven and Compute-driven frameworks to implement iterative and complex parallel algorithms, Map/Reduce algorithms at Web Scale.
 
 ## Architectural Design ##
 
@@ -79,7 +79,7 @@ Usage :
 Usage : 
 ./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
 
-#### <i class="icon-file"></i> HOW TO QUICKLY BUILD SCABI:-
+#### <i class="icon-file"></i> HOW TO QUICKLY BUILD SCABI
 
 Initial Setup
 
