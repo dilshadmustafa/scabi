@@ -154,6 +154,6 @@ Please refer License.txt file for complete details on the license and terms and 
 About The Author
 --------------------
 
-Dilshad Mustafa is the creator and programmer of Scabi micro framework and Cluster. He is also Author of Book titled “Tech Job 9 to 9”. He is a Senior Software Architect with 16+ years experience in Information Technology industry. He has experience across various domains, Banking, Retail, Materials & Supply Chain.
+Dilshad Mustafa is the creator and programmer of Scabi framework and Cluster. He is also Author of Book titled “Tech Job 9 to 9”. He is a Senior Software Architect with 16+ years experience in Information Technology industry. He has experience across various domains, Banking, Retail, Materials & Supply Chain.
 
 He completed his B.E. in Computer Science & Engineering from Annamalai University, India and completed his M.Sc. in Communication & Network Systems from Nanyang Technological University, Singapore.
