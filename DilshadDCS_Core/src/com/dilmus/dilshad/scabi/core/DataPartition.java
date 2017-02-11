@@ -161,6 +161,7 @@ public class DataPartition implements Iterable<DataElement> {
 	private boolean m_isNew = false;
 	private long m_retryNumber = -1;
 	private String m_actualArrayFolder = null;
+	private long m_parallelNumber = -1;
 	
 	public static boolean isAppIdFileExists(String storageDirPath, String appId, IStorageHandler storageHandler) throws Exception {
 
@@ -1211,13 +1212,21 @@ public class DataPartition implements Iterable<DataElement> {
 				
 			if (isNew) {
 				m_retryNumber = c.getRetryNumber();
-				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber;
+				m_parallelNumber = c.getParallelNumber();
+				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber + "_" + m_parallelNumber;
 				
+				/* cw
 				if (storageDirPath.endsWith(File.separator))
 					storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
 				else
 					storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
+				*/
 				
+				if (storageDirPath.endsWith(File.separator))
+					storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+				else
+					storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+			
 			} else {
 				/* cw
 				String detailsStr = DataPartition.getPartitionIdFileData(storageDirPath, arrayFolder, localDirPath, storageHandler);
@@ -1270,7 +1279,7 @@ public class DataPartition implements Iterable<DataElement> {
 	}
 	
 	// This is given default access
-	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, boolean isNew, long retryNumber) throws Exception {
+	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, boolean isNew, long retryNumber, long parallelNumber) throws Exception {
 
 		if (null == c)
 			throw new DScabiException("Data Context is null", "DPN.DPN.1");
@@ -1303,16 +1312,25 @@ public class DataPartition implements Iterable<DataElement> {
 				
 			if (isNew) {
 				m_retryNumber = c.getRetryNumber();
-				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber;
+				m_parallelNumber = c.getParallelNumber();
+				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber + "_" + m_parallelNumber;
 				
+				/* cw
 				if (storageDirPath.endsWith(File.separator))
 					storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
 				else
 					storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
+				*/
+				
+				if (storageDirPath.endsWith(File.separator))
+					storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+				else
+					storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
 				
 			} else {
 				m_retryNumber = retryNumber;
-				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber;
+				m_parallelNumber = parallelNumber;
+				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber + "_" + m_parallelNumber;
 			}
 			
 			m_isNew = isNew;

@@ -6,7 +6,7 @@ Welcome to Scabi
 Introduction
 -------------
 
-**Scabi** (**Scale**-out **big**-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning and Map/Reduce in pure Java. With Scabi's Data-driven cluster, create Ensemble Machine Learning models for super massive datasets, implement iterative and complex Map/Reduce and parallel algorithms and configure Scabi's Data Ring to use any storage: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
+**Scabi** (<b>Sca</b>le-out <b>bi</b>g-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning and Map/Reduce in pure Java. With Scabi's Data-driven cluster, create Ensemble Machine Learning models for super massive datasets, implement iterative and complex Map/Reduce and parallel algorithms and configure Scabi's Data Ring to use any storage: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
 
 > **Objectives:**
 
@@ -149,7 +149,7 @@ Copyright (c) Dilshad Mustafa 2016. All Rights Reserved.
 License
 -------------
 
-Please refer License.txt file for complete details on the license and terms and conditions.
+Please refer LICENSE.txt file for complete details on the license and terms and conditions.
 
 About The Author
 --------------------

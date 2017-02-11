@@ -239,6 +239,8 @@ public class DMExecute {
 	    	dctx1.add("JsonInput", djson.getString("JsonInput"));
 	    	dctx1.setRetryNumber(retryNumber);
 	    	dctx1.setMaxRetry(maxRetry);
+	    	dctx1.setParallelNumber(parallelNumber);
+	    	dctx1.setMaxParallel(maxParallel);
 	    	
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
 	  		String localDPDirPathForThisAppId = null;
@@ -518,6 +520,8 @@ public class DMExecute {
 	    	dctx1.add("TaskId", dj.getString("TaskId"));
 			dctx1.setRetryNumber(retryNumber);
 			dctx1.setMaxRetry(maxRetry);
+	    	dctx1.setParallelNumber(parallelNumber);
+	    	dctx1.setMaxParallel(maxParallel);
 			
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
 	  		String localDPDirPathForThisAppId = null;

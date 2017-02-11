@@ -442,6 +442,7 @@ public class Data implements Runnable {
 		
 		DataContext dctx = new DataContext(); 
 		dctx.setMaxRetry(m_maxRetry);
+		dctx.setMaxParallel(m_maxParallel);
 		// cw DataContext dctx = DataContext.dummy();
 		String partitionId = dataId + "_" + splitUnit + "_" + m_appId.replace("_", "");
 		
