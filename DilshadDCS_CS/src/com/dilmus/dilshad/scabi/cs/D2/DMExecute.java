@@ -232,7 +232,7 @@ public class DMExecute {
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
-	  		dctx1.add("AppId", dj.getString("AppId"));
+	  		// cw dctx1.add("AppId", dj.getString("AppId"));
 	  		dctx1.add("JobId", dj.getString("JobId"));
 	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
 	    	dctx1.add("TaskId", dj.getString("TaskId"));
@@ -241,6 +241,7 @@ public class DMExecute {
 	    	dctx1.setMaxRetry(maxRetry);
 	    	dctx1.setParallelNumber(parallelNumber);
 	    	dctx1.setMaxParallel(maxParallel);
+	    	dctx1.setAppId(appId);
 	    	
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
 	  		String localDPDirPathForThisAppId = null;
@@ -514,7 +515,7 @@ public class DMExecute {
 			
 	  		DataContext dctx1 = new DataContext("TotalComputeUnit", dj.getString("TotalComputeUnit"));
 	  		dctx1.add("SplitComputeUnit", dj.getString("SplitComputeUnit"));
-	  		dctx1.add("AppId", dj.getString("AppId"));
+	  		// cw dctx1.add("AppId", dj.getString("AppId"));
 	  		dctx1.add("JobId", dj.getString("JobId"));
 	    	dctx1.add("ConfigId", dj.getString("ConfigId"));
 	    	dctx1.add("TaskId", dj.getString("TaskId"));
@@ -522,6 +523,7 @@ public class DMExecute {
 			dctx1.setMaxRetry(maxRetry);
 	    	dctx1.setParallelNumber(parallelNumber);
 	    	dctx1.setMaxParallel(maxParallel);
+	    	dctx1.setAppId(appId);
 			
 	  		String localDPDirPath = ComputeServer_D2.getLocalDirPath();
 	  		String localDPDirPathForThisAppId = null;

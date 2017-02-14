@@ -147,7 +147,7 @@ public class UnitTest6_DataPartition {
 		dp.flushFiles();
 		dp.close();
 		dp.operationsSuccess();
-		dp.deletePartition();
+		//dp.deletePartition();
 		storageHandler.close();
 		System.out.println("done");
 	}

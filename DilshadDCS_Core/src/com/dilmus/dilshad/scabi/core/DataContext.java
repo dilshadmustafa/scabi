@@ -127,6 +127,7 @@ public class DataContext {
 	
 	private long m_parallelNumber = -1;
 	private long m_maxParallel = -1;
+	private String m_appId = null;
 	
 	public DataContext(String jsonString) throws IOException {
 		m_jsonString = jsonString;
@@ -522,6 +523,9 @@ public class DataContext {
 
 		dson3.setRetryNumber(0);
 		dson3.setMaxRetry(100);
+		dson3.setParallelNumber(0);
+		dson3.setMaxParallel(100);
+		dson3.setAppId("DummyAppId");
 		
 		return dson3;
 	}
@@ -584,6 +588,19 @@ public class DataContext {
 			throw new DScabiException("Max Parallel in data context is not set", "DCT.GMR.1");
 		
 		return m_maxParallel;
+	}
+	
+	public int setAppId(String appId) {
+		m_appId = appId;
+		
+		return 0;
+	}
+	
+	public String getAppId() throws DScabiException {
+		if (null == m_appId)
+			throw new DScabiException("App Id in data context is not set", "DCT.GAI.1");
+		
+		return m_appId;
 	}
 	
 }
