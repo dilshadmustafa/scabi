@@ -168,6 +168,7 @@ public class DataPartition implements Iterable<DataElement> {
 	private HashMap<String, IBigArray> m_bigArrayMap = new HashMap<String, IBigArray>();
 	private long m_currentBigArray = 0;
 	private long m_lastBigArray = 0;
+	private String m_createdBy = null;
 	
 	public static boolean isAppIdFileExists(String storageDirPath, String appId, IStorageHandler storageHandler) throws Exception {
 
@@ -429,9 +430,9 @@ public class DataPartition implements Iterable<DataElement> {
 		
 		String localFilePath = null;
 		if (localDirPath.endsWith(File.separator)) {
-			localFilePath = localDirPath + arrayFolder + "_R" + retryNumber + "_P" + parallelNumber +".txt";
+			localFilePath = localDirPath + arrayFolder + "_RPCC" + "_R" + retryNumber + "_P" + parallelNumber +".txt";
 		} else {
-			localFilePath = localDirPath + File.separator + arrayFolder + "_R" + retryNumber + "_P" + parallelNumber+ ".txt";
+			localFilePath = localDirPath + File.separator + arrayFolder + "_RPCC" + "_R" + retryNumber + "_P" + parallelNumber+ ".txt";
 		}
 		
 		Path path = Paths.get(localFilePath);
@@ -439,9 +440,9 @@ public class DataPartition implements Iterable<DataElement> {
 		
 		String partitionFilePath = null;
 		if (storageDirPath.endsWith(File.separator)) {
-			partitionFilePath = storageDirPath + arrayFolder + "_R" + retryNumber + "_P" + parallelNumber + ".txt";
+			partitionFilePath = storageDirPath + arrayFolder + "_RPCC" + "_R" + retryNumber + "_P" + parallelNumber + ".txt";
 		} else {
-			partitionFilePath = storageDirPath + File.separator + arrayFolder + "_R" + retryNumber + "_P" + parallelNumber + ".txt";
+			partitionFilePath = storageDirPath + File.separator + arrayFolder + "_RPCC" + "_R" + retryNumber + "_P" + parallelNumber + ".txt";
 		}
 		
 		try {
@@ -1122,15 +1123,15 @@ public class DataPartition implements Iterable<DataElement> {
 		return ret;
 	}	
 	
-	public static int deletePartition(String appId, String dataId, long splitUnit, String storageDirPath, String localDirPath, IStorageHandler storageHandler) throws DScabiException, IOException {	
+	public static int deletePartition(String appId, String dataId, long splitUnit, String storageDirPath, String localDirPath, IStorageHandler storageHandler, String deletedBy) throws DScabiException, IOException {	
 		String arrayFolder = dataId + "_" + splitUnit + "_" + appId.replace("_", "");
 
-		int ret = deletePartition(storageDirPath, arrayFolder, localDirPath, storageHandler);
+		int ret = deletePartition(storageDirPath, arrayFolder, localDirPath, storageHandler, deletedBy);
 	
 		return ret;
 	}
 	
-	public static int deletePartition(String storageDirPath, String arrayFolder, String localDirPath, IStorageHandler storageHandler) throws DScabiException, IOException {
+	public static int deletePartition(String storageDirPath, String arrayFolder, String localDirPath, IStorageHandler storageHandler, String deletedBy) throws DScabiException, IOException {
 		// NOTE: .close() or flushFiles() on that particular partition should be called by User before deleting arrayFolder 
 		// of that partition using this static method
 		
@@ -1142,6 +1143,11 @@ public class DataPartition implements Iterable<DataElement> {
 		long totalNumOfBigArrays = -1;
 		DMJson djsonPid = null;
 		
+		String strAppId, strDataId, strSplitUnit, strPartitionUserRef, strArrayFolder;
+		String strRetryNumber, strParallelNumber, strTotalNumOfBigArrays;
+		String strMaxRetry, strMaxParallel;
+		String strCreatedBy, strStatus = null;
+		
 		if (null == storageDirPath)
 			throw new DScabiException("Storage Dir Path is null", "DPN.DEN.1");
 		if (null == arrayFolder)
@@ -1150,9 +1156,13 @@ public class DataPartition implements Iterable<DataElement> {
 			throw new DScabiException("Storage Dir Path is empty string", "DPN.DEN.3");
 		if (arrayFolder.length() == 0)
 			throw new DScabiException("Array Folder is empty string", "DPN.DEN.4");
+		if (null == deletedBy)
+			throw new DScabiException("deletedBy is null", "DPN.DEN.5");
+		if (deletedBy.length() == 0)
+			throw new DScabiException("deletedBy is empty string", "DPN.DEN.5");
 		
 		try {
-			createPartitionIdDeletedFile(storageDirPath, arrayFolder, localDirPath, storageHandler, "Deleted");
+			createPartitionIdDeletedFile(storageDirPath, arrayFolder, localDirPath, storageHandler, "Deleted By : " + deletedBy);
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
@@ -1187,24 +1197,36 @@ public class DataPartition implements Iterable<DataElement> {
 						proceed = true;
 					}
 					*/
-					
-					String status = null;
+
 					try {
 						djsonPid = new DMJson(detailsStrPid);
-						status = djsonPid.getString("Status");
-						retryNumber = djsonPid.getLongOf("RetryNumber");
-						parallelNumber = djsonPid.getLongOf("ParallelNumber");
-						totalNumOfBigArrays = djsonPid.getLongOf("TotalNumOfBigArrays");
+						// to use same value from the partitionid.txt file
+						strAppId = djsonPid.getString("AppId");
+						strDataId = djsonPid.getString("DataId");
+						strSplitUnit = djsonPid.getString("SplitUnit");
+						strPartitionUserRef = djsonPid.getString("PartitionUserRef");
+						strArrayFolder = djsonPid.getString("ArrayFolder");
+						strRetryNumber = djsonPid.getString("RetryNumber");
+						strParallelNumber = djsonPid.getString("ParallelNumber");
+						strTotalNumOfBigArrays = djsonPid.getString("TotalNumOfBigArrays");
+						strMaxRetry = djsonPid.getString("MaxRetry");
+						strMaxParallel = djsonPid.getString("MaxParallel");
+						strStatus = djsonPid.getString("Status");
+						strCreatedBy = djsonPid.getString("CreatedBy");
+						
+						retryNumber = Long.parseLong(strRetryNumber);
+						parallelNumber = Long.parseLong(strParallelNumber);
+						totalNumOfBigArrays = Long.parseLong(strTotalNumOfBigArrays);
 					} catch (Exception e) {
 						logs.debug("deletePartition(...) Information only - Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid + " storageDirPath : " + storageDirPath);					
 						return 0;		
 					}
-					if (false == status.equalsIgnoreCase("SUCCESS")) {
-						logs.debug("deletePartition(...) Information only - Status in partition id file : " + arrayFolder + ".txt is not SUCCESS. Status is : " + status + " storageDirPath : " + storageDirPath);
-						return 0;
-					} else {
-						proceed = true;
-					}
+					// cw if (false == strStatus.equalsIgnoreCase("SUCCESS")) {
+					// cw 	logs.debug("deletePartition(...) Information only - Status in partition id file : " + arrayFolder + ".txt is not SUCCESS. Status is : " + strStatus + " storageDirPath : " + storageDirPath);
+					// cw	return 0;
+					// cw } else {
+					proceed = true;
+					// cw }
 				}
 			}
 		} else {
@@ -1213,7 +1235,6 @@ public class DataPartition implements Iterable<DataElement> {
 		}	
 		
 		if (proceed) {
-
 	
 			/* cw
 			if (dirPath.charAt(dirPath.length() - 1) == File.separatorChar)
@@ -1228,15 +1249,22 @@ public class DataPartition implements Iterable<DataElement> {
 				Instant inst = Instant.now();
 				long nano = System.nanoTime();
 				DMJson djsonDel = new DMJson();
-				djsonDel.add("RetryNumber", djsonPid.getString("RetryNumber"));
-				djsonDel.add("MaxRetry", djsonPid.getString("MaxRetry"));
-				djsonDel.add("ParallelNumber", djsonPid.getString("ParallelNumber"));
-				djsonDel.add("MaxParallel", djsonPid.getString("MaxParallel"));
-				djsonDel.add("TotalNumOfBigArrays", djsonPid.getString("TotalNumOfBigArrays"));
-				djsonDel.add("Status", "DELETED");
+				// to use same value from the partitionid.txt file
+				djsonDel.add("AppId", strAppId);
+				djsonDel.add("DataId", strDataId);
+				djsonDel.add("SplitUnit", strSplitUnit);
+				djsonDel.add("PartitionUserRef", strPartitionUserRef);
+				djsonDel.add("ArrayFolder", strArrayFolder);
+				djsonDel.add("RetryNumber", strRetryNumber);
+				djsonDel.add("ParallelNumber", strParallelNumber);
+				djsonDel.add("TotalNumOfBigArrays", strTotalNumOfBigArrays);
+				djsonDel.add("MaxRetry", strMaxRetry);
+				djsonDel.add("MaxParallel", strMaxParallel);
 				djsonDel.add("Timestamp", inst.toString());
 				djsonDel.add("NanoTimestamp", "" + nano);
-				djsonDel.add("Remarks", "Deleted");
+				djsonDel.add("Status", "DELETED");
+				djsonDel.add("CreatedBy", strCreatedBy);
+				djsonDel.add("Remarks", "Deleted By : " + deletedBy);
 				
 				String deleteDetailsStr = djsonDel.toString();
 				createPartitionIdDeletedFile(storageDirPath, arrayFolder, localDirPath, storageHandler, deleteDetailsStr);
@@ -1291,16 +1319,21 @@ public class DataPartition implements Iterable<DataElement> {
 			Instant inst = Instant.now();
 			long nano = System.nanoTime();
 			DMJson djsonDel = new DMJson();
-			
+			djsonDel.add("AppId", m_context.getAppId());
+			djsonDel.add("DataId", m_dataId);
+			djsonDel.add("SplitUnit", "" + m_context.getDU());
+			djsonDel.add("PartitionUserRef", m_partitionUserRef);
+			djsonDel.add("ArrayFolder", m_arrayFolder);
 			djsonDel.add("RetryNumber", "" + m_retryNumber);
-			djsonDel.add("MaxRetry", "" + m_context.getMaxRetry());
 			djsonDel.add("ParallelNumber", "" + m_parallelNumber);
-			djsonDel.add("MaxParallel", "" + m_context.getMaxParallel());
 			djsonDel.add("TotalNumOfBigArrays", "" + m_totalNumOfBigArrays);
-			djsonDel.add("Status", "DELETED");
+			djsonDel.add("MaxRetry", "" + m_context.getMaxRetry());
+			djsonDel.add("MaxParallel", "" + m_context.getMaxParallel());
 			djsonDel.add("Timestamp", inst.toString());
 			djsonDel.add("NanoTimestamp", "" + nano);
-			djsonDel.add("Remarks", "Deleted");
+			djsonDel.add("Status", "DELETED");
+			djsonDel.add("CreatedBy", m_createdBy);
+			djsonDel.add("Remarks", "Deleted By : non-static DataPartition.deletePartition() with App Id m_appId : " + m_context.getAppId());
 			
 			String deleteDetailsStr = djsonDel.toString();
 			
@@ -1334,7 +1367,42 @@ public class DataPartition implements Iterable<DataElement> {
 		return 0;
 	}	
 	
-	public static DataPartition createDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler) throws Exception {	
+	public int deletePartitionWithoutDeletedFile() throws Exception {
+		close();
+		
+		// System.out.println("deletePartitionWithoutDeletedFile() Deleting data partition : " + m_arrayFolder + "...");
+		log.debug("deletePartitionWithoutDeletedFile() Deleting data partition : {}...", m_arrayFolder);
+	
+		try {
+			deletePartitionIdRPCCFile();
+			deletePartitionIdFile();	
+			
+			for (long i = 1; i <= m_totalNumOfBigArrays; i++) {
+				String dirPath = m_storageDirPath;
+				if (dirPath.endsWith(File.separator))
+					dirPath = dirPath + m_arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + i;
+				else
+					dirPath = dirPath + File.separator + m_arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + i;;
+				log.debug("deletePartitionWithoutDeletedFile() dirPath : {} for BigArray : {}", dirPath, i);
+				m_storageHandler.deleteDirIfExists(dirPath);
+			}
+			
+			deletePartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_storageHandler, m_retryNumber, m_parallelNumber);
+			deletePartitionIdPOSTCNBAFile(m_storageDirPath, m_arrayFolder, m_storageHandler, m_retryNumber, m_parallelNumber);
+			
+			if (m_isNew)
+				m_isNew = false;
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+		
+		// System.out.println("deletePartitionWithoutDeletedFile() Deleting data partition : " + m_arrayFolder + " done");
+		log.debug("deletePartitionWithoutDeletedFile() Deleting data partition : {} storageDirPath : {} done", m_arrayFolder, m_storageDirPath);
+		
+		return 0;
+	}	
+	
+	public static DataPartition createDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, String createdBy) throws Exception {	
 	
 		logs.debug("createDataPartition() partition : {}", arrayFolder);
 		
@@ -1344,7 +1412,7 @@ public class DataPartition implements Iterable<DataElement> {
 		DataPartition dp = null;
 		if (false == check) {
 			logs.debug("createDataPartition() Information only - Partition doesn't exist for partition : {}, storageDirPath : {}", arrayFolder, storageDirPath);
-			dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, true);
+			dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, createdBy);
 		} else {
 			throw new DScabiException("DataPartition for partition : " + arrayFolder + " already found in Storage system", "DPN.CDP.1");			   	
 		}		
@@ -1352,7 +1420,7 @@ public class DataPartition implements Iterable<DataElement> {
 		return dp;
 	}
 	
-	public static DataPartition allowCreateDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler) throws Exception {	
+	public static DataPartition allowCreateDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, String createdBy) throws Exception {	
 		
 		logs.debug("allowCreateDataPartition() partition : {}", arrayFolder);
 		
@@ -1366,44 +1434,67 @@ public class DataPartition implements Iterable<DataElement> {
 		boolean check3 = DataPartition.isPartitionIdFileExists(storageDirPath, arrayFolder, storageHandler);
 		boolean proceed = false;	
 		long retryNumber = -1;
-
+		long parallelNumber = -1;
+		
 		if (check3) {
 			logs.debug("allowCreateDataPartition() Information only - Partition Id file exists for partition : {}, storageDirPath : {}", arrayFolder, storageDirPath);
 
-			String detailsStr2 = DataPartition.getPartitionIdFileData(storageDirPath, arrayFolder, localDirPath, storageHandler);
-			if (null == detailsStr2) {
+			String detailsStrPid2 = DataPartition.getPartitionIdFileData(storageDirPath, arrayFolder, localDirPath, storageHandler);
+			if (null == detailsStrPid2) {
 				logs.debug("allowCreateDataPartition() detailsStr2 is null for DataPartition for partition : " + arrayFolder + " Proceeding to create data partition");
 				proceed = true;
 			} else {
-				if (detailsStr2.length() == 0) {
+				if (detailsStrPid2.length() == 0) {
 					logs.debug("allowCreateDataPartition() Details in partition id file : " + arrayFolder + ".txt is empty" + " Proceeding to create data partition");					
 					proceed = true;
 				} else {	
-					String s[] = detailsStr2.split(";");
-					// This number 5 should be consistent with how many ";" we write here in the end in operationsSuccess() method
-					if (s.length < 5) {					
-						logs.debug("allowCreateDataPartition() Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStr2 + " Proceeding to create data partition");					
-						proceed = true;		
-					} else {
-						retryNumber = Long.parseLong(s[0]);
-						if (retryNumber == c.getRetryNumber()) {
-							throw new DScabiException("Partition id file is already having retry number same as this DU's retry number. c.getRetryNumber() : " + c.getRetryNumber() + " retryNumber : " + retryNumber + " arrayFolder : " + arrayFolder, "DPN.ACD.1");
-						} else if (retryNumber < c.getRetryNumber()) {
-							logs.debug("allowCreateDataPartition() Information only - case retryNumber < c.getRetryNumber() Proceeding to create data partition");
-							proceed = true;
-						} else {
-							logs.debug("allowCreateDataPartition() Information only - case retryNumber > c.getRetryNumber() Proceeding to check if Partition Id RNCC file exists for partition : {}, storageDirPath : {}, retryNumber : {}", arrayFolder, storageDirPath, retryNumber);
-							// TODO use parallelNumber in call to isPartitionIdRPCCFileExists below
-							boolean check4 = DataPartition.isPartitionIdRPCCFileExists(storageDirPath, arrayFolder, storageHandler, retryNumber, 0);
-							if (check4) {
-								logs.debug("allowCreateDataPartition() Information only - Partition Id RNCC file exists for partition : {}, storageDirPath : {}, retryNumber : {}", arrayFolder, storageDirPath, retryNumber);
-								throw new DScabiException("Partition id file is already having retry number greater than this DU's retry number. c.getRetryNumber() : " + c.getRetryNumber() + " retryNumber : " + retryNumber + " arrayFolder : " + arrayFolder, "DPN.ACD.1");
-							} else {
-								logs.debug("allowCreateDataPartition() Information only - Partition Id RNCC file does not exist for partition : {}, storageDirPath : {}, retryNumber : {} Proceeding to create data partition", arrayFolder, storageDirPath, retryNumber);
+					// cw String s[] = detailsStr2.split(";");
+					// cw // This number 5 should be consistent with how many ";" we write here in the end in operationsSuccess() method
+					// cw if (s.length < 5) {					
+					// cw	logs.debug("allowCreateDataPartition() Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStr2 + " Proceeding to create data partition");					
+					// cw	proceed = true;		
+					// cw } else {
+					// cw	retryNumber = Long.parseLong(s[0]);
+						
+					try {	
+						// This try-catch is only for getting values from json
+						// Will get exception if detailsStr is not in proper
+						// json format
+						DMJson djsonPid2 = new DMJson(detailsStrPid2);	
+						retryNumber = djsonPid2.getLongOf("RetryNumber");
+						parallelNumber = djsonPid2.getLongOf("ParallelNumber");
+					} catch (Exception e) {
+						logs.debug("allowCreateDataPartition() Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid2 + " Proceeding to create partition id file");					
+						proceed = true;
+					}
+					if (false == proceed) {	
+						if (parallelNumber == c.getParallelNumber()) {
+							if (retryNumber == c.getRetryNumber()) {
+								throw new DScabiException("Partition id file is already having retry number same as this DU's retry number. c.getRetryNumber() : " + c.getRetryNumber() + " retryNumber : " + retryNumber + " c.getParallelNumber() : " + c.getParallelNumber() + " parallelNumber : " + parallelNumber + " arrayFolder : " + arrayFolder, "DPN.ACD.1");
+							} else if (retryNumber < c.getRetryNumber()) {
+								logs.debug("allowCreateDataPartition() Information only - case retryNumber < c.getRetryNumber() Proceeding to create data partition");
 								proceed = true;
-							}	
+							} else {
+								// retryNumber > c.getRetryNumber()
+								throw new DScabiException("Partition id file is already having retry number greater than this DU's retry number. c.getRetryNumber() : " + c.getRetryNumber() + " retryNumber : " + retryNumber + " c.getParallelNumber() : " + c.getParallelNumber() + " parallelNumber : " + parallelNumber + " arrayFolder : " + arrayFolder, "DPN.OSS.1");
+								/* cw
+								// This commented code below is old logic where partitionid_RNCC_<r>.txt file was created after creating partitionid.txt file
+								logs.debug("allowCreateDataPartition() Information only - case retryNumber > c.getRetryNumber() Proceeding to check if Partition Id RNCC file exists for partition : {}, storageDirPath : {}, retryNumber : {}", arrayFolder, storageDirPath, retryNumber);
+								boolean check4 = DataPartition.isPartitionIdRPCCFileExists(storageDirPath, arrayFolder, storageHandler, retryNumber, parallelNumber);
+								if (check4) {
+									logs.debug("allowCreateDataPartition() Information only - Partition Id RNCC file exists for partition : {}, storageDirPath : {}, retryNumber : {}, parallelNumber : {}", arrayFolder, storageDirPath, retryNumber, parallelNumber);
+									throw new DScabiException("Partition id file is already having retry number greater than this DU's retry number. c.getRetryNumber() : " + c.getRetryNumber() + " retryNumber : " + retryNumber + " c.getParallelNumber() : " + c.getParallelNumber() + " parallelNumber : " + parallelNumber + " arrayFolder : " + arrayFolder, "DPN.ACD.1");
+								} else {
+									logs.debug("allowCreateDataPartition() Information only - Partition Id RNCC file does not exist for partition : {}, storageDirPath : {}, retryNumber : {} , parallelNumber : {} Proceeding to create data partition", arrayFolder, storageDirPath, retryNumber, parallelNumber);
+									proceed = true;
+								}	
+								*/
+							}
+						} else {
+							proceed = true;
 						}
 					}
+					// cw }
 				}
 			}
 		} else {
@@ -1413,7 +1504,7 @@ public class DataPartition implements Iterable<DataElement> {
 
 		DataPartition dp = null;
 		if (proceed) {
-			dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, true);
+			dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, createdBy);
 		}
 		
 		return dp;
@@ -1463,7 +1554,7 @@ public class DataPartition implements Iterable<DataElement> {
 	}	
 	*/	
 	
-	public static DataPartition readDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler) throws Exception {	
+	public static DataPartition readDataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, String readBy) throws Exception {	
 		
 		boolean toRepair = false;
 		long retryNumber = -1;
@@ -1507,21 +1598,34 @@ public class DataPartition implements Iterable<DataElement> {
 					// cw	throw new DScabiException("Status in partition id file : " + arrayFolder + ".txt is not SUCCESS. Status is : " + s[1], "DPN.DPN.2");
 					// cw } else {
 					// cw 	retryNumber = Long.parseLong(s[0]);
+					String status = null;
+					String createdBy = null;
 					try {
+						// This try-catch is only for getting values from json
+						// Will get exception if detailsStr is not in proper
+						// json format
 						DMJson djsonPid = new DMJson(detailsStrPid);
 						retryNumber = djsonPid.getLongOf("RetryNumber");
 						parallelNumber = djsonPid.getLongOf("ParallelNumber");
 						totalNumOfBigArrays = djsonPid.getLongOf("TotalNumOfBigArrays");
+						status = djsonPid.getString("Status");
+						createdBy = djsonPid.getString("CreatedBy");
+					} catch (Exception e) {
+						logs.debug("readDataPartition() Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid + " Proceeding to try to repair");					
+						toRepair = true;
+					}
+					if (false == toRepair) {
+						if (false == status.equalsIgnoreCase("SUCCESS")) {
+							throw new DScabiException("Status in partition id file : " + arrayFolder + ".txt is not SUCCESS. Status is : " + status, "DPN.DPN.2");
+						}
 						boolean check2 = DataPartition.isPartitionIdRPCCFileExists(storageDirPath, arrayFolder, storageHandler, retryNumber, parallelNumber);
 						if (check2) {
 							logs.debug("readDataPartition() Information only - Partition Id RPCC file exists for partition : {}, storageDirPath : {}, retryNumber : {}, parallelNumber : {}", arrayFolder, storageDirPath, retryNumber, parallelNumber);
-							dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, false, retryNumber, parallelNumber, totalNumOfBigArrays);
+							dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, retryNumber, parallelNumber, totalNumOfBigArrays, createdBy);
 						} else {
 							logs.debug("readDataPartition() Information only - Partition Id RPCC file does not exist for partition : {}, storageDirPath : {}, retryNumber : {}, parallelNumber : {} Proceeding to try to repair", arrayFolder, storageDirPath, retryNumber, parallelNumber);
 							toRepair = true;
 						}	
-					} catch (Exception e) {
-						toRepair = true;
 					}
 					// cw } // for else part
 				}
@@ -1562,38 +1666,69 @@ public class DataPartition implements Iterable<DataElement> {
 								logs.debug("operationsSuccessWithAppStatusCheck() Information only - Details in partition id RPCC file.txt is empty for partition : {}, storageDirPath : {}, retryNumber : {} parallelNumber : {} Proceeding to check next partition id RPCC file", arrayFolder, storageDirPath, i, p);
 								continue;
 							} else {	
+								String strAppId, strDataId, strSplitUnit, strPartitionUserRef, strArrayFolder;
+								String strRetryNumber, strParallelNumber, strTotalNumOfBigArrays;
+								String strMaxRetry, strMaxParallel;
+								String strCreatedBy, strStatus = null;
 								try {
+									// readDataPartition() method is also called from
+									// Data.getDataPartition() method
+									// So put only the original values from _RPCC_i_p.txt file into partition id.txt file
 									DMJson djsonRPCC1 = new DMJson(detailsStrRPCC1);
-									retryNumber = djsonRPCC1.getLongOf("RetryNumber");
-									long mxRetry = djsonRPCC1.getLongOf("MaxRetry"); // to use same value as in the file
-									parallelNumber = djsonRPCC1.getLongOf("ParallelNumber");
-									long mxParallel = djsonRPCC1.getLongOf("MaxParallel"); // to use same value as in the file
-									totalNumOfBigArrays = djsonRPCC1.getLongOf("TotalNumOfBigArrays");
-
-									// if _RPCC_i_p.txt file exists, create partition id file with retry number = i, parallel number = p, create dp, found = true and break for loop 
-									Instant inst = Instant.now();
-									long nano = System.nanoTime();
-									// cw String detailsStrPid2 = i + ";SUCCESS;" + inst.toString() + ";" + nano + ";Repaired by DataPartition.readDataPartition()";
-									DMJson djsonPid2 = new DMJson();
-									djsonPid2.add("RetryNumber", "" + retryNumber);
-									djsonPid2.add("MaxRetry", "" + mxRetry); // to use same value as in the file
-									djsonPid2.add("ParallelNumber", "" + parallelNumber);
-									djsonPid2.add("MaxParallel", "" + mxParallel); // to use same value as in the file
-									djsonPid2.add("TotalNumOfBigArrays", "" + totalNumOfBigArrays);
-									djsonPid2.add("Status", "SUCCESS");
-									djsonPid2.add("Timestamp", inst.toString());
-									djsonPid2.add("NanoTimestamp", "" + nano);
-									djsonPid2.add("Remarks", "Repaired");
+									// to use same value from the RPCC file
+									strAppId = djsonRPCC1.getString("AppId");
+									strDataId = djsonRPCC1.getString("DataId");
+									strSplitUnit = djsonRPCC1.getString("SplitUnit");
+									strPartitionUserRef = djsonRPCC1.getString("PartitionUserRef");
+									strArrayFolder = djsonRPCC1.getString("ArrayFolder");
+									strRetryNumber = djsonRPCC1.getString("RetryNumber");
+									strParallelNumber = djsonRPCC1.getString("ParallelNumber");
+									strTotalNumOfBigArrays = djsonRPCC1.getString("TotalNumOfBigArrays");
+									strMaxRetry = djsonRPCC1.getString("MaxRetry");
+									strMaxParallel = djsonRPCC1.getString("MaxParallel");
+									strStatus = djsonRPCC1.getString("Status");
+									strCreatedBy = djsonRPCC1.getString("CreatedBy");
 									
-									String detailsStrPid2 = djsonPid2.toString();
-									createPartitionIdFile(storageDirPath, arrayFolder, localDirPath, storageHandler, detailsStrPid2);
-									dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, false, retryNumber, parallelNumber, totalNumOfBigArrays);
-									found = true;
-									break;
-								
+									retryNumber = Long.parseLong(strRetryNumber);
+									parallelNumber = Long.parseLong(strParallelNumber);
+									totalNumOfBigArrays = Long.parseLong(strTotalNumOfBigArrays);
 								} catch (Exception e) {
+									logs.debug("readDataPartition() Details in partition id RPCC file is not in correct format. Details is : {}, partition : {}, storageDirPath : {}, retryNumber : {} parallelNumber : {} Proceeding to check next partition id RPCC file", detailsStrRPCC1, arrayFolder, storageDirPath, i, p);					
 									continue;
 								}
+								if (false == strStatus.equalsIgnoreCase("SUCCESS")) {
+									logs.debug("readDataPartition() Status in partition id RPCC file is not SUCCESS. Status is : {}, partition : {}, storageDirPath : {}, retryNumber : {} parallelNumber : {} Proceeding to check next partition id RPCC file", strStatus, arrayFolder, storageDirPath, i, p);	
+									continue;
+								}
+								// if _RPCC_i_p.txt file exists, create partition id file with retry number = i, parallel number = p, create dp, found = true and break for loop 
+								Instant inst = Instant.now();
+								long nano = System.nanoTime();
+								// to put same value from the RPCC file
+								DMJson djsonPid2 = new DMJson();
+								djsonPid2.add("AppId", strAppId);
+								djsonPid2.add("DataId", strDataId);
+								djsonPid2.add("SplitUnit", strSplitUnit);
+								djsonPid2.add("PartitionUserRef", strPartitionUserRef);
+								djsonPid2.add("ArrayFolder", strArrayFolder);
+								djsonPid2.add("RetryNumber", strRetryNumber);
+								djsonPid2.add("ParallelNumber", strParallelNumber);
+								djsonPid2.add("TotalNumOfBigArrays", strTotalNumOfBigArrays);
+								djsonPid2.add("MaxRetry", strMaxRetry);
+								djsonPid2.add("MaxParallel", strMaxParallel);
+								djsonPid2.add("Timestamp", inst.toString());
+								djsonPid2.add("NanoTimestamp", "" + nano);
+								djsonPid2.add("Status", "SUCCESS");
+								djsonPid2.add("CreatedBy", strCreatedBy);
+								djsonPid2.add("Remarks", "Repaired By : " + readBy);
+								
+								// cw String detailsStrPid2 = i + ";SUCCESS;" + inst.toString() + ";" + nano + ";Repaired by DataPartition.readDataPartition()";
+								String detailsStrPid2 = djsonPid2.toString();
+								createPartitionIdFile(storageDirPath, arrayFolder, localDirPath, storageHandler, detailsStrPid2);
+								logs.debug("readDataPartition() Repair completed for partition : " + arrayFolder + " storageDirPath : " + storageDirPath + " Repaired By : " + readBy);
+								
+								dp = new DataPartition(c, dataId, partitionUserRef, storageDirPath, arrayFolder, pageSize, localDirPath, storageHandler, retryNumber, parallelNumber, totalNumOfBigArrays, strCreatedBy);
+								found = true;
+								break;
 							}
 						}
 					}
@@ -1612,7 +1747,7 @@ public class DataPartition implements Iterable<DataElement> {
 	}		
 
 	
-	/* cw
+	/* pw
 	// This is given default access
 	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler) throws Exception {
 
@@ -1682,12 +1817,11 @@ public class DataPartition implements Iterable<DataElement> {
 	}
 	*/
 	
+	/* cw 18-Feb-2017
 	// This is given default access
 	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, boolean isNew) throws Exception {
-
 		// This constructor is used for creating DataPartition
 		// pass isNew as true
-		
 		if (null == c)
 			throw new DScabiException("Data Context is null", "DPN.DPN.1");
 		if (null == dataId)
@@ -1709,16 +1843,7 @@ public class DataPartition implements Iterable<DataElement> {
 		if (localDirPath.length() == 0)
 			throw new DScabiException("Local Dir Path is empty string", "DPN.DPN.7");
 		
-		// cw String actualArrayFolder = null;
-		
 		try {
-			/* cw
-			if (localDirPath.endsWith(File.separator))
-				deleteLocalPartitionIfExists(localDirPath + arrayFolder);
-			else
-				deleteLocalPartitionIfExists(localDirPath + File.separator + arrayFolder);
-			*/
-			
 			if (isNew) {
 				m_retryNumber = c.getRetryNumber();
 				m_parallelNumber = c.getParallelNumber();
@@ -1729,30 +1854,18 @@ public class DataPartition implements Iterable<DataElement> {
 				else
 					deleteLocalPartitionIfExists(localDirPath + File.separator + m_actualArrayFolder);
 				
-				/* cw
-				if (storageDirPath.endsWith(File.separator))
-					storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
-				else
-					storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
-				*/
+				// Delete in storageDirPath is not needed as of 18-Feb-2017
+				// cw if (storageDirPath.endsWith(File.separator))
+				// cw 	storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
+				// cw else
+				// cw	storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
+				// OR
+				// cw if (storageDirPath.endsWith(File.separator))
+				// cw	storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+				// cw else
+				// cw 	storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
 				
-				if (storageDirPath.endsWith(File.separator))
-					storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
-				else
-					storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
-			
 			} else {
-				/* cw
-				String detailsStr = DataPartition.getPartitionIdFileData(storageDirPath, arrayFolder, localDirPath, storageHandler);
-				String s[] = detailsStr.split(";");
-				if (s.length < 2)
-					throw new DScabiException("Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStr, "DPN.DPN.1");					
-				if (false == s[1].equalsIgnoreCase("SUCCESS"))
-					throw new DScabiException("Status in partition id file : " + arrayFolder + ".txt is not SUCCESS. Status is : " + s[1], "DPN.DPN.2");
-	
-				m_retryNumber = Long.parseLong(s[0]);
-				m_actualArrayFolder = arrayFolder + "_" + m_retryNumber;
-				*/
 				throw new DScabiException("This constructor should not be used for reading a data partition", "DPN.DPN.1");
 			}
 			
@@ -1787,7 +1900,6 @@ public class DataPartition implements Iterable<DataElement> {
 				createPartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPRECNBA);
 			}
 			
-			// cw m_bigArray = new BigArrayImpl(storageDirPath, arrayFolder, pageSize, localDirPath, m_storageHandler);
 			m_bigArray = new BigArrayImpl(storageDirPath, m_actualArrayFolder, pageSize, localDirPath, m_storageHandler);			
 			if (null == m_bigArray) {
 				throw new DScabiException("big array is null", "DPN.DPN.10");
@@ -1839,13 +1951,154 @@ public class DataPartition implements Iterable<DataElement> {
 				throw e;
 		}
 	}
+	*/
 	
 	// This is given default access
-	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, boolean isNew, long retryNumber, long parallelNumber, long totalNumOfBigArrays) throws Exception {
+	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, String createdBy) throws Exception {
+		// This constructor is used for creating DataPartition
+		// pass isNew as true
+		if (null == c)
+			throw new DScabiException("Data Context is null", "DPN.DPN.1");
+		if (null == dataId)
+			throw new DScabiException("Data Id is null", "DPN.DPN.2");
+		if (null == partitionUserRef)
+			throw new DScabiException("Partition Id is null", "DPN.DPN.3");
+		if (null == storageDirPath)
+			throw new DScabiException("Storage Dir Path is null", "DPN.DPN.4");
+		if (null == arrayFolder)
+			throw new DScabiException("Array Folder is null", "DPN.DPN.5");
+		if (pageSize <= 0)
+			throw new DScabiException("Page Size <= 0", "DPN.DPN.6");
+		if (null == localDirPath)
+			throw new DScabiException("Local Dir Path is null", "DPN.DPN.4");
+		if (storageDirPath.length() == 0)
+			throw new DScabiException("Storage Dir Path is empty string", "DPN.DPN.7");
+		if (arrayFolder.length() == 0)
+			throw new DScabiException("Array Folder is empty string", "DPN.DPN.8");
+		if (localDirPath.length() == 0)
+			throw new DScabiException("Local Dir Path is empty string", "DPN.DPN.7");
+		if (null == createdBy)
+			throw new DScabiException("CreatedBy is null", "DPN.DPN.9");
+		if (createdBy.length() == 0)
+			throw new DScabiException("CreatedBy is empty string", "DPN.DPN.9");
+		
+		try {
+			// create DP purpose
+			m_retryNumber = c.getRetryNumber();
+			m_parallelNumber = c.getParallelNumber();
+			m_actualArrayFolder = arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + (m_lastBigArray + 1);
+			
+			if (localDirPath.endsWith(File.separator))
+				deleteLocalPartitionIfExists(localDirPath + m_actualArrayFolder);
+			else
+				deleteLocalPartitionIfExists(localDirPath + File.separator + m_actualArrayFolder);
+			
+			// Delete in storageDirPath is not needed as of 18-Feb-2017
+			// cw if (storageDirPath.endsWith(File.separator))
+			// cw 	storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
+			// cw else
+			// cw	storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
+			// OR
+			// cw if (storageDirPath.endsWith(File.separator))
+			// cw	storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+			// cw else
+			// cw 	storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
 
+			// End create DP purpose
+			
+			m_isNew = true;
+			m_context = c;
+			m_storageDirPath = storageDirPath;
+			m_arrayFolder = arrayFolder;
+			m_localDirPath = localDirPath;
+			m_storageHandler = storageHandler;
+			m_dataId = dataId;
+			m_partitionUserRef = partitionUserRef;
+			m_pageSize = pageSize;
+			m_createdBy = createdBy;
+			
+			// create DP purpose
+			Instant inst = Instant.now();
+			long nano = System.nanoTime();
+			DMJson djsonPRECNBA = new DMJson();
+			djsonPRECNBA.add("AppId", m_context.getAppId());
+			djsonPRECNBA.add("DataId", m_dataId);
+			djsonPRECNBA.add("SplitUnit", "" + m_context.getDU());
+			djsonPRECNBA.add("PartitionUserRef", m_partitionUserRef);
+			djsonPRECNBA.add("ArrayFolder", m_arrayFolder);
+			djsonPRECNBA.add("RetryNumber", "" + m_retryNumber);
+			djsonPRECNBA.add("ParallelNumber", "" + m_parallelNumber);
+			djsonPRECNBA.add("PreCreateLastBigArray", "" + m_lastBigArray);				
+			djsonPRECNBA.add("MaxRetry", "" + m_context.getMaxRetry());
+			djsonPRECNBA.add("MaxParallel", "" + m_context.getMaxParallel());
+			djsonPRECNBA.add("Timestamp", inst.toString());
+			djsonPRECNBA.add("NanoTimestamp", "" + nano);
+			djsonPRECNBA.add("CreatedBy", m_createdBy);
+			djsonPRECNBA.add("Remarks", "Created");
+
+			String detailsStrPRECNBA = djsonPRECNBA.toString();
+			createPartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPRECNBA);
+			// End create DP purpose
+			
+			m_bigArray = new BigArrayImpl(storageDirPath, m_actualArrayFolder, pageSize, localDirPath, m_storageHandler);			
+			if (null == m_bigArray) {
+				throw new DScabiException("big array is null", "DPN.DPN.10");
+			} 
+
+			m_currentBigArray++;
+			m_bigArrayMap.put("" + m_currentBigArray, m_bigArray);
+
+			// create DP purpose
+			m_totalNumOfBigArrays++;				
+			m_lastBigArray++;
+			Instant inst2 = Instant.now();
+			long nano2 = System.nanoTime();
+			DMJson djsonPOSTCNBA = new DMJson();
+			djsonPOSTCNBA.add("AppId", m_context.getAppId());
+			djsonPOSTCNBA.add("DataId", m_dataId);
+			djsonPOSTCNBA.add("SplitUnit", "" + m_context.getDU());
+			djsonPOSTCNBA.add("PartitionUserRef", m_partitionUserRef);
+			djsonPOSTCNBA.add("ArrayFolder", m_arrayFolder);
+			djsonPOSTCNBA.add("RetryNumber", "" + m_retryNumber);
+			djsonPOSTCNBA.add("ParallelNumber", "" + m_parallelNumber);
+			djsonPOSTCNBA.add("PostCreateLastBigArray", "" + m_lastBigArray);
+			djsonPOSTCNBA.add("MaxRetry", "" + m_context.getMaxRetry());
+			djsonPOSTCNBA.add("MaxParallel", "" + m_context.getMaxParallel());
+			djsonPOSTCNBA.add("Timestamp", inst2.toString());
+			djsonPOSTCNBA.add("NanoTimestamp", "" + nano2);
+			djsonPOSTCNBA.add("CreatedBy", m_createdBy);
+			djsonPOSTCNBA.add("Remarks", "Created");
+			
+			String detailsStrPOSTCNBA = djsonPOSTCNBA.toString();
+			createPartitionIdPOSTCNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPOSTCNBA);
+			// End create DP purpose
+			
+			if (m_bigArray.size() > 0) {
+				m_lastIndex = m_bigArray.size() - 1;
+			}
+			
+			m_dson = new Dson();
+			m_fieldsDson = new Dson();
+			m_dataElement = new DataElement();
+			
+			// for zip purposes
+		    m_forzip_zipbyteostream = new ByteArrayOutputStream();
+		    m_forzip_gzipostream = new GZIPOutputStream(m_forzip_zipbyteostream);
+		    // for unzip purposes
+		    m_forunzip_unzipbyteostream = new ByteArrayOutputStream();
+		    m_forunzip_unzipbuffer = new byte[1024];
+
+		} catch (Exception e) {
+				e.printStackTrace();
+				throw e;
+		}
+	}
+	
+	/* cw 19-Feb-2017
+	// This is given default access
+	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, boolean isNew, long retryNumber, long parallelNumber, long totalNumOfBigArrays) throws Exception {
 		// This constructor is used for reading existing DataPartition
 		// pass isNew as false
-		
 		if (null == c)
 			throw new DScabiException("Data Context is null", "DPN.DPN.1");
 		if (null == dataId)
@@ -1867,16 +2120,7 @@ public class DataPartition implements Iterable<DataElement> {
 		if (localDirPath.length() == 0)
 			throw new DScabiException("Local Dir Path is empty string", "DPN.DPN.7");
 		
-		// cw String actualArrayFolder = null;
-		
 		try {
-			/* cw
-			if (localDirPath.endsWith(File.separator))
-				deleteLocalPartitionIfExists(localDirPath + arrayFolder);
-			else
-				deleteLocalPartitionIfExists(localDirPath + File.separator + arrayFolder);
-			*/
-			
 			if (isNew) {
 				m_retryNumber = c.getRetryNumber();
 				m_parallelNumber = c.getParallelNumber();
@@ -1887,17 +2131,16 @@ public class DataPartition implements Iterable<DataElement> {
 				else
 					deleteLocalPartitionIfExists(localDirPath + File.separator + m_actualArrayFolder);
 				
-				/* cw
-				if (storageDirPath.endsWith(File.separator))
-					storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
-				else
-					storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
-				*/
-				
-				if (storageDirPath.endsWith(File.separator))
-					storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
-				else
-					storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+				// Delete in storageDirPath is not needed as of 18-Feb-2017
+				// cw if (storageDirPath.endsWith(File.separator))
+				// cw	storageHandler.deleteDirIfExists(storageDirPath + m_actualArrayFolder);
+				// cw else
+				// cw	storageHandler.deleteDirIfExists(storageDirPath + File.separator + m_actualArrayFolder);
+				// OR
+				// cw if (storageDirPath.endsWith(File.separator))
+				// cw	storageHandler.deleteIfExists(storageDirPath + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
+				// cw else
+				// cw	storageHandler.deleteIfExists(storageDirPath + File.separator + m_actualArrayFolder + File.separator + "meta_data" + File.separator + "page-0.dat");
 				
 			} else {
 				m_retryNumber = retryNumber;
@@ -1943,7 +2186,6 @@ public class DataPartition implements Iterable<DataElement> {
 				createPartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPRECNBA);
 			}
 			
-			// cw m_bigArray = new BigArrayImpl(storageDirPath, arrayFolder, pageSize, localDirPath, m_storageHandler);
 			m_bigArray = new BigArrayImpl(storageDirPath, m_actualArrayFolder, pageSize, localDirPath, m_storageHandler);			
 			if (null == m_bigArray) {
 				throw new DScabiException("big array is null", "DPN.DPN.10");
@@ -1975,6 +2217,91 @@ public class DataPartition implements Iterable<DataElement> {
 				createPartitionIdPOSTCNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPOSTCNBA);
 			}
 			
+			if (m_bigArray.size() > 0) {
+				m_lastIndex = m_bigArray.size() - 1;
+			}
+			
+			m_dson = new Dson();
+			m_fieldsDson = new Dson();
+			m_dataElement = new DataElement();
+			
+			// for zip purposes
+		    m_forzip_zipbyteostream = new ByteArrayOutputStream();
+		    m_forzip_gzipostream = new GZIPOutputStream(m_forzip_zipbyteostream);
+		    // for unzip purposes
+		    m_forunzip_unzipbyteostream = new ByteArrayOutputStream();
+		    m_forunzip_unzipbuffer = new byte[1024];
+
+		} catch (Exception e) {
+				e.printStackTrace();
+				throw e;
+		}
+	}
+	*/
+	//=====
+	
+	// This is given default access
+	DataPartition(DataContext c, String dataId, String partitionUserRef, String storageDirPath, String arrayFolder, int pageSize, String localDirPath, IStorageHandler storageHandler, long retryNumber, long parallelNumber, long totalNumOfBigArrays, String createdBy) throws Exception {
+		// This constructor is used for reading existing DataPartition
+		// pass isNew as false
+		if (null == c)
+			throw new DScabiException("Data Context is null", "DPN.DPN.1");
+		if (null == dataId)
+			throw new DScabiException("Data Id is null", "DPN.DPN.2");
+		if (null == partitionUserRef)
+			throw new DScabiException("Partition Id is null", "DPN.DPN.3");
+		if (null == storageDirPath)
+			throw new DScabiException("Storage Dir Path is null", "DPN.DPN.4");
+		if (null == arrayFolder)
+			throw new DScabiException("Array Folder is null", "DPN.DPN.5");
+		if (pageSize <= 0)
+			throw new DScabiException("Page Size <= 0", "DPN.DPN.6");
+		if (null == localDirPath)
+			throw new DScabiException("Local Dir Path is null", "DPN.DPN.4");
+		if (storageDirPath.length() == 0)
+			throw new DScabiException("Storage Dir Path is empty string", "DPN.DPN.7");
+		if (arrayFolder.length() == 0)
+			throw new DScabiException("Array Folder is empty string", "DPN.DPN.8");
+		if (localDirPath.length() == 0)
+			throw new DScabiException("Local Dir Path is empty string", "DPN.DPN.7");
+		if (null == createdBy)
+			throw new DScabiException("CreatedBy is null", "DPN.DPN.9");
+		if (createdBy.length() == 0)
+			throw new DScabiException("CreatedBy is empty string", "DPN.DPN.9");
+		
+		try {
+		    // read DP purpose
+			m_retryNumber = retryNumber;
+			m_parallelNumber = parallelNumber;
+			m_totalNumOfBigArrays = totalNumOfBigArrays;
+			m_lastBigArray = totalNumOfBigArrays;
+			m_actualArrayFolder = arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + (m_currentBigArray + 1);
+
+			if (localDirPath.endsWith(File.separator))
+				deleteLocalPartitionIfExists(localDirPath + m_actualArrayFolder);
+			else
+				deleteLocalPartitionIfExists(localDirPath + File.separator + m_actualArrayFolder);
+			// End read DP purpose
+			
+			m_isNew = false;
+			m_context = c;
+			m_storageDirPath = storageDirPath;
+			m_arrayFolder = arrayFolder;
+			m_localDirPath = localDirPath;
+			m_storageHandler = storageHandler;
+			m_dataId = dataId;
+			m_partitionUserRef = partitionUserRef;
+			m_pageSize = pageSize;
+			m_createdBy = createdBy;
+			
+			m_bigArray = new BigArrayImpl(storageDirPath, m_actualArrayFolder, pageSize, localDirPath, m_storageHandler);			
+			if (null == m_bigArray) {
+				throw new DScabiException("big array is null", "DPN.DPN.10");
+			} 
+			
+			m_currentBigArray++;
+			m_bigArrayMap.put("" + m_currentBigArray, m_bigArray);
+
 			if (m_bigArray.size() > 0) {
 				m_lastIndex = m_bigArray.size() - 1;
 			}
@@ -2091,6 +2418,7 @@ public class DataPartition implements Iterable<DataElement> {
 			djsonRPCC1.add("Timestamp", inst.toString());
 			djsonRPCC1.add("NanoTimestamp", "" + nano);
 			djsonRPCC1.add("Status", "SUCCESS");
+			djsonRPCC1.add("CreatedBy", m_createdBy);
 			djsonRPCC1.add("Remarks", "Created");
 			
 			// cw String detailsStrRPCC1 = m_retryNumber + ";SUCCESS;" + inst.toString() + ";" + nano + ";Created by : " + m_retryNumber;
@@ -2148,7 +2476,7 @@ public class DataPartition implements Iterable<DataElement> {
 						// cw 	retryNumber = Long.parseLong(s[0]);
 						try {	
 							// This try-catch is only for getting values from json
-							// will get exception if detailsStr is not in proper
+							// Will get exception if detailsStr is not in proper
 							// json format
 							DMJson djsonPid2 = new DMJson(detailsStrPid2);	
 							retryNumber = djsonPid2.getLongOf("RetryNumber");
@@ -2213,6 +2541,7 @@ public class DataPartition implements Iterable<DataElement> {
 				djsonPid1.add("Timestamp", inst2.toString());
 				djsonPid1.add("NanoTimestamp", "" + nano2);
 				djsonPid1.add("Status", "SUCCESS");
+				djsonPid1.add("CreatedBy", m_createdBy);
 				djsonPid1.add("Remarks", "Created");
 				
 				// cw String detailsStrPid1 = m_retryNumber + ";SUCCESS;" + inst2.toString() + ";" + nano2 + ";Created by : " + m_retryNumber;
@@ -2253,6 +2582,7 @@ public class DataPartition implements Iterable<DataElement> {
 			djsonRPCC1.add("Timestamp", inst.toString());
 			djsonRPCC1.add("NanoTimestamp", "" + nano);
 			djsonRPCC1.add("Status", "SUCCESS");
+			djsonRPCC1.add("CreatedBy", m_createdBy);
 			djsonRPCC1.add("Remarks", "Created");
 			
 			// cw String detailsStrRPCC1 = m_retryNumber + ";SUCCESS;" + inst.toString() + ";" + nano + ";Created by : " + m_retryNumber;
@@ -2350,6 +2680,7 @@ public class DataPartition implements Iterable<DataElement> {
 				djsonPid1.add("Timestamp", inst2.toString());
 				djsonPid1.add("NanoTimestamp", "" + nano2);
 				djsonPid1.add("Status", "SUCCESS");
+				djsonPid1.add("CreatedBy", m_createdBy);
 				djsonPid1.add("Remarks", "Created");
 				
 				// cw String detailsStrPid1 = m_retryNumber + ";SUCCESS;" + inst2.toString() + ";" + nano2 + ";Created by : " + m_retryNumber;
@@ -3423,6 +3754,9 @@ public class DataPartition implements Iterable<DataElement> {
 	
 	public int importFromFile(String filePath) throws Exception {
 		
+		if (false == m_isNew)
+			throw new DScabiException("Data Partition cannot be modified, arrayFolder : " + m_arrayFolder + " retryNumber : " + m_retryNumber + " parallelNumber : " + m_parallelNumber + " storageDirPath " + m_storageDirPath, "DPN.IMF.1");
+		
 		File f = new File(filePath);
 		if (f.exists() == false)
 			return -1;
@@ -3435,9 +3769,71 @@ public class DataPartition implements Iterable<DataElement> {
 		String line = null;
 		// m_bigArray.removeAll() --> Don't use, not supported in new bigarray
 		close();
-		deletePartition();
+		deletePartitionWithoutDeletedFile();
+		
 		// cw m_bigArray = new BigArrayImpl(m_storageDirPath, m_arrayFolder, m_pageSize, m_localDirPath, m_storageHandler);
+		
+		m_totalNumOfBigArrays = 0;
+		m_bigArrayMap = new HashMap<String, IBigArray>();
+		m_currentBigArray = 0;
+		m_lastBigArray = 0;
+		
+		m_actualArrayFolder = m_arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + (m_lastBigArray + 1);
+		
+		if (m_localDirPath.endsWith(File.separator))
+			deleteLocalPartitionIfExists(m_localDirPath + m_actualArrayFolder);
+		else
+			deleteLocalPartitionIfExists(m_localDirPath + File.separator + m_actualArrayFolder);
+		
+		Instant inst = Instant.now();
+		long nano = System.nanoTime();
+		DMJson djsonPRECNBA = new DMJson();
+		djsonPRECNBA.add("AppId", m_context.getAppId());
+		djsonPRECNBA.add("DataId", m_dataId);
+		djsonPRECNBA.add("SplitUnit", "" + m_context.getDU());
+		djsonPRECNBA.add("PartitionUserRef", m_partitionUserRef);
+		djsonPRECNBA.add("ArrayFolder", m_arrayFolder);
+		djsonPRECNBA.add("RetryNumber", "" + m_retryNumber);
+		djsonPRECNBA.add("ParallelNumber", "" + m_parallelNumber);
+		djsonPRECNBA.add("PreCreateLastBigArray", "" + m_lastBigArray);				
+		djsonPRECNBA.add("MaxRetry", "" + m_context.getMaxRetry());
+		djsonPRECNBA.add("MaxParallel", "" + m_context.getMaxParallel());
+		djsonPRECNBA.add("Timestamp", inst.toString());
+		djsonPRECNBA.add("NanoTimestamp", "" + nano);
+		djsonPRECNBA.add("CreatedBy", m_createdBy);
+		djsonPRECNBA.add("Remarks", "Created");
+		
+		String detailsStrPRECNBA = djsonPRECNBA.toString();
+		createPartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPRECNBA);
+		
 		m_bigArray = new BigArrayImpl(m_storageDirPath, m_actualArrayFolder, m_pageSize, m_localDirPath, m_storageHandler);		
+
+		m_currentBigArray++;
+		m_bigArrayMap.put("" + m_currentBigArray, m_bigArray);
+
+		m_totalNumOfBigArrays++;				
+		m_lastBigArray++;
+		Instant inst2 = Instant.now();
+		long nano2 = System.nanoTime();
+		DMJson djsonPOSTCNBA = new DMJson();
+		djsonPOSTCNBA.add("AppId", m_context.getAppId());
+		djsonPOSTCNBA.add("DataId", m_dataId);
+		djsonPOSTCNBA.add("SplitUnit", "" + m_context.getDU());
+		djsonPOSTCNBA.add("PartitionUserRef", m_partitionUserRef);
+		djsonPOSTCNBA.add("ArrayFolder", m_arrayFolder);
+		djsonPOSTCNBA.add("RetryNumber", "" + m_retryNumber);
+		djsonPOSTCNBA.add("ParallelNumber", "" + m_parallelNumber);
+		djsonPOSTCNBA.add("PostCreateLastBigArray", "" + m_lastBigArray);
+		djsonPOSTCNBA.add("MaxRetry", "" + m_context.getMaxRetry());
+		djsonPOSTCNBA.add("MaxParallel", "" + m_context.getMaxParallel());
+		djsonPOSTCNBA.add("Timestamp", inst2.toString());
+		djsonPOSTCNBA.add("NanoTimestamp", "" + nano2);
+		djsonPOSTCNBA.add("CreatedBy", m_createdBy);
+		djsonPOSTCNBA.add("Remarks", "Created");
+		
+		String detailsStrPOSTCNBA = djsonPOSTCNBA.toString();
+		createPartitionIdPOSTCNBAFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler, m_retryNumber, m_parallelNumber, detailsStrPOSTCNBA);
+		
 		// cw createPartitionIdFile(m_storageDirPath, m_arrayFolder, m_localDirPath, m_storageHandler);
 		m_isNew = true;
 		m_lastIndex = -1;

@@ -105,7 +105,7 @@ public class UnitTest6_DataPartition2 {
 
 		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
 		// cw DataPartition dp = new DataPartition(c, "mydata2", "mydata2_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		DataPartition dp = DataPartition.createDataPartition(c, "mydata2", "mydata2_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata2", "mydata2_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata2_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition2");
 	
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");

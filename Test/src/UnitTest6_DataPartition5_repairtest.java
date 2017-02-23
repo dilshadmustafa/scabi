@@ -86,6 +86,7 @@ import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.compute.DCompute;
@@ -95,59 +96,26 @@ import com.dilmus.dilshad.scabi.deprecated.DFieldGroup;
  * @author Dilshad Mustafa
  *
  */
-public class UnitTest6_DataPartition {
+public class UnitTest6_DataPartition5_repairtest {
 
 	public static void main(String args[]) throws Exception {
 		
-		//Long lon = null;
-		//System.out.println(lon instanceof Long);
-		
-		//Class<Long> lon = null;
-		//Class<Integer> in = Integer.class;
-		//in.asSubclass(Long.class);
-		//System.out.println(lon..getCanonicalName());
-		
-		
-		//DFieldGroup<Long> df = new DFieldGroup<Long>();
-		//df.hashGroup(null, null);
-		
-		// NOTE : change this filename before every run "test_for_CU_13"
 		DataContext c = DataContext.dummy();
 		
 		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
-		// cw DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition");		
+		DataPartition dp = DataPartition.readDataPartition(c, "mydata1", "mydata1_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition5");		
 		
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
-		// works for Seaweed DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		// for Seaweed DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+		// for Seaweed DataPartition dp = DataPartition.readDataPartition(c, "mydata1", "mydata1_1_app1", "teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
 		
-		HashMap<String, String> m = new HashMap<String, String>();
-		m.put("1", "hello");
-		m.put("2", "here");
-		dp.append(m);
-		System.out.println(dp.get(0));
-		
-		MyClass myc = new MyClass(5, 4);
-		// for this to work, jackson needs set and get methods for the fields in MyClass to be serialized to json
-		// so jackson uses bean serialization
-		dp.append(myc);
-		System.out.println(dp.get(1));
-		
-		dp.begin();
-		dp.next();
-		dp.next();
-		// for this to work, jackson needs default constructor for MyClass and set and get methods for the fields
-		// in input json (each record in dp) to be deserialized and assigned into fields in MyClass obj internally created by jackson
-		// so jackson uses bean deserialization
-		MyClass myo = dp.get(MyClass.class);
-		System.out.println(myo);
+		for (DataElement de : dp) {
+			System.out.println(de.toString());
+		}
 		
 		dp.flushFiles();
 		dp.close();
 		dp.operationsSuccess();
-		//dp.deletePartition();
 		storageHandler.close();
 		System.out.println("done");
 	}

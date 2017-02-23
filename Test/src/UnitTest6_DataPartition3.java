@@ -140,10 +140,10 @@ public class UnitTest6_DataPartition3 {
 		// cw DataPartition dp = new DataPartition(c, "mydata3", "mydata3_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
 		DataPartition dp = null;
 		try {
-		dp = DataPartition.createDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+		dp = DataPartition.createDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition3");		
 		} catch (Exception e) {
 			e.printStackTrace();
-			dp = DataPartition.readDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);		
+			dp = DataPartition.readDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition3");		
 		}
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
 		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
@@ -181,6 +181,8 @@ public class UnitTest6_DataPartition3 {
 		*/
 	
 		exportFileTest(dp);
+		dp.deletePartitionWithoutDeletedFile();
+		dp = DataPartition.createDataPartition(c, "mydata3", "mydata3_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata3_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition3");		
 		importFileTest(dp);
 		dp.close();
 		dp.operationsSuccess();

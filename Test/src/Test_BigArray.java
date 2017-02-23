@@ -128,11 +128,11 @@ public class Test_BigArray {
 		IBigArray bigArray = null;
 		try {
 			// create a new big array
-			//DMStdStorageHandler storageHandler = new DMStdStorageHandler();
+			DMStdStorageHandler storageHandler = new DMStdStorageHandler();
 			// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
-			DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
- 			//bigArray = new BigArrayImpl("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
- 			bigArray = new BigArrayImpl("Test_BigArray", "demo", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+			// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
+ 			bigArray = new BigArrayImpl("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+ 			// for seaweed bigArray = new BigArrayImpl("Test_BigArray", "demo", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
  			// works bigArray = new BigArrayImpl("", "demo", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			 
  			if (null == bigArray) {
 				System.out.println("big array is null");
@@ -191,7 +191,7 @@ public class Test_BigArray {
 			//assertTrue(bigArray.isEmpty());
 			bigArray.flushFiles();
 			bigArray.close();
-			DataPartition.deletePartition("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+			DataPartition.deletePartition("/home/anees/testdata/bigfile/tutorial/teststorage", "demo", "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "Deleted By Test_BigArray.main()");
 			storageHandler.close();
 			System.out.println("done");
 		} catch (Exception e) {

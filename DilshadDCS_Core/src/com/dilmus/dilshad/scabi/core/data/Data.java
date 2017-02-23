@@ -301,7 +301,7 @@ public class Data implements Runnable {
 		return 0;
 	}
 	
-	public static int deleteData(String appId, String dataId, IStorageHandler storageHandler) throws Exception {
+	public static int deleteData(String appId, String dataId, IStorageHandler storageHandler, String deletedBy) throws Exception {
 		// TODO yet to be unit tested
 		// TODO read noOfSplits from text file <appId>.txt
 		// TODO this <appId>.txt should have been created earlier in Storage System in either perform() or finish() method
@@ -318,7 +318,7 @@ public class Data implements Runnable {
 		
 		long noOfSplits = Long.parseLong(s);
 		
-		deleteData(appId, dataId, noOfSplits, storageHandler);
+		deleteData(appId, dataId, noOfSplits, storageHandler, deletedBy);
 		
 		Path path = Paths.get(appId + ".txt");
 		Files.deleteIfExists(path);
@@ -326,7 +326,7 @@ public class Data implements Runnable {
 		return 0;
 	}
 	
-	public static int deleteData(String appId, String dataId, long noOfsplits, IStorageHandler storageHandler) throws DScabiException, IOException {
+	public static int deleteData(String appId, String dataId, long noOfsplits, IStorageHandler storageHandler, String deletedBy) throws DScabiException, IOException {
 		// TODO yet to be unit tested
 		String storageProvider = null;
 		String mountDirPath = null;
@@ -378,8 +378,9 @@ public class Data implements Runnable {
 		String localDirPath = System.getProperty("scabi.local.dir");
 		
     	long n = noOfsplits;
+    	// cw String deletedBy = "Deleted By static Data.deleteData()";
     	for (long splitUnit = 1; splitUnit <= n; splitUnit++) {
-	    	DataPartition.deletePartition(appId, dataId, splitUnit, storageDPDirPath, localDirPath, storageHandler);
+	    	DataPartition.deletePartition(appId, dataId, splitUnit, storageDPDirPath, localDirPath, storageHandler, deletedBy);
     	}
 	    	
     	return 0;
@@ -408,9 +409,10 @@ public class Data implements Runnable {
 		}
 		*/
     	long n = m_splitTotal;
+    	String deletedBy = "Deleted By non-static Data.deleteData() with App Id m_appId : " + m_appId;
     	for (long splitUnit = 1; splitUnit <= n; splitUnit++) {
 	    	// cw DataPartition.deletePartition(m_appId, dataId, splitUnit, storageDPDirPath, m_localDirPath, m_storageHandler);
-	    	DataPartition.deletePartition(m_appId, dataId, splitUnit, m_storageDirPath, m_localDirPath, m_storageHandler);
+	    	DataPartition.deletePartition(m_appId, dataId, splitUnit, m_storageDirPath, m_localDirPath, m_storageHandler, deletedBy);
     	}
     	
     	return 0;
@@ -462,7 +464,21 @@ public class Data implements Runnable {
 		*/
 		
 		// cw dp = DataPartition.readDataPartition(dctx, dataId, partitionId, storageDPDirPath, partitionId, 64 * 1024 * 1024, localDPDirPath, m_storageHandler);	
-		dp = DataPartition.readDataPartition(dctx, dataId, partitionId, m_storageDirPath, partitionId, 64 * 1024 * 1024, m_localDirPath, m_storageHandler);	
+		
+		// to use for readBy, djsonBy
+		dctx.setAppId(m_appId);
+  		dctx.add("SplitComputeUnit", "0"); // SplitUnit = 0 means driver code
+		dctx.setRetryNumber(0);
+		dctx.setParallelNumber(0);
+		
+		DMJson djsonBy = new DMJson();
+		djsonBy.add("AppId", dctx.getAppId());
+		djsonBy.add("SplitUnit", "" + dctx.getDU()); // SplitUnit = 0 means driver code
+		djsonBy.add("RetryNumber", "" + dctx.getRetryNumber());
+		djsonBy.add("ParallelNumber", "" + dctx.getParallelNumber());
+		String readBy = djsonBy.toString();
+		
+		dp = DataPartition.readDataPartition(dctx, dataId, partitionId, m_storageDirPath, partitionId, 64 * 1024 * 1024, m_localDirPath, m_storageHandler, readBy);	
 
 		return dp;
 	}

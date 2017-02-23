@@ -3,7 +3,7 @@
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 12-Apr-2016
- * File Name : UnitTest6_DataPartition.java
+ * File Name : UnitTest6_DataPartition4.java
  */
 
 /**
@@ -76,118 +76,57 @@ and conditions of this license without giving prior notice.
 */
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.dilmus.dilshad.scabi.common.DMSeaweedStorageHandler;
 import com.dilmus.dilshad.scabi.common.DMStdStorageHandler;
+import com.dilmus.dilshad.scabi.common.DMUtil;
 import com.dilmus.dilshad.scabi.common.DScabiException;
 import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
 import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.compute.DCompute;
 import com.dilmus.dilshad.scabi.deprecated.DFieldGroup;
+import com.dilmus.dilshad.scabi.core.IShuffle;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public class UnitTest6_DataPartition {
+public class UnitTest6_DataPartition6 {
 
 	public static void main(String args[]) throws Exception {
-		
-		//Long lon = null;
-		//System.out.println(lon instanceof Long);
-		
-		//Class<Long> lon = null;
-		//Class<Integer> in = Integer.class;
-		//in.asSubclass(Long.class);
-		//System.out.println(lon..getCanonicalName());
-		
-		
-		//DFieldGroup<Long> df = new DFieldGroup<Long>();
-		//df.hashGroup(null, null);
-		
-		// NOTE : change this filename before every run "test_for_CU_13"
+
 		DataContext c = DataContext.dummy();
-		
 		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
-		// cw DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition");		
+		// cw DataPartition dp = new DataPartition(c, "mydata", "mydata_1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata_1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
+
 		
-		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
-		// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
-		// works for Seaweed DataPartition dp = new DataPartition(c, "mydata1", "mydata1_1", "teststorage", "mydata1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		// for Seaweed DataPartition dp = DataPartition.createDataPartition(c, "mydata1", "mydata1_1_app1", "teststorage", "mydata1_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
-		
-		HashMap<String, String> m = new HashMap<String, String>();
-		m.put("1", "hello");
-		m.put("2", "here");
-		dp.append(m);
-		System.out.println(dp.get(0));
-		
-		MyClass myc = new MyClass(5, 4);
-		// for this to work, jackson needs set and get methods for the fields in MyClass to be serialized to json
-		// so jackson uses bean serialization
-		dp.append(myc);
-		System.out.println(dp.get(1));
-		
-		dp.begin();
-		dp.next();
-		dp.next();
-		// for this to work, jackson needs default constructor for MyClass and set and get methods for the fields
-		// in input json (each record in dp) to be deserialized and assigned into fields in MyClass obj internally created by jackson
-		// so jackson uses bean deserialization
-		MyClass myo = dp.get(MyClass.class);
-		System.out.println(myo);
-		
-		dp.flushFiles();
+		dp.append("test");
+		//dp.deletePartition();
 		dp.close();
 		dp.operationsSuccess();
-		//dp.deletePartition();
+
+		DataPartition dp2 = DataPartition.readDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
+		DataPartition dp3 = DataPartition.readDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
+
+		dp2.close();
+		
+		dp3.close();
+		
 		storageHandler.close();
+		
 		System.out.println("done");
 	}
 	
-	public static class MyClass {
-		private int x = 0;
-		private int y = 0;
-		
-		// jackson needs default constructor for dp.get(MyClass.class)
-		public MyClass() {
-			
-		}
-		
-		public MyClass(int x, int y) {
-			this.x = x;
-			this.y = y;
-		}
-		
-		public void setX(int x) {
-			this.x = x;
-		}
-		
-		public void setY(int y) {
-			this.y = y;
-		}
-		
-		public int getX() {
-			return this.x;
-		}
-		
-		public int getY() {
-			return this.y;
-		}
-		
-		public String toString() {
-			String s = "MyClass obj => x: " + x + " y: " + y;
-			
-			return s;
-		}
-		
-	}
-	
+
 }
