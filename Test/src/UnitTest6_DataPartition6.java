@@ -108,7 +108,7 @@ public class UnitTest6_DataPartition6 {
 		DataContext c = DataContext.dummy();
 		DMStdStorageHandler storageHandler = new DMStdStorageHandler();
 		// cw DataPartition dp = new DataPartition(c, "mydata", "mydata_1_1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata_1_1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
-		DataPartition dp = DataPartition.createDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
+		DataPartition dp = DataPartition.createDataPartition(c, "mydata5", "mydata5_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata5_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition6");			
 
 		
 		dp.append("test");
@@ -116,8 +116,8 @@ public class UnitTest6_DataPartition6 {
 		dp.close();
 		dp.operationsSuccess();
 
-		DataPartition dp2 = DataPartition.readDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
-		DataPartition dp3 = DataPartition.readDataPartition(c, "mydata4", "mydata4_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata4_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition4");			
+		DataPartition dp2 = DataPartition.readDataPartition(c, "mydata5", "mydata5_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata5_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition6");			
+		DataPartition dp3 = DataPartition.readDataPartition(c, "mydata5", "mydata5_1_app1", "/home/anees/testdata/bigfile/tutorial/teststorage", "mydata5_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition6");			
 
 		dp2.close();
 		

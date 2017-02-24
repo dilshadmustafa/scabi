@@ -20,6 +20,24 @@ Introduction
 > - Use Data-driven and Compute-driven framework to implement iterative and complex Map/Reduce and parallel algorithms at Web Scale.
 > - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
 
+## Cluster Computing Architectures ##
+
+> **CONVERGED SYSTEM**
+
+ >- Converged System combines computing cluster with storage system. 
+> - Nodes are built with computing power and storage.
+> - Converged System can provide the advantage of Data Locality in best case scenario when computing is done on the same node containing the data to be processed.
+> - The disadvantage is when we start storing previous months PetaBytes+ scale datasets, the storage requirements will soon become out of proportion (often exponentially) compared to computing    requirements. This will require addition of new nodes.
+
+-------------
+
+> **DIVERGED SYSTEM**
+
+> - Diverged System separates computing cluster from storage system.
+> - Compute nodes are built using arrays of GPU-like cores.
+> - Storage nodes are built with embedded light-weight processor (e.g.    Raspberry Pi, Arduino, etc. to name a few) with processing speed sufficient enough to handle the speed of the underlying storage technology used to read and write data.
+> - As the computing cluster and storage system is separate, storing previous months PetaBytes+ scale datasets will only require increase in capacity of storage system.
+
 ## Architectural Design ##
 
 ![Scabi Architectural Design](https://raw.githubusercontent.com/dilshadmustafa/scabi/v0.2.3/Documentation/Scabi_1.jpg)
