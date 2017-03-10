@@ -102,7 +102,7 @@ import com.dilmus.dilshad.scabi.core.IShuffle;
  * @author Dilshad Mustafa
  *
  */
-public class UnitTest6_DataPartition7 {
+public class UnitTest6_DataPartition7_bigarray4Feb2017version {
 
 	public static void main(String args[]) throws Exception {
 		
@@ -134,52 +134,56 @@ public class UnitTest6_DataPartition7 {
 			dp = DataPartition.readDataPartition(c, "mydata6", "mydata6_1_app1", "teststorage", "mydata6_1_app1", 64 * 1024 * 1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler, "UnitTest6_DataPartition7");		
 		}
 		*/
-		//--------- tested ok
+		//---------
 		// Create and no other operation including close()
 		// local dir - meta_data/local_page-0 file should be created
 		// local dir - index and data folders should be empty
 		// storage dir - index, data, meta_data folders should be empty
-		//--------- tested ok
+		//---------
 		// Create and close()
 		// local dir - should be empty, no folders should be present
 		// storage dir - index, data, meta_data folders should be empty
 		// dp.close();
-		//---------- tested ok
+		//----------
 		// Create and append
 		// local dir - meta_data/local_page-0, index/local_page-0, data/local_page-0 file should be created
 		// storage dir - index, data, meta_data folders should be empty
 		// dp.append("test");
-		//---------- tested ok
+		//----------
 		// Create and append
 		// local dir - should be empty, no folders should be present
 		// storage dir - meta_data/page-0, index/page-0, data/page-0 file should be created
 		// dp.append("test");
 		// dp.close();
-		//---------- tested ok
-		// local dir - index/local_page-0, data/local_page-0, meta_data/local_page-0 file should be created
-		// storage dir - index, data, meta_data folders should be empty
-		// storage dir - meta_data/page-0, index/page-0, data/page-0 file should not be created
+		//----------
+		// To simulate bigarray.get(long) doesn't read from meta-data page file and so doesn't copy to local meta-data page file
+		// and so local meta-data folder is not created after flushFiles() is called
+		// local dir - index/local_page-0, data/local_page-0 file should be created
+		// local dir - meta_data folder and meta_data/local_page-0 file shoud not be created
+		// storage dir - meta_data/page-0, index/page-0, data/page-0 file should be created
 		// dp.append("test");
-		// dp.flushFiles(); // clear cache except last page
+		// dp.flushFiles(); // clear cache and remove all page folders data, index, meta-data
 		// for (DataElement e : dp) {
 		// 	System.out.println("DataElement as String : " + e.getString());
 		// }
 		//System.out.println("dp.size() : " + dp.size());
-		// comment any dp.close() so that local array dir and page dirs are not deleted
-		//---------- tested ok
+		// comment any dp.flushFiles(), dp.close() so that local array dir and page dirs are not deleted
+		//----------
 		// Create, flushFiles, display
-		// local dir - meta_data/local_page-0 file should be created
-		// local dir - index, data folder should be empty 
+		// local dir - should be empty, no folders should be present
 		// storage dir - index, data, meta_data folders should be empty
-		dp.flushFiles(); // clear cache except last page
+		dp.flushFiles(); // clear cache and remove all page folders data, index, meta-data
 		for (DataElement e : dp) {
 			System.out.println("DataElement as String : " + e.getString());
 		}
 		//System.out.println("dp.size() : " + dp.size());
-		// comment any dp.close() so that local array dir and page dirs are not deleted
-		//----------
+		// comment any dp.flushFiles(), dp.close() so that local array dir and page dirs are not deleted
 		
-		/*
+		
+		
+		
+		
+	/*
 		for (DataElement e : dp) {
 			System.out.println("DataElement as String : " + e.getString());
 		}

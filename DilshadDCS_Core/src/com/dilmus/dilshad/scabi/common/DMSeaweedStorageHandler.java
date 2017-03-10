@@ -728,11 +728,11 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 	 * return always true
 	 */
 	
-	public boolean mkdirIfAbsent(String dir) throws Exception {
-		return true;
+	public int mkdirIfAbsent(String dir) throws Exception {
+		return 0;
 	}
 
-	/* Method : deleteDirIfExists(String dirPath)
+	/* Method : deleteArrayDirIfExists(String dirPath)
 	 * Assumptions for Storage system that does not support creation of directory given directory name
 	 * Parameter : dirPath
 	 * <AnyDummyStringWithoutSlash>/<ArrayFolder>
@@ -756,10 +756,10 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 	 * If the files don't exist in the Storage System, don't throw exception
 	 */
 	
-	public int deleteDirIfExists(String dirPath) throws Exception {
+	public int deleteArrayDirIfExists(String dirPath) throws Exception {
 
-		// System.out.println("deleteDirIfExists() dirPath : " + dirPath);
-		log.debug("deleteDirIfExists() dirPath : " + dirPath);
+		// System.out.println("deleteArrayDirIfExists() dirPath : " + dirPath);
+		log.debug("deleteArrayDirIfExists() dirPath : " + dirPath);
 		
 		// <AppId>/<ArrayFolder>
 		// Construct file names
@@ -773,10 +773,10 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 		int idx = dirPath.lastIndexOf(File.separator);
 		arrayFolder = dirPath.substring(idx + 1, dirPath.length());
 		String fileNameBase = arrayFolder.replace(File.separator, "_");
-		// System.out.println("deleteDirIfExists() arrayFolder : " + arrayFolder);
-		// log.debug("deleteDirIfExists() arrayFolder : {}", arrayFolder);
-		// System.out.println("deleteDirIfExists() fileNameBase : " + fileNameBase);
-		// log.debug("deleteDirIfExists() fileNameBase : {}", fileNameBase);
+		// System.out.println("deleteArrayDirIfExists() arrayFolder : " + arrayFolder);
+		// log.debug("deleteArrayDirIfExists() arrayFolder : {}", arrayFolder);
+		// System.out.println("deleteArrayDirIfExists() fileNameBase : " + fileNameBase);
+		// log.debug("deleteArrayDirIfExists() fileNameBase : {}", fileNameBase);
 		
 		boolean check = true;
 		long i = 0;
@@ -833,6 +833,36 @@ public class DMSeaweedStorageHandler implements IStorageHandler {
 		
 		return 0;
 	}	
+	
+	/* 
+	 * Method : deleteDirIfExists(String dirPath)
+	 * 
+	 * Assumptions for Storage system that support creation of directory given directory name
+	 * Parameter Name : dirPath
+	 * Parameter Value :
+	 * 		Any standard file system path for directory, example /home/<user>/testdata/storage
+	 * 
+	 * Delete entire directory contents of dirPath, all files and sub directories contained within dirPath
+	 * Do not complain saying "Directory is not empty" 
+	 * If the directory dirPath doesn't exist in the Storage System, don't throw exception
+	 * -----------------------------------------------------------------------------------------------------------
+	 * Assumptions for Storage system that does not support creation of directory given directory name
+	 * Parameter Name : dirPath
+	 * Parameter Value :
+	 * 		<AnyDummyStringWithoutSlash>/<SomeDirectoryName>
+	 * 		
+	 * 		where <AnyDummyStringWithoutSlash> = <AppId> or "" (empty string) or any dummy string without File.separator ("/" or "\")
+	 * 
+	 * Delete all the files associated with <SomeDirectoryName> for example file names starting with <SomeDirectoryName> [<AnyDummyStringWithoutSlash> can also be appended if needed]
+	 * 
+	 * If the files don't exist in the Storage System, don't throw exception
+	 * 
+	 * If this functionality is not possible in the storage system (for example listing all the files with file names starting with <SomeDirectoryName>)
+	 * then throw new DScabiException("Not Supported Exception", "Error Code");
+	 */
+	public int deleteDirIfExists(String dirPath) throws Exception {
+		throw new DScabiException("Not Supported Exception", "SSH.DDI.1");
+	}
 	
 	public void close() throws Exception {
 		

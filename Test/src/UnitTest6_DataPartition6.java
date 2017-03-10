@@ -121,6 +121,7 @@ public class UnitTest6_DataPartition6 {
 
 		dp2.close();
 		
+		// Expected result is: the below close() should throw exception
 		dp3.close();
 		
 		storageHandler.close();

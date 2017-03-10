@@ -234,7 +234,7 @@ public class ComputeServer_D2 extends Application {
 			Set<String> keys = m_partitionIdRPSEDataPartitionMap.keySet();
 			for (String s : keys) {
 				if (s.contains(search)) {
-					log.debug("closeDataPartitionsForAppId() partitionId matches : {}", s);
+					log.debug("closeDataPartitionsForSUAppIdRPSE() partitionId matches : {}", s);
 					DataPartition dp = m_partitionIdRPSEDataPartitionMap.get(s);
 					dpList.add(dp);
 					partitionList.add(s);

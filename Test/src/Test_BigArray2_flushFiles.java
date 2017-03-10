@@ -3,7 +3,7 @@
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 12-Apr-2016
- * File Name : UnitTest11_Seaweed.java
+ * File Name : Test_BigArray.java
  */
 
 /**
@@ -75,73 +75,126 @@ and conditions of this license without giving prior notice.
 
 */
 
-import java.io.File;
+//import static org.junit.Assert.assertEquals;
+//import static org.junit.Assert.assertNotNull;
+//import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.dilmus.dilshad.scabi.common.DMSeaweedStorageHandler;
-import com.dilmus.dilshad.scabi.common.DMUtil;
+import com.dilmus.dilshad.scabi.common.DMStdStorageHandler;
 import com.dilmus.dilshad.scabi.common.DScabiException;
-import com.dilmus.dilshad.scabi.core.DComputeContext;
 import com.dilmus.dilshad.scabi.core.DComputeUnit;
 import com.dilmus.dilshad.scabi.core.DMeta;
-import com.dilmus.dilshad.scabi.core.DataContext;
-import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.compute.DCompute;
-import com.dilmus.dilshad.scabi.deprecated.DFieldGroup;
-import com.dilmus.dilshad.scabi.core.IShuffle;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.leansoft.bigqueue.BigArrayImpl;
+//import com.leansoft.bigqueue.BigArrayImpl;
+//import com.leansoft.bigqueue.IBigArray;
+import com.leansoft.bigqueue.IBigArray;
 
 /**
  * @author Dilshad Mustafa
  *
  */
-public class UnitTest11_Seaweed {
+public class Test_BigArray2_flushFiles {
 
-	public static void main(String[] args) throws Exception {
-	       System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
-	       System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
-	       System.setProperty("org.slf4j.simpleLogger.levelInBrackets", "true");       
-	       System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss:SSS Z");
-	       System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug"); // works debug warn		
-	       System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
-	  
-		long startTime = System.currentTimeMillis();
-		DMSeaweedStorageHandler w = null;
-		try {
-			// DMSeaweedStorageHandler w = new DMSeaweedStorageHandler();
-			// String str = "{ \"1\" : \"{ \\\"Host\\\" : \\\"localhost\\\", \\\"Port\\\" : \\\"8888\\\" }\" }"; 
-			String str = "localhost-8888";
-			w = new DMSeaweedStorageHandler(str);
-			
-			/*
-			w.deleteIfExists("page-0.dat");
-			w.deleteIfExists("page-1.dat");
-			w.deleteIfExists("page-2.dat");
-			w.deleteIfExists("page-3.dat");
-			*/
-			System.out.println("start");
-			w.copyFromLocal("0678889887687/testmydata/meta_data/page-0.dat", "/home/anees/testdata/bigfile/tutorial/teststorage/mydata3_1/meta_data/page-0.dat");
-			w.copyFromLocal("0678889887687/testmydata/index/page-0.dat", "/home/anees/testdata/bigfile/tutorial/teststorage/mydata3_1/index/page-0.dat");
-			w.copyFromLocal("0678889887687/testmydata/data/page-0.dat", "/home/anees/testdata/bigfile/tutorial/teststorage/mydata3_1/data/page-0.dat");
+	public static void main(String args[]) throws Exception {
 		
-			w.deleteArrayDirIfExists("0678889887687/testmydata");
-			w.close();
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode root = mapper.createObjectNode();
+		root.put("name", "Developer");
+		root.put("years", 10);
+		
+		System.out.println(mapper.writeValueAsString(root));
+		root.put("years", 25);
+		System.out.println(mapper.writeValueAsString(root));
+		root.put("years", 25.23456789018727737);
+		System.out.println(mapper.writeValueAsString(root));
+	
+		System.out.println(root.get("years").asDouble());
+
+		IBigArray bigArray = null;
+		try {
+			// create a new big array
+			DMStdStorageHandler storageHandler = new DMStdStorageHandler();
+			// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler();
+			// works DMSeaweedStorageHandler storageHandler = new DMSeaweedStorageHandler("localhost-8888");
+ 			bigArray = new BigArrayImpl("/home/anees/testdata/bigfile/tutorial/teststorage", "demo2", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);
+ 			// for seaweed bigArray = new BigArrayImpl("Test_BigArray", "demo2", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			
+ 			// works for seaweed bigArray = new BigArrayImpl("", "demo2", 64*1024*1024, "/home/anees/testdata/bigfile/tutorial/testlocal", storageHandler);			 
+ 			if (null == bigArray) {
+				System.out.println("big array is null");
+				
+			} else {
+				System.out.println("bigArray is not null");
+			}
+			// ensure the new big array is empty
+			/*
+			assertNotNull(bigArray);
+			assertTrue(bigArray.isEmpty());
+			assertTrue(bigArray.size() == 0);
+			assertTrue(bigArray.getHeadIndex() == 0);
+			assertTrue(bigArray.getTailIndex() == 0);
+			*/
+			// append some items into the array
+			for(int i = 0; i < 10; i++) {
+				String item = String.valueOf(i);
+				long index = bigArray.append(item.getBytes());
+				//assertTrue(i == index);
+			}
+			//assertTrue(bigArray.size() == 10);
+			//assertTrue(bigArray.getHeadIndex() == 10);
+			//assertTrue(bigArray.getTailIndex() == 0);
+			
+			// randomly read items in the array
+			String item0 = new String(bigArray.get(0));
+			System.out.println(item0);
+			//assertEquals(String.valueOf(0), item0);
+			
+			String item3 = new String(bigArray.get(3));
+			//assertEquals(String.valueOf(3), item3);
+			System.out.println(item3);
+			String item9 = new String(bigArray.get(9));
+			//assertEquals(String.valueOf(9), item9);
+			System.out.println(item9);
+			
+			
+			long index2 = bigArray.append(mapper.writeValueAsString(root).getBytes());
+			System.out.println("index : " + index2);
+			String item10 = new String(bigArray.get(10));
+			System.out.println(item10);
+			System.out.println(bigArray.get(10));
+			
+			long index3 = bigArray.append(mapper.writeValueAsString(root).getBytes("UTF-8"));
+			System.out.println("index : " + index3);
+			String item11 = new String(bigArray.get(11));
+			System.out.println(item11);
+			System.out.println(bigArray.get(11));
+			
+			JsonNode root2 = mapper.readTree(bigArray.get(10));
+			System.out.println(root2.get("name").asText());
+			
+			bigArray.flushFiles();
+			// Expected result meta_data, index, data folders in storage dir should be empty
+			storageHandler.close();
 			System.out.println("done");
 		} catch (Exception e) {
-			w.close();
 			throw e;
 		}
 		
-		long endTime = System.currentTimeMillis();
+		finally {
+			//bigArray.close();
+		}
+
 		
-		System.out.println("Total Time taken : " + (endTime - startTime));
+		
+	}
 	
-	}	
 	
 }

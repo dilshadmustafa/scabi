@@ -85,6 +85,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dilmus.dilshad.storage.IStorageHandler;
 
 /**
@@ -93,6 +96,8 @@ import com.dilmus.dilshad.storage.IStorageHandler;
  */
 public class DMStdStorageHandler implements IStorageHandler {
 
+	private final Logger log = LoggerFactory.getLogger(DMStdStorageHandler.class);
+	
 	public DMStdStorageHandler() {
 		
 	}
@@ -132,7 +137,7 @@ public class DMStdStorageHandler implements IStorageHandler {
 		return 0;
 	}
 	
-	public boolean mkdirIfAbsent(String dir) throws Exception {
+	public int mkdirIfAbsent(String dir) throws Exception {
 		File dirFile = new File(dir);
 		if (!dirFile.exists()) {
 			boolean status = dirFile.mkdir();
@@ -140,15 +145,50 @@ public class DMStdStorageHandler implements IStorageHandler {
 				throw new IOException("Failed to create directory : " + dir + " Check if parent directories exist");
 		}
 		
-		return true;
+		return 0;
 	}
 	
-	public int deleteDirIfExists(String dir) throws Exception {
+	public int deleteArrayDirIfExists(String dir) throws Exception {
 		
 		// throws directory is not empty exception
 		// Path path = Paths.get(dir);
 		// Files.deleteIfExists(path);
 		
+		// Delete dir, contained files and all sub-dirs instead of complaining dir is not empty
+		File f = new File(dir);
+		if (f.exists())
+			deleteFileDir(f);
+	
+		return 0;
+	}
+	
+	/* 
+	 * Method : deleteDirIfExists(String dirPath)
+	 * 
+	 * Assumptions for Storage system that support creation of directory given directory name
+	 * Parameter Name : dirPath
+	 * Parameter Value :
+	 * 		Any standard file system path for directory, example /home/<user>/testdata/storage
+	 * 
+	 * Delete entire directory contents of dirPath, all files and sub directories contained within dirPath
+	 * Do not complain saying "Directory is not empty" 
+	 * If the directory dirPath doesn't exist in the Storage System, don't throw exception
+	 * -----------------------------------------------------------------------------------------------------------
+	 * Assumptions for Storage system that does not support creation of directory given directory name
+	 * Parameter Name : dirPath
+	 * Parameter Value :
+	 * 		<AnyDummyStringWithoutSlash>/<SomeDirectoryName>
+	 * 		
+	 * 		where <AnyDummyStringWithoutSlash> = <AppId> or "" (empty string) or any dummy string without File.separator ("/" or "\")
+	 * 
+	 * Delete all the files associated with <SomeDirectoryName> for example file names starting with <SomeDirectoryName> [<AnyDummyStringWithoutSlash> can also be appended if needed]
+	 * 
+	 * If the files don't exist in the Storage System, don't throw exception
+	 * 
+	 * If this functionality is not possible in the storage system (for example listing all the files with file names starting with <SomeDirectoryName>)
+	 * then throw new DScabiException("Not Supported Exception", "Error Code");
+	 */
+	public int deleteDirIfExists(String dir) throws Exception {
 		// Delete dir, contained files and all sub-dirs instead of complaining dir is not empty
 		File f = new File(dir);
 		if (f.exists())
@@ -180,18 +220,18 @@ public class DMStdStorageHandler implements IStorageHandler {
 				if (e.isDirectory())
 					deleteFileDir(e);
 				else if (e.isFile()) {
-					System.out.println("deleteFileDir(f) Deleting file : " + e);
-					// log.debug("deleteFileDir(f) Deleting file : {}", e);
+					// System.out.println("DMStdStorageHandler deleteFileDir(f) Deleting file : " + e);
+					log.debug("DMStdStorageHandler deleteFileDir(f) Deleting file : {}", e);
 					e.delete();
 				}
 			}
-			System.out.println("deleteFileDir(f) Deleting dir : " + f);
-			// log.debug("deleteFileDir(f) Deleting dir : {}", f);
+			// System.out.println("DMStdStorageHandler deleteFileDir(f) Deleting dir : " + f);
+			log.debug("DMStdStorageHandler deleteFileDir(f) Deleting dir : {}", f);
 			f.delete();
 		}	
 		else if (f.isFile()){
-			System.out.println("deleteFileDir(f) Deleting2 file : " + f);
-			// log.debug("deleteFileDir(f) Deleting2 file : {}", f);
+			// System.out.println("DMStdStorageHandler deleteFileDir(f) Deleting2 file : " + f);
+			log.debug("DMStdStorageHandler deleteFileDir(f) Deleting2 file : {}", f);
 			f.delete();
 		}
 		

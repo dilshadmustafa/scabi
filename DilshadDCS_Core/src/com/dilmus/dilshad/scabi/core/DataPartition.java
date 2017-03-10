@@ -1282,7 +1282,7 @@ public class DataPartition implements Iterable<DataElement> {
 						dirPath = dirPath + File.separator + actualArrayFolder;
 					logs.debug("deletePartition(...) dirPath : {} for BigArray : {}", dirPath, i);
 				
-					storageHandler.deleteDirIfExists(dirPath);		
+					storageHandler.deleteArrayDirIfExists(dirPath);		
 				}
 				
 				deletePartitionIdPRECNBAFile(storageDirPath, arrayFolder, storageHandler, retryNumber, parallelNumber);
@@ -1349,7 +1349,7 @@ public class DataPartition implements Iterable<DataElement> {
 				else
 					dirPath = dirPath + File.separator + m_arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + i;;
 				log.debug("deletePartition() dirPath : {} for BigArray : {}", dirPath, i);
-				m_storageHandler.deleteDirIfExists(dirPath);
+				m_storageHandler.deleteArrayDirIfExists(dirPath);
 			}
 			
 			deletePartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_storageHandler, m_retryNumber, m_parallelNumber);
@@ -1384,7 +1384,7 @@ public class DataPartition implements Iterable<DataElement> {
 				else
 					dirPath = dirPath + File.separator + m_arrayFolder + "_R" + m_retryNumber + "_P" + m_parallelNumber + "_B" + i;;
 				log.debug("deletePartitionWithoutDeletedFile() dirPath : {} for BigArray : {}", dirPath, i);
-				m_storageHandler.deleteDirIfExists(dirPath);
+				m_storageHandler.deleteArrayDirIfExists(dirPath);
 			}
 			
 			deletePartitionIdPRECNBAFile(m_storageDirPath, m_arrayFolder, m_storageHandler, m_retryNumber, m_parallelNumber);
@@ -2358,8 +2358,9 @@ public class DataPartition implements Iterable<DataElement> {
 	public int operationsSuccessWithAppStatusCheck() throws Exception {
 		// operationsSuccess() should be called only after all the data of this partition is 
 		// completely and successfully appended()
+		close();
 		if (m_isNew) {
-			close();
+			// cw close();
 			
 			// if Appid.txt file doesn't exist throw exception
 			// read app_line from Appid.txt file
@@ -2557,8 +2558,9 @@ public class DataPartition implements Iterable<DataElement> {
 	public int operationsSuccess() throws Exception {
 		// operationsSuccess() should be called only after all the data of this partition is 
 		// completely and successfully appended()
+		close();
 		if (m_isNew) {
-			close();
+			// cw close();
 		
 			logs.debug("operationsSuccessWithAppStatusCheck() Proceeding with isPartitionIdDeletedFileExists() check for partition : {}", m_arrayFolder);			   		
 			boolean checkDeleted = isPartitionIdDeletedFileExists(m_storageDirPath, m_arrayFolder, m_storageHandler);
