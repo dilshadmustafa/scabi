@@ -2,8 +2,8 @@
  * @author Dilshad Mustafa
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
- * Created 10-Aug-2016
- * File Name : IShuffle2.java
+ * Created 19-Jul-2016
+ * File Name : FileUnit.java
  */
 
 /**
@@ -75,19 +75,44 @@ and conditions of this license without giving prior notice.
 
 */
 
-package com.dilmus.dilshad.scabi.core;
+import java.io.IOException;
 
-import java.io.Serializable;
-
-import com.dilmus.dilshad.scabi.deprecated.DOperatorContext;
+import com.dilmus.dilshad.scabi.core.DataContext;
+import com.dilmus.dilshad.scabi.core.DataPartition;
+import com.dilmus.dilshad.scabi.core.DataUnit;
 
 /**
  * @author Dilshad Mustafa
  *
  */
+public class MyDataUnit extends DataUnit{
 
-public interface IShuffle2 extends Serializable {
+	public long count(DataContext c) {
+		long noOfPartitions = 0;
+		
+		try {
+			System.out.println(c.getInput().toString());
+			noOfPartitions = c.getInput().getLongOf("Partitions");
+		} catch (Exception e) { 
+			System.out.println(e);
+		}	
+		
+		return noOfPartitions;
+	}
 	
-	public long groupToPartition(DataElement e, DataContext c) throws Exception;
+	public void load(DataPartition a, DataContext c) throws Exception {
+		System.out.println("load from : " + c.getDU());
+		
+		a.appendField("number", c.getDU() + 1);
+		a.appendRow();
+		a.appendField("number", c.getDU() + 2);
+		a.appendRow();
+		a.appendField("number", c.getDU() + 3);
+		a.appendRow();
+		a.appendField("number", c.getDU() + 4);
+		a.appendRow();
+		a.appendField("number", c.getDU() + 5);
+		a.appendRow();
+	}
 	
 }

@@ -126,8 +126,10 @@ public class DataPartition implements Iterable<DataElement> {
 	private static final Logger logs = LoggerFactory.getLogger(DataPartition.class); // log for static methods
 	
 	private IBigArray m_bigArray = null;
-	private IShuffle m_shuffle = null;
-	private ObjectMapper m_objectMapper = new ObjectMapper();
+	private IShuffle m_shuffleByValues = null;
+	// cw private ObjectMapper m_objectMapper = new ObjectMapper();
+	private ObjectMapper m_objectMapper = null;	
+	
 	private long m_lastIndex = -1;
 	private long m_currentIndex = -1;
 	private DataContext m_context = null;
@@ -169,6 +171,20 @@ public class DataPartition implements Iterable<DataElement> {
 	private long m_currentBigArray = 0;
 	private long m_lastBigArray = 0;
 	private String m_createdBy = null;
+	
+	private int m_shuffleType = 0; 
+	// m_shuffleType = 0 - not set, 1 - groupByValues, 2 - groupByFields, 3 - groupToPartition
+	private DMJson m_shuffleByFieldNames = null;
+	
+	public int setJsonParser(ObjectMapper objectMapper) {
+		m_objectMapper = objectMapper;
+		m_dataElement.setJsonParser(objectMapper);
+		return 0;
+	}
+	
+	public ObjectMapper getJsonParser() {
+		return m_objectMapper;
+	}
 	
 	public static boolean isAppIdFileExists(String storageDirPath, String appId, IStorageHandler storageHandler) throws Exception {
 
@@ -1610,6 +1626,24 @@ public class DataPartition implements Iterable<DataElement> {
 						totalNumOfBigArrays = djsonPid.getLongOf("TotalNumOfBigArrays");
 						status = djsonPid.getString("Status");
 						createdBy = djsonPid.getString("CreatedBy");
+						
+						// below code is just to check if the partitionid.txt file json is in proper format
+						String strAppId = djsonPid.getString("AppId");
+						String strDataId = djsonPid.getString("DataId");
+						String strSplitUnit = djsonPid.getString("SplitUnit");
+						String strPartitionUserRef = djsonPid.getString("PartitionUserRef");
+						String strArrayFolder = djsonPid.getString("ArrayFolder");
+						String strRetryNumber = djsonPid.getString("RetryNumber");
+						String strParallelNumber = djsonPid.getString("ParallelNumber");
+						String strTotalNumOfBigArrays = djsonPid.getString("TotalNumOfBigArrays");
+						String strMaxRetry = djsonPid.getString("MaxRetry");
+						String strMaxParallel = djsonPid.getString("MaxParallel");
+						String strTimestamp = djsonPid.getString("Timestamp");
+						String strNanoTimestamp = djsonPid.getString("NanoTimestamp");
+						String strStatus = djsonPid.getString("Status");
+						String strCreatedBy = djsonPid.getString("CreatedBy");
+						String strRemarks = djsonPid.getString("Remarks");
+						// End partitionid.txt file json format check
 					} catch (Exception e) {
 						logs.debug("readDataPartition() Details in partition id file : " + arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid + " Proceeding to try to repair");					
 						toRepair = true;
@@ -1692,6 +1726,12 @@ public class DataPartition implements Iterable<DataElement> {
 									retryNumber = Long.parseLong(strRetryNumber);
 									parallelNumber = Long.parseLong(strParallelNumber);
 									totalNumOfBigArrays = Long.parseLong(strTotalNumOfBigArrays);
+									
+									// below code with additional fields is just to check if the partitionid_RPCC_R_P.txt file json is in proper format
+									String strTimestamp = djsonRPCC1.getString("Timestamp");
+									String strNanoTimestamp = djsonRPCC1.getString("NanoTimestamp");
+									String strRemarks = djsonRPCC1.getString("Remarks");
+									// End partitionid_RPCC_R_P.txt file json format check
 								} catch (Exception e) {
 									logs.debug("readDataPartition() Details in partition id RPCC file is not in correct format. Details is : {}, partition : {}, storageDirPath : {}, retryNumber : {} parallelNumber : {} Proceeding to check next partition id RPCC file", detailsStrRPCC1, arrayFolder, storageDirPath, i, p);					
 									continue;
@@ -2482,6 +2522,24 @@ public class DataPartition implements Iterable<DataElement> {
 							DMJson djsonPid2 = new DMJson(detailsStrPid2);	
 							retryNumber = djsonPid2.getLongOf("RetryNumber");
 							parallelNumber = djsonPid2.getLongOf("ParallelNumber");
+							
+							// below code is just to check if the partitionid.txt file json is in proper format
+							String strAppId = djsonPid2.getString("AppId");
+							String strDataId = djsonPid2.getString("DataId");
+							String strSplitUnit = djsonPid2.getString("SplitUnit");
+							String strPartitionUserRef = djsonPid2.getString("PartitionUserRef");
+							String strArrayFolder = djsonPid2.getString("ArrayFolder");
+							String strRetryNumber = djsonPid2.getString("RetryNumber");
+							String strParallelNumber = djsonPid2.getString("ParallelNumber");
+							String strTotalNumOfBigArrays = djsonPid2.getString("TotalNumOfBigArrays");
+							String strMaxRetry = djsonPid2.getString("MaxRetry");
+							String strMaxParallel = djsonPid2.getString("MaxParallel");
+							String strTimestamp = djsonPid2.getString("Timestamp");
+							String strNanoTimestamp = djsonPid2.getString("NanoTimestamp");
+							String strStatus = djsonPid2.getString("Status");
+							String strCreatedBy = djsonPid2.getString("CreatedBy");
+							String strRemarks = djsonPid2.getString("Remarks");
+							// End partitionid.txt file json format check
 						} catch (Exception e) {
 							log.debug("operationsSuccessWithAppStatusCheck() Details in partition id file : " + m_arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid2 + " Proceeding to create partition id file");					
 							proceed = true;
@@ -2623,6 +2681,24 @@ public class DataPartition implements Iterable<DataElement> {
 							DMJson djsonPid2 = new DMJson(detailsStrPid2);	
 							retryNumber = djsonPid2.getLongOf("RetryNumber");
 							parallelNumber = djsonPid2.getLongOf("ParallelNumber");
+							
+							// below code is just to check if the partitionid.txt file json is in proper format
+							String strAppId = djsonPid2.getString("AppId");
+							String strDataId = djsonPid2.getString("DataId");
+							String strSplitUnit = djsonPid2.getString("SplitUnit");
+							String strPartitionUserRef = djsonPid2.getString("PartitionUserRef");
+							String strArrayFolder = djsonPid2.getString("ArrayFolder");
+							String strRetryNumber = djsonPid2.getString("RetryNumber");
+							String strParallelNumber = djsonPid2.getString("ParallelNumber");
+							String strTotalNumOfBigArrays = djsonPid2.getString("TotalNumOfBigArrays");
+							String strMaxRetry = djsonPid2.getString("MaxRetry");
+							String strMaxParallel = djsonPid2.getString("MaxParallel");
+							String strTimestamp = djsonPid2.getString("Timestamp");
+							String strNanoTimestamp = djsonPid2.getString("NanoTimestamp");
+							String strStatus = djsonPid2.getString("Status");
+							String strCreatedBy = djsonPid2.getString("CreatedBy");
+							String strRemarks = djsonPid2.getString("Remarks");
+							// End partitionid.txt file json format check
 						} catch (Exception e) {
 							log.debug("operationsSuccessWithAppStatusCheck() Details in partition id file : " + m_arrayFolder + ".txt is not in correct format. Details is : " + detailsStrPid2 + " Proceeding to create partition id file");					
 							proceed = true;
@@ -2703,13 +2779,21 @@ public class DataPartition implements Iterable<DataElement> {
 		} 
 	}
 	
-	public int shuffleBy(IShuffle g) {
-		m_shuffle = g;
+	public int shuffleByValues(IShuffle g) {
+		m_shuffleByValues = g;
+		m_shuffleType = 1;
 		return 0;
 	}
 
+	public int shuffleByFieldNames(DMJson djsonFieldNamesToGroup) {
+		m_shuffleByFieldNames = djsonFieldNamesToGroup;
+		m_shuffleType = 2;
+		return 0;
+	}
+	
 	public int clearShuffle() {
-		m_shuffle = null;
+		m_shuffleByValues = null;
+		m_shuffleType = 0;
 		return 0;
 	}
 	
@@ -2772,7 +2856,7 @@ public class DataPartition implements Iterable<DataElement> {
 		gc();
 		byte[] bytea = m_bigArray.get(index);
 		m_dataElement.set(bytea);
-		Iterable<String> values = m_shuffle.groupByValues(m_dataElement, m_context);
+		Iterable<String> values = m_shuffleByValues.groupByValues(m_dataElement, m_context);
 		long hash = hash(values);
 		return hash;
 	}
@@ -2786,7 +2870,7 @@ public class DataPartition implements Iterable<DataElement> {
 		gc();
 		byte[] bytea = m_bigArray.get(m_currentIndex);
 		m_dataElement.set(bytea);
-		Iterable<String> values = m_shuffle.groupByValues(m_dataElement, m_context);
+		Iterable<String> values = m_shuffleByValues.groupByValues(m_dataElement, m_context);
 		long hash = hash(values);
 		return hash;
 	}
@@ -2795,7 +2879,7 @@ public class DataPartition implements Iterable<DataElement> {
 		gc();
 		byte[] bytea = m_bigArray.get(index);
 		m_dataElement.set(bytea);
-		Iterable<String> values = m_shuffle.groupByValues(m_dataElement, m_context);
+		Iterable<String> values = m_shuffleByValues.groupByValues(m_dataElement, m_context);
 		long hash = hash(values);
 		
 		if (hash >= 0) {
@@ -2821,7 +2905,7 @@ public class DataPartition implements Iterable<DataElement> {
 		gc();
 		byte[] bytea = m_bigArray.get(m_currentIndex);
 		m_dataElement.set(bytea);
-		Iterable<String> values = m_shuffle.groupByValues(m_dataElement, m_context);
+		Iterable<String> values = m_shuffleByValues.groupByValues(m_dataElement, m_context);
 		long hash = hash(values);
 		
 		if (hash >= 0) {
@@ -2836,6 +2920,95 @@ public class DataPartition implements Iterable<DataElement> {
 			else
 				return false;
 		}
+	}	
+
+	public boolean isHashFieldsElementBelongsToSU(long index, long tu, long su) throws Exception {
+		gc();
+		byte[] bytea = m_bigArray.get(index);
+		m_dataElement.set(bytea);
+
+		LinkedList<String> values = new LinkedList<String>();
+		Iterator<String> itr = m_shuffleByFieldNames.fieldNames();
+		while (itr.hasNext()) {
+			String fieldName = itr.next();
+			String fieldValue = m_dataElement.getField(fieldName);
+			values.add(fieldValue);
+		}
+		
+		long hash = hash(values);
+		
+		if (hash >= 0) {
+			if ((hash % tu) + 1 == su)
+				return true;
+			else
+				return false;
+		} else {
+			long n = (-1 * hash) % tu;
+			if (n + 1 == su)
+				return true;
+			else
+				return false;
+		}
+	}
+	
+	public boolean isHashFieldsCurrentElementBelongsToSU(long tu, long su) throws Exception {
+		if (m_currentIndex > m_lastIndex)
+			throw new DScabiException("m_currentIndex is not valid", "DPN.IHB.1");
+		else if (m_currentIndex < 0)
+			throw new DScabiException("m_currentIndex is not valid", "DPN.IHB.2");
+		
+		gc();
+		byte[] bytea = m_bigArray.get(m_currentIndex);
+		m_dataElement.set(bytea);
+		
+		LinkedList<String> values = new LinkedList<String>();
+		Iterator<String> itr = m_shuffleByFieldNames.fieldNames();
+		while (itr.hasNext()) {
+			String fieldName = itr.next();
+			String fieldValue = m_dataElement.getField(fieldName);
+			values.add(fieldValue);
+		}
+		
+		long hash = hash(values);
+		
+		if (hash >= 0) {
+			if ((hash % tu) + 1 == su)
+				return true;
+			else
+				return false;
+		} else {
+			long n = (-1 * hash) % tu;
+			if (n + 1 == su)
+				return true;
+			else
+				return false;
+		}
+	}	
+	
+	public boolean isElementBelongsToSU(long index, long tu, long su) throws Exception {
+		if (1 == m_shuffleType) {
+			boolean ret = isHashElementBelongsToSU(index, tu, su);
+			return ret;
+		} else if (2 == m_shuffleType) {
+			boolean ret = isHashFieldsElementBelongsToSU(index, tu, su);
+			return ret;
+		} else {
+			throw new DScabiException("m_shuffleType is " + m_shuffleType + " is not set", "DPN.IEB.1");
+		}
+			
+	}
+	
+	public boolean isCurrentElementBelongsToSU(long tu, long su) throws Exception {
+		if (1 == m_shuffleType) {
+			boolean ret = isHashCurrentElementBelongsToSU(tu, su);
+			return ret;
+		} else if (2 == m_shuffleType) {
+			boolean ret = isHashFieldsCurrentElementBelongsToSU(tu, su);
+			return ret;
+		} else {
+			throw new DScabiException("m_shuffleType is " + m_shuffleType + " is not set", "DPN.ICE.1");
+		}
+			
 	}	
 	
 	// next...(...) and related methods
@@ -3700,7 +3873,7 @@ public class DataPartition implements Iterable<DataElement> {
 			
 			// Determine hash
 			m_dataElement.set(bytea);
-			values = m_shuffle.groupByValues(m_dataElement, m_context);
+			values = m_shuffleByValues.groupByValues(m_dataElement, m_context);
 			hash = hash(values);
 			if (hash >= 0) {
 				if ((hash % tu) + 1 != su)

@@ -188,15 +188,16 @@ public class Data implements Runnable {
 	
 	private static final DMCounter M_DMCOUNTER = new DMCounter();
 	
-	private final static int DIT_DATAUNIT_CLASS = 1;
-	private final static int DIT_DATAUNIT_CLASS_OF_INTERFACE = 2;
-	private final static int DIT_DATAUNIT_OBJECT = 3;
-	private final static int DIT_DATAUNIT_OBJECT_OF_INTERFACE = 4;
+	private final static int DIT_NOCLASSOBJECT = 1;
+	private final static int DIT_DATAUNIT_CLASS = 2;
+	private final static int DIT_DATAUNIT_CLASS_OF_INTERFACE = 3;
+	private final static int DIT_DATAUNIT_OBJECT = 4;
+	private final static int DIT_DATAUNIT_OBJECT_OF_INTERFACE = 5;
 	// For future features, repartition from another Data cluster
-	private final static int DIT_PARTITIONER_CLASS = 5;
-	private final static int DIT_PARTITIONER_CLASS_OF_INTERFACE = 6;
-	private final static int DIT_PARTITIONER_OBJECT = 7;
-	private final static int DIT_PARTITIONER_OBJECT_OF_INTERFACE = 8;
+	private final static int DIT_PARTITIONER_CLASS = 6;
+	private final static int DIT_PARTITIONER_CLASS_OF_INTERFACE = 7;
+	private final static int DIT_PARTITIONER_OBJECT = 8;
+	private final static int DIT_PARTITIONER_OBJECT_OF_INTERFACE = 9;
 	
 	private int m_dataInitiatorType = 0; // one of the DIT_ types above
 	private int m_configNodeType = 0; // DataAsyncConfigNode type
@@ -235,6 +236,14 @@ public class Data implements Runnable {
 	private String m_specificJsonStrInput = null;
 	
 	private long m_maxParallel = 0;
+	
+	private HashMap<String, String> m_stageMap = new HashMap<String, String>();
+	private long m_stageCount = 0;
+	private long m_startStage = 0;
+	private long m_stageStartCommandId = 1;
+	
+	private long m_numOfDataUnitsToCreate = 0;
+	private boolean m_isDataInitiatorProvided = true;
 	
 	private String createStorageAppIdDirIfAbsent(String storageDirPath, String appId, IStorageHandler storageHandler) throws IOException {
 		
@@ -747,6 +756,9 @@ public class Data implements Runnable {
 		
 		m_configNodeType = 0;
 		
+		m_numOfDataUnitsToCreate = 0;
+		m_isDataInitiatorProvided = true;
+		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
 		
@@ -803,6 +815,9 @@ public class Data implements Runnable {
 		m_dataUnitObject = dataUnitObj;
 		m_partitionerClass = null;
 		m_partitionerObject = null;
+		
+		m_numOfDataUnitsToCreate = 0;
+		m_isDataInitiatorProvided = true;
 		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
@@ -861,6 +876,9 @@ public class Data implements Runnable {
 		m_partitionerClass = null;
 		m_partitionerObject = partitionerObj;
 		
+		m_numOfDataUnitsToCreate = 0;
+		m_isDataInitiatorProvided = true;
+		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
 		
@@ -884,7 +902,7 @@ public class Data implements Runnable {
 		createAppIdFile(m_storageDirPath, m_appId, m_localDirPath, m_storageHandler, detailsStr);
 	}	
 	
-	public Data(DMeta meta, String dataId) throws IOException {
+	public Data(DMeta meta, long numOfDataUnitsToCreate) throws IOException {
 
 		m_meta = meta;
 		m_commandMap = new HashMap<String, DataAsyncConfigNode>();
@@ -910,14 +928,17 @@ public class Data implements Runnable {
 		m_cnbListSize = 0;
 		m_futureListSize = 0;
 		
-		m_dataInitiatorType = 0;
+		m_dataInitiatorType = DIT_NOCLASSOBJECT;
 		m_configNodeType = 0;
-		m_dataId = dataId;
+		m_dataId = null;
 		m_dataUnitClass = null;;
 		m_dataUnitObject = null;
 		m_partitionerClass = null;
 		m_partitionerObject = null;
 
+		m_numOfDataUnitsToCreate = numOfDataUnitsToCreate;
+		m_isDataInitiatorProvided = false;
+		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
 		
@@ -1040,7 +1061,29 @@ public class Data implements Runnable {
 		
 		return this;
 	}
-
+	
+	private Data setDataUnitConfig() throws DScabiException, IOException {
+		
+		m_configNodeType = DataAsyncConfigNode.CNT_DATAUNIT_CONFIG;
+		DataUnitConfig config = new DataUnitConfig();
+		m_configNode = new DataAsyncConfigNode(config);
+		
+		config.setDataId(m_dataId);
+		config.setInput(m_jsonStrInput);
+		config.setOutput(m_outputMap);
+		config.setMaxSplit(m_maxSplit);
+		config.setMaxRetry(m_maxRetry);
+		
+		m_commandMap.put("1", m_configNode);
+		
+		m_configNodeList.add(0, m_configNode);
+		
+		m_configNode = null;
+		m_configNodeType = 0;
+		
+		return this;
+	}
+	
 	private Data setPartitionerClass(Class<? extends DPartitioner> cls) throws DScabiException, IOException {
 		
 		m_configNodeType = DataAsyncConfigNode.CNT_PARTITIONER_CONFIG;
@@ -1232,18 +1275,21 @@ public class Data implements Runnable {
 	
 	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
 	// Note : Nested lamda function-class and inner class defined inside lamda function-class are not supported
-	public Data groupBy(String dataId1, String dataId2, IShuffle unit) throws Exception {
+	public Data groupByValues(String dataId1, String dataId2, IShuffle unit) throws Exception {
+		
+		long endCommandId = -1;
 		
 		// this is needed for the below if (m_startCommandId <= m_endCommandId) condition
 		if (m_configNode != null)
-			m_endCommandId = m_commandID;
+			endCommandId = m_commandID;
 		else
-			m_endCommandId = m_commandID - 1;
+			endCommandId = m_commandID - 1;
 		
 		// this is to .perform() of previous operations
-		if (m_startCommandId <= m_endCommandId) {
-			perform();
-			finish();
+		if (m_startCommandId <= endCommandId) {
+			// cw perform();
+			// cw finish();
+			addStage();
 			
 			// This is just to help debugging, to see when finish block-1 completed
 			for (int i = 0; i < 200; i++) {
@@ -1285,12 +1331,22 @@ public class Data implements Runnable {
 			m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2;
 			DMShuffleConfig_1_2 config = new DMShuffleConfig_1_2(cls);
 			m_configNode = new DataAsyncConfigNode(config);
+			
+			config.setLambdaMethodName(m_lambdaMethodName);
 			config.setSourceDataId(dataId1);
 			config.setTargetDataId(dataId2);
 			config.setOutput(m_outputMap);
 			config.setMaxSplit(m_maxSplit);
 			config.setMaxRetry(m_maxRetry);
-			//System.exit(0);
+			
+			if (m_isSpecificInput) {
+				config.setInput(m_specificJsonStrInput);
+				m_isSpecificInput = false;
+				m_specificJsonStrInput = null;	
+			}
+			else
+				config.setInput(m_jsonStrInput);
+
 		} else {
 			m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_1;
 			DMShuffleConfig_1_1 config = new DMShuffleConfig_1_1(unit);
@@ -1300,6 +1356,14 @@ public class Data implements Runnable {
 			config.setOutput(m_outputMap);
 			config.setMaxSplit(m_maxSplit);
 			config.setMaxRetry(m_maxRetry);
+			
+			if (m_isSpecificInput) {
+				config.setInput(m_specificJsonStrInput);
+				m_isSpecificInput = false;
+				m_specificJsonStrInput = null;	
+			}
+			else
+				config.setInput(m_jsonStrInput);
 		}
 		
 		m_commandMap.put("" + m_commandID, m_configNode);
@@ -1313,10 +1377,160 @@ public class Data implements Runnable {
 		m_dataId1 = null;
 		m_dataId2 = null;
 		
-		perform();
-		finish();
+		// cw perform();
+		// cw finish();
 		
 		return this;
+	}
+	
+	public Data groupByFields(String dataId1, String dataId2, Iterable<String> fieldNamesToGroup) throws Exception {
+		
+		long endCommandId = -1;
+		
+		// this is needed for the below if (m_startCommandId <= m_endCommandId) condition
+		if (m_configNode != null)
+			endCommandId = m_commandID;
+		else
+			endCommandId = m_commandID - 1;
+		
+		// this is to .perform() of previous operations
+		if (m_startCommandId <= endCommandId) {
+			// cw perform();
+			// cw finish();
+			addStage();
+			
+			// This is just to help debugging, to see when finish block-1 completed
+			for (int i = 0; i < 200; i++) {
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			log.debug("groupBy() Finish block completed");
+			}
+			
+			Set<String> st = m_outputMap.keySet();
+			String ok = DMJson.ok();
+			
+			for (String s : st) {
+				// TODO later use dedicated result map and set it inside config.setResult() method
+				// because m_outputMap is supplied by user
+				String result = m_outputMap.get(s);
+
+				// TODO remove this if before release and uncomment below if (false == result.equals(ok)) condition
+				if (result.contains("Error")) {
+					log.debug("Result for split : {} is not ok. Result is : {}", s, result);
+					throw new DScabiException("Result for split : " + s + " is not ok. Result is : " + result, "DAA.GBY.1");
+				}
+
+				/* TODO uncomment before release
+				if (false == result.equals(ok)) {
+					log.debug("Result for split : {} is not ok. Result is : {}", s, result);
+					throw new DScabiException("Result for split : " + s + " is not ok. Result is : " + result, "DAA.GBY.1");
+				}
+				*/
+			}
+			
+		}
+		
+		m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_2_1;
+		DMShuffleConfig_2_1 config = new DMShuffleConfig_2_1(fieldNamesToGroup);
+		m_configNode = new DataAsyncConfigNode(config);
+		config.setSourceDataId(dataId1);
+		config.setTargetDataId(dataId2);
+		config.setOutput(m_outputMap);
+		config.setMaxSplit(m_maxSplit);
+		config.setMaxRetry(m_maxRetry);
+		
+		if (m_isSpecificInput) {
+			config.setInput(m_specificJsonStrInput);
+			m_isSpecificInput = false;
+			m_specificJsonStrInput = null;	
+		}
+		else
+			config.setInput(m_jsonStrInput);
+		
+		m_commandMap.put("" + m_commandID, m_configNode);
+		m_commandID++;
+		
+		m_configNodeList.add(m_configNode);
+		
+		m_configNode = null;
+		m_configNodeType = 0;
+		
+		m_dataId1 = null;
+		m_dataId2 = null;
+		
+		// cw perform();
+		// cw finish();
+		
+		return this;
+	}
+	
+	private int addStage() {
+		
+		if (m_configNode != null) {
+			if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_1 == m_configNode.getConfigNodeType()) {
+				setForOperatorConfig_1_1(m_configNode.getOperatorConfig_1_1());
+			} else if (DataAsyncConfigNode.CNT_OPERATOR_CONFIG_1_2 == m_configNode.getConfigNodeType()) {
+				setForOperatorConfig_1_2(m_configNode.getOperatorConfig_1_2());
+			}
+
+			m_commandMap.put("" + m_commandID, m_configNode);
+			m_commandID++;
+
+			m_configNodeList.add(m_configNode);
+			
+			m_configNode = null;
+			m_configNodeType = 0;
+			
+			m_dataId1 = null;
+			m_dataId2 = null;
+			
+		}
+		
+		log.debug("addStage() m_stageCount : {}, m_stageStartCommandId : {}, m_commandID : {}", m_stageCount, m_stageStartCommandId, m_commandID);
+		
+		// this is to add stage of previous operations
+		if (m_stageStartCommandId <= m_commandID - 1) {
+			String cmdIds = "" + m_stageStartCommandId + "," + (m_commandID - 1);
+			m_stageMap.put("" + m_stageCount, cmdIds);
+			log.debug("addStage() Added Stage : {}, cmdIds : {}", m_stageCount, cmdIds);
+			m_stageCount++;
+		}
+		
+		m_stageStartCommandId = m_commandID;
+		
+		return 0;
+	}
+	
+	public void act() throws DScabiException, IOException, ExecutionException, InterruptedException {
+		
+		addStage();
+		
+		long original_m_startCommandId = m_startCommandId;
+		long original_m_commandID = m_commandID;
+		
+		for (long i = m_startStage; i < m_stageCount; i++) {
+			String cmdIds = m_stageMap.get("" + i);
+			log.debug("act() Stage : {}, cmdIds : {}", i, cmdIds);
+			
+			String s[] = cmdIds.split(",");
+			m_startCommandId = Long.parseLong(s[0]);
+			
+			// perform(), performAgain() calculates m_endCommandId based on m_commandID
+			m_commandID = Long.parseLong(s[1]) + 1; 
+			log.debug("act() m_startCommandId : {}, m_commandID : {}", m_startCommandId, m_commandID);
+			
+			log.debug("act() Executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, m_startCommandId, m_commandID - 1);
+			perform();
+			finish();
+			log.debug("act() Finished executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, m_startCommandId, m_commandID - 1);			
+		}
+		
+		m_startStage = m_stageCount;
+		
+		m_startCommandId = original_m_startCommandId;
+		m_commandID = original_m_commandID;
 	}
 	
 	// Note : Nested anonymous class and inner class defined inside anonymous class are not supported
@@ -1977,6 +2191,8 @@ public class Data implements Runnable {
 			setDataUnitClass(m_dataUnitClass);
 		} else if (DIT_DATAUNIT_OBJECT == m_dataInitiatorType) {
 			setDataUnitObject(m_dataUnitObject);
+		} else if (DIT_NOCLASSOBJECT == m_dataInitiatorType) {
+			setDataUnitConfig();
 		} else if (DIT_PARTITIONER_CLASS == m_dataInitiatorType) {
 			setPartitionerClass(m_partitionerClass);
 		} else if (DIT_PARTITIONER_OBJECT == m_dataInitiatorType) {
@@ -2004,6 +2220,8 @@ public class Data implements Runnable {
 			} catch (Exception ex) {
 				throw new DScabiException(ex.toString(), "Driver.DAA.PEM.1");
 			}
+		} else if (DIT_NOCLASSOBJECT == m_dataInitiatorType) {
+			m_splitTotal = m_numOfDataUnitsToCreate;
 		} else if (DIT_PARTITIONER_CLASS == m_dataInitiatorType) {
 			try {
 				DPartitioner p = (DPartitioner) m_partitionerClass.newInstance(); 

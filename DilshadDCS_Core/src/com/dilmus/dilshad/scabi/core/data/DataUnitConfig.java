@@ -103,10 +103,11 @@ import com.dilmus.dilshad.scabi.core.DataUnit;
  */
 public class DataUnitConfig implements IConfig {
 	
-	public final static int CFG_TYPE_CLASS = 1;
-	public final static int CFG_TYPE_CLASS_OF_INTERFACE = 2;
-	public final static int CFG_TYPE_OBJECT = 3;
-	public final static int CFG_TYPE_OBJECT_OF_INTERFACE = 4;
+	public final static int CFG_TYPE_NOCLASSOBJECT = 1;
+	public final static int CFG_TYPE_CLASS = 2;
+	public final static int CFG_TYPE_CLASS_OF_INTERFACE = 3;
+	public final static int CFG_TYPE_OBJECT = 4;
+	public final static int CFG_TYPE_OBJECT_OF_INTERFACE = 5;
 	
 	private final Logger log = LoggerFactory.getLogger(DataUnitConfig.class);
 	private DataUnit m_dataUnitObj = null;
@@ -154,6 +155,8 @@ public class DataUnitConfig implements IConfig {
 	
 	private String m_appName = null;
 	private String m_appId = null;
+	
+	private boolean m_isDataInitiatorProvided = true;
 	
 	public int setAppName(String appName) {
 		m_appName = appName;
@@ -422,6 +425,8 @@ public class DataUnitConfig implements IConfig {
 		
 		m_appName = DMJson.empty();
 		m_appId = DMJson.empty();
+		
+		m_isDataInitiatorProvided = true;
 	}
 	
 	public DataUnitConfig(Class<?> cls) throws IOException {
@@ -445,8 +450,32 @@ public class DataUnitConfig implements IConfig {
 		
 		m_appName = DMJson.empty();
 		m_appId = DMJson.empty();
+		
+		m_isDataInitiatorProvided = true;
 	}
 
+	public DataUnitConfig() throws IOException {
+		m_configType = DataUnitConfig.CFG_TYPE_NOCLASSOBJECT;
+		m_maxSplit = 1;
+		
+		m_jarFilePathList = new LinkedList<String>();
+		m_jsonStrInput = DMJson.empty();
+		
+		m_jobId = DMJson.empty();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
+		
+		m_statusMap = new HashMap<String, String>();
+		
+		m_appName = DMJson.empty();
+		m_appId = DMJson.empty();
+		
+		m_isDataInitiatorProvided = false;
+	}
+	
 	public boolean isJarFilePathListSet() {
 		return m_isJarFilePathListSet;
 	}

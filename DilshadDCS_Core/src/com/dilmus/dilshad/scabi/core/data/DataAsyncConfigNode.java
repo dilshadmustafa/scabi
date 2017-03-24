@@ -104,7 +104,8 @@ public class DataAsyncConfigNode {
 	public final static int CNT_OPERATOR_CONFIG_1_2 = 4;
 	public final static int CNT_SHUFFLE_CONFIG_1_1 = 5;
 	public final static int CNT_SHUFFLE_CONFIG_1_2 = 6;
-	public final static int CNT_COMPARATOR_CONFIG_1_1 = 7;
+	public final static int CNT_SHUFFLE_CONFIG_2_1 = 7;
+	public final static int CNT_COMPARATOR_CONFIG_1_1 = 8;
 	
 	private final Logger log = LoggerFactory.getLogger(DataAsyncConfigNode.class);
 	
@@ -114,6 +115,7 @@ public class DataAsyncConfigNode {
 	private DMOperatorConfig_1_2 m_operatorConfig_1_2 = null;
 	private DMShuffleConfig_1_1 m_shuffleConfig_1_1 = null;
 	private DMShuffleConfig_1_2 m_shuffleConfig_1_2 = null;
+	private DMShuffleConfig_2_1 m_shuffleConfig_2_1 = null;
 	private DMComparatorConfig_1_1 m_comparatorConfig = null;
 	
 	private int m_configNodeType = 0;
@@ -209,6 +211,18 @@ public class DataAsyncConfigNode {
 		m_configId = DMJson.empty();
 	}
 	
+	public DataAsyncConfigNode(DMShuffleConfig_2_1 unit) {
+		m_shuffleConfig_2_1 = unit;
+		m_configNodeType = DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_2_1;
+		
+		m_jobId = DMJson.empty();
+		
+		// Previous works m_configId = UUID.randomUUID().toString() + "_" + System.nanoTime() + "_" + M_DMCOUNTER.inc();
+		// Previous works m_configId = m_configId.replace('-', '_');
+		
+		m_configId = DMJson.empty();
+	}
+
 	public DataAsyncConfigNode(DMComparatorConfig_1_1 unit) {
 		m_comparatorConfig = unit;
 		m_configNodeType = DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_1;
@@ -247,6 +261,10 @@ public class DataAsyncConfigNode {
 	
 	public DMShuffleConfig_1_2 getShuffleConfig_1_2() {
 		return m_shuffleConfig_1_2;
+	}
+	
+	public DMShuffleConfig_2_1 getShuffleConfig_2_1() {
+		return m_shuffleConfig_2_1;
 	}
 	
 	public DMComparatorConfig_1_1 getComparatorConfig() {

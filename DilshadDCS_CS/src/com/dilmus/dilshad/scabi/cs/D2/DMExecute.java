@@ -622,7 +622,7 @@ public class DMExecute {
 	    	dctx1.add("JsonInput", djson.getString("JsonInput"));
 			log.debug("dataExecuteForOperators() JsonInput : {}", djson.getString("JsonInput"));
 			String configNodeType = djson.getString("ConfigNodeType");
-			log.debug("dataExecuteForOperators() ConfigNodeTyped : {}", configNodeType);
+			log.debug("dataExecuteForOperators() ConfigNodeType : {}", configNodeType);
 			String dataId1 = djson.getString("SourceDataId");
 			log.debug("dataExecuteForOperators() DataId1 : {}", dataId1);
 			String dataId2 = djson.getString("TargetDataId");
@@ -722,13 +722,17 @@ public class DMExecute {
 		   	// cw synchronized(ComputeServer_D2.m_partitionIdDataPartitionMap) { ComputeServer_D2.m_partitionIdDataPartitionMap.put(partitionId2, dp2); }
 		   	synchronized(ComputeServer_D2.m_partitionIdRPSEDataPartitionMap) { ComputeServer_D2.m_partitionIdRPSEDataPartitionMap.put(partitionId2 + suffix, dp2); }
 		   			   	
-		   	String hexStr = djson.getString("ClassBytes");
-		   	// log.debug("dataExecuteForOperators() Hex string is : {}", hexStr);
-		   	String className = djson.getString("ClassName");
-		   	log.debug("dataExecuteForOperators() className is : {}", className);
-		  	
-		   	byte b2[] = DMUtil.toBytesFromHexStr(hexStr);
-
+		   	String hexStr = null;
+		   	String className = null;
+		   	byte b2[] = null;
+		   	if (Integer.parseInt(configNodeType) != DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_2_1) {
+			   	hexStr = djson.getString("ClassBytes");
+			   	// log.debug("dataExecuteForOperators() Hex string is : {}", hexStr);
+			   	className = djson.getString("ClassName");
+			   	log.debug("dataExecuteForOperators() className is : {}", className);
+			  	
+			   	b2 = DMUtil.toBytesFromHexStr(hexStr);
+		   	}
 		   	// Not used ClassLoader cl = ClassLoader.getSystemClassLoader();
 		   
 		   	// Big if
@@ -740,6 +744,8 @@ public class DMExecute {
 		   		result = dataExecuteForShuffle_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPathForThisSplitRetryNum, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_1_2) {
 		   		result = dataExecuteForShuffle_1_2(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPathForThisSplitRetryNum, storageHandler);
+		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_2_1) {
+		   		result = dataExecuteForShuffle_2_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId, storageDPDirPath, localDPDirPathForThisSplitRetryNum, storageHandler);
 		   	} else if (Integer.parseInt(configNodeType) == DataAsyncConfigNode.CNT_COMPARATOR_CONFIG_1_1) {
 		   		result = dataExecuteForComparator_1_1(dcl, dj, djson, className, b2, dctx1, dp1, dp2, taskId);
 		   	} 
@@ -1044,12 +1050,12 @@ public class DMExecute {
 	  				
 	  				if (i == cu) {
 	  					// use dp1
-	  		  			dp1.shuffleBy(cuu);
+	  		  			dp1.shuffleByValues(cuu);
 	  					// add filtered entries from dp1 to dp2
 	  		  			dp1.begin();
 	  		  			while (dp1.hasNext()) {
 	  		  				DataElement e = dp1.next();
-	  		  				if (dp1.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  				if (dp1.isCurrentElementBelongsToSU(tu, cu)) {
 	  		  					dp2.append(e);
 	  		  				}
 	  		  			}
@@ -1073,12 +1079,12 @@ public class DMExecute {
 						*/
 						dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler, readBy);						
 						
-						dpSourceOther.shuffleBy(cuu);
+						dpSourceOther.shuffleByValues(cuu);
 	  					// add filtered entries from dpSourceOther to dp2
 						dpSourceOther.begin();
 	  		  			while (dpSourceOther.hasNext()) {
 	  		  				DataElement e = dpSourceOther.next();
-	  		  				if (dpSourceOther.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  				if (dpSourceOther.isCurrentElementBelongsToSU(tu, cu)) {
 	  		  					dp2.append(e);
 	  		  				}
 	  		  			}
@@ -1154,12 +1160,12 @@ public class DMExecute {
 	  				
 	  				if (i == cu) {
 	  					// use dp1
-	  		  			dp1.shuffleBy(shuffleObj);
+	  		  			dp1.shuffleByValues(shuffleObj);
 	  					// add filtered entries from dp1 to dp2
 	  		  			dp1.begin();
 	  		  			while (dp1.hasNext()) {
 	  		  				DataElement e = dp1.next();
-	  		  				if (dp1.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  				if (dp1.isCurrentElementBelongsToSU(tu, cu)) {
 	  		  					dp2.append(e);
 	  		  				}
 	  		  			}
@@ -1182,12 +1188,12 @@ public class DMExecute {
 						}
 						*/
 						dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler, readBy);  					
-						dpSourceOther.shuffleBy(shuffleObj);
+						dpSourceOther.shuffleByValues(shuffleObj);
 	  					// add filtered entries from dpSourceOther to dp2
 						dpSourceOther.begin();
 	  		  			while (dpSourceOther.hasNext()) {
 	  		  				DataElement e = dpSourceOther.next();
-	  		  				if (dpSourceOther.isHashCurrentElementBelongsToSU(tu, cu)) {
+	  		  				if (dpSourceOther.isCurrentElementBelongsToSU(tu, cu)) {
 	  		  					dp2.append(e);
 	  		  				}
 	  		  			}
@@ -1216,11 +1222,223 @@ public class DMExecute {
 		return DMJson.ok();
 	}
 
-	public static String dataExecuteForShuffle_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPath, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
+	public static String dataExecuteForShuffle_1_2(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPathForThisSplitRetryNum, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException, DScabiException {
 	
-		return DMJson.ok();
+		DMJson djsonBy = new DMJson();
+		djsonBy.add("AppId", dctx1.getAppId());
+		djsonBy.add("SplitUnit", "" + dctx1.getDU());
+		djsonBy.add("RetryNumber", "" + dctx1.getRetryNumber());
+		djsonBy.add("ParallelNumber", "" + dctx1.getParallelNumber());
+		String readBy = djsonBy.toString();
+		
+  		log.debug("dataExecuteForShuffle_1_2() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForShuffle_1_2() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForShuffle_1_2() JsonInput : {}", djson.getString("JsonInput"));
+		
+		long tu = dj.getTU();
+		long cu = dj.getCU();
+		
+		ClassPool pool = null;
+		String result = null;
+  		boolean proceed = false;
+  		IOperator cuu = null;
+  		
+  		log.debug("dataExecuteForShuffle_1_2() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForShuffle_1_2() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForShuffle_1_2() JsonInput : {}", djson.getString("JsonInput"));
+  		
+  		InputStream fis = new ByteArrayInputStream(b2);
+	
+  		// Previous works ClassPool pool = ClassPool.getDefault();
+  		pool = new ClassPool(true);
+  		pool.appendSystemPath();
+  		// Reference pool.appendClassPath(new LoaderClassPath(_extraLoader));
+  		pool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+  		// Reference pool.importPackage("com.dilmus.dilshad.scabi.client.Dson");
+  		CtClass cr = pool.makeClass(fis);
+  		cr.setModifiers(cr.getModifiers() | Modifier.PUBLIC);
+  		log.debug("dataExecuteForShuffle_1_2() modifiers : {}", cr.getModifiers());
+	  		
+  		log.debug("dataExecuteForShuffle_1_2() DMDataTemplate.class.getCanonicalName() : {}", DMDataTemplate.class.getCanonicalName());
+  		CtClass ct = pool.getAndRename(DMDataTemplate.class.getCanonicalName(), "OT" + System.nanoTime() + "_" + M_DMCOUNTER.inc());
+
+  		String lambdaMethodName = djson.getString("LambdaMethodName");   
+  		log.debug("dataExecuteForShuffle_1_2() lambdaMethodName: {}", lambdaMethodName);
+  		CtMethod amethods[] = cr.getDeclaredMethods();
+  		for (CtMethod amethod : amethods) {
+  			if (amethod.getName().equals(lambdaMethodName)) {
+  				log.debug("dataExecuteForShuffle_1_2() Match found for lambdaMethodName: {}", lambdaMethodName);
+  				CtMethod bmethod = CtNewMethod.copy(amethod, ct, null);
+		    	
+  				// OR
+		    	//CtMethod bmethod = new CtMethod(pool.get(String.class.getCanonicalName()), "compute", new CtClass[] {pool.get(Dson.class.getCanonicalName())}, ct);
+		    	//bmethod.setBody(amethod, null);
+		    	//bmethod.setModifiers(bmethod.getModifiers() | Modifier.PUBLIC);
+		    	// OR
+		    	//CtMethod bmethod = CtMethod.make(amethod.getMethodInfo(), ct);
+		    		
+  				ct.addMethod(bmethod);
+  			}
+  		}
+		    
+  		//CtField afields[] = cr.getDeclaredFields();
+  		//for (CtField afield : afields) {
+  		//	CtField bfield = new CtField(afield, ct);
+  		//    ct.addField(bfield);
+  		//}
+		    
+  		// Notes : Anonymous class can not define constructor. So no need to copy constructor
+		    
+  		Class<?> df2 = ct.toClass();
+  		// Object ob = df2.newInstance();
+  		// Method m = df2.getMethod("groupByValues", DataElement.class, DataContext.class);
+  		Method m = df2.getDeclaredMethod(lambdaMethodName, DataElement.class, DataContext.class);
+  		m.setAccessible(true);
+  		/* OR try
+	  		IShuffle  iob = (IShuffle) ob; // Possible only if ob implements IShuffle
+	  		iob.groupByValues(de1, dctx3);
+  		 */
+  		
+		String appId = dj.getString("AppId");
+		log.debug("dataExecuteForShuffle_1_2() AppId : {}", appId);
+		String dataId1 = djson.getString("SourceDataId");
+		log.debug("dataExecuteForShuffle_1_2() DataId1 : {}", dataId1);
+		
+  		try {
+  			DMShuffle dmshuffle = new DMShuffle(m, null);
+  			// TODO set a read only attribute to dp1.setReadOnly()
+  			// create DataPartition object for other source dp with partition id dataid1_i_appid of source dataset dataId1
+  			for (int i = 1; i <= tu; i++) {
+  				
+  				if (i == cu) {
+  					// use dp1
+  		  			dp1.shuffleByValues(dmshuffle);
+  					// add filtered entries from dp1 to dp2
+  		  			dp1.begin();
+  		  			while (dp1.hasNext()) {
+  		  				DataElement e = dp1.next();
+  		  				if (dp1.isCurrentElementBelongsToSU(tu, cu)) {
+  		  					dp2.append(e);
+  		  				}
+  		  			}
+  		  			dp1.clearShuffle();
+  				} else {
+  					// check if other source dp exists and create DataPartition object if other source dp exists
+  					String partitionIdOther = dataId1 + "_" + i + "_" + appId.replace("_", "");
+  					log.debug("dataExecuteForShuffle_1_2() PartitionIdOther : {}", partitionIdOther);
+  					DataPartition dpSourceOther = null;
+
+					dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler, readBy);						
+					
+					dpSourceOther.shuffleByValues(dmshuffle);
+  					// add filtered entries from dpSourceOther to dp2
+					dpSourceOther.begin();
+  		  			while (dpSourceOther.hasNext()) {
+  		  				DataElement e = dpSourceOther.next();
+  		  				if (dpSourceOther.isCurrentElementBelongsToSU(tu, cu)) {
+  		  					dp2.append(e);
+  		  				}
+  		  			}
+  		  			dpSourceOther.close();
+  		  			dpSourceOther = null;
+  				}
+  			}
+  			
+  		} catch(Throwable e) {
+  			cr.detach();
+  			ct.detach();
+  			pool = null;
+  			result = DMJson.error("CSE.EXE.DEFO3.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+  			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+  		}
+  		// Release CtClass from ClassPool
+  		cr.detach();
+  		ct.detach();
+  		pool = null;
+	 		
+  		log.debug("dataExecuteForShuffle_1_2() shuffle done");
+  		
+  		return DMJson.ok();	
 	}
 	
+	public static String dataExecuteForShuffle_2_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId, String storageDPDirPath, String localDPDirPathForThisSplitRetryNum, IStorageHandler storageHandler) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException, DScabiException {
+		DMJson djsonBy = new DMJson();
+		djsonBy.add("AppId", dctx1.getAppId());
+		djsonBy.add("SplitUnit", "" + dctx1.getDU());
+		djsonBy.add("RetryNumber", "" + dctx1.getRetryNumber());
+		djsonBy.add("ParallelNumber", "" + dctx1.getParallelNumber());
+		String readBy = djsonBy.toString();
+		
+  		log.debug("dataExecuteForShuffle_2_1() TotalComputeUnit : {}", dj.getTU());
+  		log.debug("dataExecuteForShuffle_2_1() SplitComputeUnit : {}", dj.getCU());
+  		log.debug("dataExecuteForShuffle_2_1() JsonInput : {}", djson.getString("JsonInput"));
+		
+		long tu = dj.getTU();
+		long cu = dj.getCU();
+		
+		String result = null;
+
+		String appId = dj.getString("AppId");
+		log.debug("dataExecuteForShuffle_2_1() AppId : {}", appId);
+		String dataId1 = djson.getString("SourceDataId");
+		log.debug("dataExecuteForShuffle_2_1() DataId1 : {}", dataId1);
+		
+  		try {
+  			String jsonStrFieldNamesToGroup = djson.getString("JsonStrFieldNamesToGroup");
+  			log.debug("dataExecuteForShuffle_2_1() jsonStrFieldNamesToGroup : {}", jsonStrFieldNamesToGroup);
+  			DMJson djsonFieldNamesToGroup = new DMJson(jsonStrFieldNamesToGroup);
+  			// TODO set a read only attribute to dp1.setReadOnly()
+  			// create DataPartition object for other source dp with partition id dataid1_i_appid of source dataset dataId1
+  			for (int i = 1; i <= tu; i++) {
+  				
+  				if (i == cu) {
+  					// use dp1
+  		  			dp1.shuffleByFieldNames(djsonFieldNamesToGroup);
+  					// add filtered entries from dp1 to dp2
+  		  			dp1.begin();
+  		  			while (dp1.hasNext()) {
+  		  				DataElement e = dp1.next();
+  		  				if (dp1.isCurrentElementBelongsToSU(tu, cu)) {
+  		  					dp2.append(e);
+  		  				}
+  		  			}
+  		  			dp1.clearShuffle();
+  				} else {
+  					// check if other source dp exists and create DataPartition object if other source dp exists
+  					String partitionIdOther = dataId1 + "_" + i + "_" + appId.replace("_", "");
+  					log.debug("dataExecuteForShuffle_2_1() PartitionIdOther : {}", partitionIdOther);
+  					DataPartition dpSourceOther = null;
+					dpSourceOther = DataPartition.readDataPartition(dctx1, dataId1, partitionIdOther, storageDPDirPath, partitionIdOther, 64 * 1024 * 1024, localDPDirPathForThisSplitRetryNum, storageHandler, readBy);						
+					
+					dpSourceOther.shuffleByFieldNames(djsonFieldNamesToGroup);
+  					// add filtered entries from dpSourceOther to dp2
+					dpSourceOther.begin();
+  		  			while (dpSourceOther.hasNext()) {
+  		  				DataElement e = dpSourceOther.next();
+  		  				if (dpSourceOther.isCurrentElementBelongsToSU(tu, cu)) {
+  		  					dp2.append(e);
+  		  				}
+  		  			}
+  		  			dpSourceOther.close();
+  		  			dpSourceOther = null;
+  				}
+  			}
+  			
+  		} catch(Throwable e) {
+  			result = DMJson.error("CSE.EXE.DEFS2.1", DMUtil.serverErrMsg(e));
+  			synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+  			synchronized(ComputeServer_D2.m_taskIdStatusMap) { ComputeServer_D2.m_taskIdStatusMap.put(taskId, ComputeServer_D2.S_EXECUTION_ERROR); }
+  			return result;
+  		}
+	 		
+  		log.debug("dataExecuteForShuffle_2_1() shuffle done");
+  		
+  		return DMJson.ok();	
+		
+	}
+
 	public static String dataExecuteForComparator_1_1(DMClassLoader dcl, DMJson dj, DMJson djson, String className, byte[] b2, DataContext dctx1, DataPartition dp1, DataPartition dp2, String taskId) throws CannotCompileException, InstantiationException, IllegalAccessException, IOException, RuntimeException, NoSuchMethodException, NotFoundException {
 
 		return DMJson.ok();

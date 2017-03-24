@@ -713,6 +713,7 @@ public class DataNoBlock {
 			Class<?> p = null;
 			DMJson d = new DMJson();
 			String hexStr = null;
+			boolean skip = false;
 			
 			DataAsyncConfigNode configNode = commandMap.get("" + i);
 			d.add("CommandId", "" + i);
@@ -724,11 +725,17 @@ public class DataNoBlock {
 				d.add("DataId", dataUnitConfig.getDataId());
 				d.add("JsonInput", dataUnitConfig.getInput());
 				if (DataUnitConfig.CFG_TYPE_CLASS == dataUnitConfig.getConfigType()) {
+					d.add("IsDataInitiatorProvided", "true");
 					p = dataUnitConfig.getDataUnitClass();
+					hexStr = dataUnitConfig.getJavaFileAsHexStr();
 				} else if (DataUnitConfig.CFG_TYPE_OBJECT == dataUnitConfig.getConfigType()) {
+					d.add("IsDataInitiatorProvided", "true");
 					p = dataUnitConfig.getDataUnitObject().getClass();
+					hexStr = dataUnitConfig.getJavaFileAsHexStr();
+				} else if (DataUnitConfig.CFG_TYPE_NOCLASSOBJECT == dataUnitConfig.getConfigType()) {
+					d.add("IsDataInitiatorProvided", "false");
+					skip = true;
 				}
-				hexStr = dataUnitConfig.getJavaFileAsHexStr();
 			} else if (DataAsyncConfigNode.CNT_PARTITIONER_CONFIG == configNode.getConfigNodeType()) {
 				DMPartitionerConfig partitionerConfig = configNode.getPartitionerConfig();
 				d.add("ConfigType", partitionerConfig.getConfigType());
@@ -793,9 +800,21 @@ public class DataNoBlock {
 					p = shuffleConfig_1_2.getShuffleClass();
 				} 
 				hexStr = shuffleConfig_1_2.getJavaFileAsHexStr();
+			} else if (DataAsyncConfigNode.CNT_SHUFFLE_CONFIG_2_1 == configNode.getConfigNodeType()) {
+				DMShuffleConfig_2_1 shuffleConfig_2_1 = configNode.getShuffleConfig_2_1();
+				d.add("ConfigType", shuffleConfig_2_1.getConfigType());
+				d.add("SourceDataId", shuffleConfig_2_1.getSourceDataId());
+				d.add("TargetDataId", shuffleConfig_2_1.getTargetDataId());
+				d.add("JsonInput", shuffleConfig_2_1.getInput());
+				String jsonStrFieldNamesToGroup = shuffleConfig_2_1.getJsonStrFieldNamesToGroup();
+				d.add("JsonStrFieldNamesToGroup", jsonStrFieldNamesToGroup);
+
+				skip = true;
 			} else {
 				throw new DScabiException("Invalid config node type", "DNB.EFD.1");
 			}
+
+			if (false == skip) {
 
 	    	String className = p.getName();
 	    	log.debug("executeForDataUnit() className  : {}", className);
@@ -813,6 +832,9 @@ public class DataNoBlock {
 	    	
 			d.add("ClassName", className);
 			d.add("ClassBytes", hexStr);	
+			
+			} // End if (false == skip)
+				
 			log.debug("executeForDataUnit() d is : {}", d.toString());
 			djson1.add("" + n, d.toString());
 			n++;

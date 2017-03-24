@@ -217,7 +217,7 @@ public class UnitTest6_DataPartition3 {
 		
 		dp.flushFiles();
 		
-		dp.shuffleBy(new IShuffle() {
+		dp.shuffleByValues(new IShuffle() {
 
 			@Override
 			public Iterable<String> groupByValues(DataElement e, DataContext c) throws IOException {

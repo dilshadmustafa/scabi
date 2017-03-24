@@ -3,7 +3,7 @@
  * Copyright (c) Dilshad Mustafa
  * All Rights Reserved.
  * Created 21-Jan-2016
- * File Name : Test8_Data.java
+ * File Name : Test8_Data2.java
  */
 
 /**
@@ -119,6 +119,7 @@ import com.dilmus.dilshad.scabi.core.DataPartition;
 import com.dilmus.dilshad.scabi.core.DataElement;
 import com.dilmus.dilshad.scabi.core.Dson;
 import com.dilmus.dilshad.scabi.core.IOperator;
+import com.dilmus.dilshad.scabi.core.IShuffle;
 import com.dilmus.dilshad.scabi.core.compute.DComputeNoBlock;
 import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeBlock_D1;
 import com.dilmus.dilshad.scabi.core.computesync_D1.DComputeSync_D1;
@@ -140,7 +141,7 @@ import static com.mongodb.client.model.Filters.eq;
  * @author Dilshad Mustafa
  *
  */
-public class Test8_Data implements Serializable {
+public class Test8_Data5_groupByFields implements Serializable {
 	private static Logger log = null;
 	
 
@@ -162,8 +163,8 @@ public class Test8_Data implements Serializable {
   		System.setProperty("org.slf4j.simpleLogger.showLogName", "true");		
   		//System.setProperty("org.slf4j.simplelogger.defaultlog", "debug");
     	//System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
-  		final Logger log = LoggerFactory.getLogger(Test8_Data.class);
-  		Test8_Data.log = log;
+  		final Logger log = LoggerFactory.getLogger(Test8_Data5_groupByFields.class);
+  		Test8_Data5_groupByFields.log = log;
     	System.out.println("ScabiClient");
   	
     	// Test suite
@@ -196,53 +197,29 @@ public class Test8_Data implements Serializable {
     	*/
     	
        	DMeta meta = new DMeta("localhost", "5000");
-       	
-    	// works Dson dson = new Dson("Partitions", "100");
-    	Dson dson = new Dson("Partitions", "10");
-    	
+       	// works Dson dson = new Dson("Partitions", "100");
+       	// Dson dson = new Dson("Partitions", "3");
+       	Dson dson = new Dson("Partitions", "10");
     	//Dson dson = new Dson("Partitions", "11");
     	HashMap<String, String> out1 = new HashMap<String, String>();
-    	Data d = new Data(meta, "mydata", FileUnit.class);  
+    	Data d = new Data(meta, "mydata", MyDataUnit.class);  
     	d.input(dson);
     	d.output(out1);
     	//d.maxThreads(12);
     	long time1 = System.currentTimeMillis();
     	long timeTillFinish = 0;
-    	IOperator iob = new IOperator() {
-
-			@Override
-			public void operate(DataPartition a, DataPartition b, DataContext c) throws Exception {
-				
-				b.append("Hello from DU " + c.getDU());
-				for (DataElement e : a) {
-					b.append(e.getInt() + 1);
-				}
-				return;
-			}
-    		
-    	};
-    	//works d.operate("mydata", "newdata", iob);
-    	d.operate("mydata", "newdata", (a, b, c) -> { 
-    												  b.append("Hello from DU " + c.getDU());
-													  for (DataElement e : a) {
-														b.append(e.getInt() + 1);
-													  }
-													  return; 
-													 });
-    	//IOperator iob2 = (a, b, c) -> { return; };
-    	//iob2.operate(null, null, null);
-    	// loadJavaFileAsHexStr() className  : Test8_Data$$Lambda$2/1375995437
-    	// 2016-10-05 22:06:25:591 +0530 [main] [DEBUG] com.dilmus.dilshad.scabi.core.data.DOperatorConfig_1_1 - loadJavaFileAsHexStr() classAsPath  : Test8_Data$$Lambda$2/1375995437.class
     	
-    	
-    	d.perform();
     	try {
-	    	d.finish();
+    		LinkedList<String> list = new LinkedList<String>();
+    		list.add("number");
+	    	d.groupByFields("mydata", "newdata2", list);
+	    	d.act();
 	    	timeTillFinish = System.currentTimeMillis();
 	    	System.out.println("Time taken till finish() : " + (timeTillFinish - time1)); 
 	    	long n = d.getNoOfSplits();
 	    	for (long i = 1; i <= n; i++) {
-		    	DataPartition dp = d.getDataPartition("newdata", i);
+		    	DataPartition dp = d.getDataPartition("newdata2", i);
+		    	// DataPartition dp = d.getDataPartition("mydata", i);
 		    	System.out.println("");
 		    	System.out.print("dp-" + i + " : ");
 		    	for (DataElement e : dp) {
@@ -254,7 +231,7 @@ public class Test8_Data implements Serializable {
 	    	}
 	    	System.out.println("");
 	    	d.deleteData("mydata");
-	    	d.deleteData("newdata");
+	    	d.deleteData("newdata2");
 	    	d.close();
 	    	meta.close();
     	} catch (Throwable e) {

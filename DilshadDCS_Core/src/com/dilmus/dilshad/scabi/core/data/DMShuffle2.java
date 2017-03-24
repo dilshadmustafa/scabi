@@ -103,7 +103,7 @@ public class DMShuffle2 implements IShuffle2 {
 		m_object = obj;
 	}
 
-	public long groupByValues(DataElement e, DataContext c) throws IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, DScabiException {
+	public long groupToPartition(DataElement e, DataContext c) throws IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, DScabiException {
 
 		Object ret = m_method.invoke(m_object, e, c);
 		

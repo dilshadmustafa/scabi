@@ -82,6 +82,7 @@ import java.util.Iterator;
 
 import com.dilmus.dilshad.scabi.common.DMCounter;
 import com.dilmus.dilshad.scabi.common.DScabiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leansoft.bigqueue.IBigArray;
 
 /**
@@ -97,6 +98,8 @@ public class DataPartitionIterator implements Iterator<DataElement> {
 
 	private DMCounter m_gcCounter = new DMCounter();
 	
+	private ObjectMapper m_objectMapper = null;	
+	
 	private void gc() {
 		m_gcCounter.inc();
 		if (m_gcCounter.value() >= 100000) {
@@ -109,6 +112,8 @@ public class DataPartitionIterator implements Iterator<DataElement> {
 		m_dataPartition = a; 
 		m_bigArray = a.getBigArray();
 		m_lastIndex = a.getLastIndex();
+		
+		m_objectMapper = a.getJsonParser();
 	}
 	
     public boolean hasNext() {
@@ -134,6 +139,8 @@ public class DataPartitionIterator implements Iterator<DataElement> {
 				m_dataPartition.setOperationTypeGet();
 				byte[] bytea = m_bigArray.get(m_currentIndex + 1);
 				DataElement e = new DataElement(bytea);
+				e.setJsonParser(m_objectMapper);
+				
 				m_currentIndex++;
 				return e;
 			} catch (Exception ex) {

@@ -94,14 +94,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class DataElement {
 
-	// TODO later see from where to get m_objectMapper
-	private static ObjectMapper m_objectMapper = new ObjectMapper();
+	// cw private static ObjectMapper m_objectMapper = new ObjectMapper();
+	private ObjectMapper m_objectMapper = null;
+	
 	private byte m_bytea[] = null;
 	private Dson m_dson = null;
 	private Dson m_fieldsDson = null;
 	private final static String M_DEFAULT_ENCODING = "UTF-8";
 	
 	private static DMCounter m_gcCounter = new DMCounter();
+	
+	private boolean m_isFieldsDsonSet = false;
+	
+	public int setJsonParser(ObjectMapper objectMapper) {
+		m_objectMapper = objectMapper;
+		return 0;
+	}
 	
 	// Note this gc() is static, class level, as there are few objects created at object level per DataElement object level by various get...(...) methods below
 	// for example by multiple invocations of getField(String fieldName), multiple String objects will be created
@@ -135,6 +143,7 @@ public class DataElement {
 		if (null == bytea)
 			throw new DScabiException("Byte array is null", "DET.SET.1");
 		m_bytea = bytea;
+		m_isFieldsDsonSet = false;
 		return 0;
 	}
 	
@@ -208,41 +217,56 @@ public class DataElement {
 	// get...Field(...) methods for fields
 	
 	public String getField(String fieldName) throws IOException {
-		// Further analysis needed. Do we need this here? gc(); // gc() call is needed because if this get...Field() method is called many times, many String objects will be created 
-		String s = new String(m_bytea, M_DEFAULT_ENCODING);
-		m_fieldsDson.set(s);
+		if (false == m_isFieldsDsonSet) {
+			String s = new String(m_bytea, M_DEFAULT_ENCODING);
+			m_fieldsDson.set(s);
+			
+			m_isFieldsDsonSet = true;
+		}
 		String s2 = m_fieldsDson.getString(fieldName);
 		return s2;
 	}
 
 	public int getIntField(String fieldName) throws IOException {
-		// Further analysis needed. Do we need this here? gc(); // gc() call is needed because if this get...Field() method is called many times, many String objects will be created 
-		String s = new String(m_bytea, M_DEFAULT_ENCODING);
-		m_fieldsDson.set(s);
+		if (false == m_isFieldsDsonSet) {
+			String s = new String(m_bytea, M_DEFAULT_ENCODING);
+			m_fieldsDson.set(s);
+		
+			m_isFieldsDsonSet = true;
+		}
 		int s2 = m_fieldsDson.getInt(fieldName);
 		return s2;
 	}
 
 	public long getLongField(String fieldName) throws IOException {
-		// Further analysis needed. Do we need this here? gc(); // gc() call is needed because if this get...Field() method is called many times, many String objects will be created 
-		String s = new String(m_bytea, M_DEFAULT_ENCODING);
-		m_fieldsDson.set(s);
+		if (false == m_isFieldsDsonSet) {
+			String s = new String(m_bytea, M_DEFAULT_ENCODING);
+			m_fieldsDson.set(s);
+		
+			m_isFieldsDsonSet = true;
+		}
 		long s2 = m_fieldsDson.getLong(fieldName);
 		return s2;
 	}
 
 	public double getDoubleField(String fieldName) throws IOException {
-		// Further analysis needed. Do we need this here? gc(); // gc() call is needed because if this get...Field() method is called many times, many String objects will be created 
-		String s = new String(m_bytea, M_DEFAULT_ENCODING);
-		m_fieldsDson.set(s);
+		if (false == m_isFieldsDsonSet) {
+			String s = new String(m_bytea, M_DEFAULT_ENCODING);
+			m_fieldsDson.set(s);
+		
+			m_isFieldsDsonSet = true;
+		}
 		double s2 = m_fieldsDson.getDouble(fieldName);
 		return s2;
 	}
 
 	public boolean getBooleanField(String fieldName) throws IOException {
-		// Further analysis needed. Do we need this here? gc(); // gc() call is needed because if this get...Field() method is called many times, many String objects will be created 
-		String s = new String(m_bytea, M_DEFAULT_ENCODING);
-		m_fieldsDson.set(s);
+		if (false == m_isFieldsDsonSet) {
+			String s = new String(m_bytea, M_DEFAULT_ENCODING);
+			m_fieldsDson.set(s);
+		
+			m_isFieldsDsonSet = true;
+		}
 		boolean s2 = m_fieldsDson.getBoolean(fieldName);
 		return s2;
 	}
