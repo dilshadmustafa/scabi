@@ -242,6 +242,20 @@ or for SeaweedFS:
 4. In Eclipse, import the folder /home/(username)/myworkspace/scabi using File->Import->Existing Projects into Workspace.		
 5. Do steps (18) to (22).
 
+**RUNNING SEAWEEDFS - QUICK START**
+
+1. Download SeaweedFS from https://github.com/chrislusf/seaweedfs/releases
+
+2. Start SeaweedFS Master, Volume and Filer servers, run commands,
+
+		cd /home/(username)/seaweed
+	
+		./weed master -idleTimeout=1000000 -volumeSizeLimitMB=350
+	
+		./weed volume -idleTimeout=1000000 -max=10000 -mserver="localhost:9333" -dir="/home/(username)/mystorage/mystorage1"
+	
+		./weed filer -dir="/home/(username)/mystorage/forfiler"
+
 Copyright
 -------------------
 
