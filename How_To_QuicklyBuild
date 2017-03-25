@@ -1,20 +1,86 @@
-HOW TO QUICKLY BUILD SCABI
+HOW TO QUICKLY BUILD SCABI USING MAVEN
 
 Initial Setup
 
 1. Install Oracle Java 8 Java SE 1.8.0_66
 2. Install Git
-3. Install Maven
-4. Install Eclipse MARS or later
-5. Create folder /home/(username)/scabi
-6. cd to scabi folder
-7. Run command
-	git clone https://www.github.com/dilshadmustafa/scabi.git
-	git clone https://www.github.com/dilshadmustafa/StorageHandler.git
-	git clone https://www.github.com/dilshadmustafa/bigqueue.git
-8. Inside the Scabi project, folder named "Download", extract the file  scabi.tar.gz and copy all the jar files from the folder named "dependency-jars". Or alternatively, use any of the Maven pom.xml file inside DilshadDCS_Core or DilshadDCS_CS or DilshadDCS_MS to get all the dependency jar files.
-9. In Eclipse, import the following folders DilshadDCS_Core, DilshadDCS_CS, DilshadDCS_MS, Dilshad_StorageHandler and "Test" as **separate** projects using File->Import->Existing Projects into Workspace.
-10. In Eclipse, create new Java project and point to existing Java source code in bigqueue folder.
+3. Install Maven 3.0 or later
+4. Create folder /home/(username)/myworkspace 
+Replace **(username)** with your user name in all the steps.
+5. In terminal window, cd to /home/(username)/myworkspace folder
+6. Run commands,
+
+		git clone https://www.github.com/dilshadmustafa/scabi.git
+		git clone https://www.github.com/dilshadmustafa/StorageHandler.git
+		git clone https://www.github.com/dilshadmustafa/bigqueue.git
+7. cd to /home/(username)/myworkspace/scabi folder.
+8. Run command,
+
+		mvn package
+		
+		File scabi-0.2.3.jar will be created inside /home/(username)/myworkspace/scabi/target
+		
+		All the dependency jars will be copied to /home/(username)/myworkspace/scabi/target/dependency-jars
+9. In a separate terminal, start MongoDB or Cassandra server,
+
+		sudo mongod --dbpath /home/(username)/data/db
+10. In a separate terminal, to run Meta Service, run commands,
+
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. com.dilmus.dilshad.scabi.ms.MetaServer
+
+11. In another terminal, to run Compute Service, run commands,
+
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000
+
+		Or to enable debugging details, run commands,
+		
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000 5 debug 
+		
+		For SeaweedFS, run commands,
+
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000
+
+		Or to enable debugging details, run commands,
+		
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000 5 debug 
+12. In another terminal, to run example Driver code for Data-driven framework, run commands,
+
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" Test8_Data2_operate_lambda
+		
+		For SeaweedFS, run commands,
+		
+		cd /home/(username)/myworkspace/scabi/target
+		java -cp scabi-0.2.3.jar:"../dependency-jars/*":"../*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" Test8_Data2_operate_lambda
+
+13. Storage directory (-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage") or Storage system (S3-interface Storage system, SeaweedFS, etc. e.g. -Dscabi.seaweedfs.config="localhost-8888") should be set the same value for all Compute Service nodes (DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. Test->Test8_Data2_operate_lambda.java) as the storage system forms the Data Ring.
+
+HOW TO QUICKLY BUILD SCABI USING ECLIPSE
+
+Initial Setup
+
+1. Install Oracle Java 8 Java SE 1.8.0_66
+2. Install Git
+3. Install Maven 3.0 or later
+4. Install Eclipse Mars or later
+5. Create folder /home/(username)/myworkspace
+Replace **(username)** with your user name in all the steps.
+6. In terminal window, cd to /home/(username)/myworkspace folder
+7. Run commands,
+
+		git clone https://www.github.com/dilshadmustafa/scabi.git
+		git clone https://www.github.com/dilshadmustafa/StorageHandler.git
+		git clone https://www.github.com/dilshadmustafa/bigqueue.git
+8. Inside /home/(username)/myworkspace/scabi/Download folder, extract the file scabi.tar.gz and copy all the jar files from the folder named "dependency-jars". 
+
+	Or alternatively, use /home/(username)/myworkspace/scabi/pom.xml file to get all the dependency jar files.
+9. In Eclipse, import the following folders /home/(username)/myworkspace/scabi/DilshadDCS_Core, /home/(username)/myworkspace/scabi/DilshadDCS_CS, /home/(username)/myworkspace/scabi/DilshadDCS_MS, /home/(username)/myworkspace/StorageHandler/Dilshad_StorageHandler and /home/(username)/myworkspace/scabi/Test as **separate** projects using File->Import->Existing Projects into Workspace.
+10. In Eclipse, create new Java project and point to existing Java source code in /home/(username)/myworkspace/bigqueue/src/main/java folder.
 11. In Eclipse, set dependency for DilshadDCS_Core project by right-click->Properties->Java Build Path->Projects->add Dilshad_StorageHandler and bigqueue.
 12. In Eclipse, set dependency for DilshadDCS_CS project by right-click->Properties->Java Build Path->Projects->add DilshadDCS_Core, Dilshad_StorageHandler and bigqueue.
 13. In Eclipse, set dependency for DilshadDCS_MS project by right-click->Properties->Java Build Path->Projects->add DilshadDCS_Core.
@@ -40,10 +106,39 @@ or for SeaweedFS:
 	-Dscabi.storage.provider="seaweedfs"
 	-Dscabi.seaweedfs.config="localhost-8888".
 
-20. Storage directory (-Dscabi.dfs.mount.dir) or storage system (S3-interface, SeaweedFS, etc. e.g. -Dscabi.seaweedfs.config="localhost-8888") should be the same for all compute service nodes (DilshadDCS_CS->ComputerServer_D2.java) and driver code (e.g. Test->Test8_Data2_operate_lambda.java) as the storage system forms the Data Ring.
+20. Storage directory (-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage") or Storage system (S3-interface Storage system, SeaweedFS, etc. e.g. -Dscabi.seaweedfs.config="localhost-8888") should be set the same value for all Compute Service nodes (DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. Test->Test8_Data2_operate_lambda.java) as the storage system forms the Data Ring.
 
-21. Run MongoDB or Cassandra server.
+21. In a separate terminal, start MongoDB or Cassandra server,
 
-22. In Eclipse, right-click on files, DilshadDCS_MS->MetaServer.java, DilshadDCS_CS->ComputerServer_D2.java (compute service), Test->Test8_Data2_operate_lambda.java (driver code example) and click Run As->Java Aplication.
+		sudo mongod --dbpath /home/(username)/data/db
+
+22. In Eclipse, right-click on files, DilshadDCS_MS->MetaServer.java, DilshadDCS_CS->ComputerServer_D2.java (Compute Service), Test->Test8_Data2_operate_lambda.java (Driver code example) and click Run As->Java Application.
+
+Alternate method 1 - Import Maven project into Eclipse
+
+1. Do steps (1) to (7) as given above in "HOW TO QUICKLY BUILD SCABI USING ECLIPSE".
+2. In Eclipse, File->Import->Import from Existing Maven project and choose file /home/(username)/myworkspace/scabi/pom.xml. You need to have Eclipse Maven plugin installed.
+3. Do steps (18) to (22).
+
+Alternate method 2 - Generate Eclipse project using Maven
+
+1. Do steps (1) to (7) as given above in "HOW TO QUICKLY BUILD SCABI USING ECLIPSE".
+2. cd to /home/(username)/myworkspace/scabi folder.
+3. Run command,
+		
+		mvn -npr eclipse:eclipse
+
+		You may edit /home/(username)/myworkspace/scabi/pom.xml to explicitly specify maven eclipse plugin version if really needed as below:
+		<plugin>
+		   <groupId>org.apache.maven.plugins</groupId>
+		   <artifactId>maven-eclipse-plugin</artifactId>
+		   <version>put eclipse plugin version here</version>
+		   <configuration>
+			...
+4. In Eclipse, import the folder /home/(username)/myworkspace/scabi using File->Import->Existing Projects into Workspace.		
+5. Do steps (18) to (22).
+
+
+
 
 

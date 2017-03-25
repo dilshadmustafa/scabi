@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.dilmus.dilshad</groupId>
-  <artifactId>scabi_compute</artifactId>
-  <version>0.2.0</version>
+  <artifactId>scabi</artifactId>
+  <version>0.2.3</version>
   <packaging>jar</packaging>
 
-  <name>scabi_compute</name>
+  <name>scabi</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,7 +52,7 @@
         <artifactId>mongodb-driver</artifactId>
         <version>3.2.1</version>
     </dependency>
-	
+    
 	<!-- http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
 	<dependency>
 	    <groupId>com.fasterxml.jackson.core</groupId>
@@ -72,7 +72,7 @@
 	    <groupId>com.fasterxml.jackson.core</groupId>
 	    <artifactId>jackson-databind</artifactId>
 	    <version>2.7.4</version>
-	</dependency>	
+	</dependency>
 	
 	<dependency>
 		<groupId>org.slf4j</groupId>
@@ -131,7 +131,7 @@
 	    <groupId>org.apache.ftpserver</groupId>
     	<artifactId>ftpserver-core</artifactId>
     	<version>1.0.6</version>
-	</dependency>	
+	</dependency>
 	
 	<!-- used by bigqueue, bigarray -->
 	<!-- https://mvnrepository.com/artifact/log4j/log4j -->
@@ -145,7 +145,32 @@
   
 	<build>
 		<plugins>
-		
+
+	      <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>build-helper-maven-plugin</artifactId>
+		<version>3.0.0</version>
+		<executions>
+		  <execution>
+		    <id>add-source</id>
+		    <phase>generate-sources</phase>
+		    <goals>
+		      <goal>add-source</goal>
+		    </goals>
+		    <configuration>
+		      <sources>
+			<source>../StorageHandler/Dilshad_StorageHandler/src</source>
+			<source>../bigqueue/src/main/java</source>
+			<source>DilshadDCS_Core/src</source>
+			<source>DilshadDCS_CS/src</source>
+			<source>DilshadDCS_MS/src</source>
+			<source>Test/src</source>
+		      </sources>
+		    </configuration>
+		  </execution>
+		</executions>
+	      </plugin>		
+
 		    <plugin>
 		        <artifactId>maven-compiler-plugin</artifactId>
 		        <configuration>
@@ -161,7 +186,6 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>com.dilmus.dilshad.scabi.cs.ComputeServer</mainClass>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>
 					</archive>
