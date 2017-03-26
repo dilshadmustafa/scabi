@@ -209,10 +209,11 @@ Replace **(username)** with your user name in all the steps.
 
 		/home/(username)/myworkspace/scabi/DilshadDCS_Core, 
 		/home/(username)/myworkspace/scabi/DilshadDCS_CS,
-		 /home/(username)/myworkspace/scabi/DilshadDCS_MS, 
-		 /home/(username)/myworkspace/StorageHandler/Dilshad_StorageHandler 
-		 /home/(username)/myworkspace/scabi/Test 
+		/home/(username)/myworkspace/scabi/DilshadDCS_MS, 
+		/home/(username)/myworkspace/StorageHandler/Dilshad_StorageHandler 
+		/home/(username)/myworkspace/scabi/Test 
 as **separate** projects using File->Import->Existing Projects into Workspace.
+
 10. In Eclipse, create new Java project and point to existing Java source code in /home/(username)/myworkspace/bigqueue/src/main/java folder.
 11. In Eclipse, set dependency for DilshadDCS_Core project by right-click->Properties->Java Build Path->Projects->add Dilshad_StorageHandler and bigqueue.
 12. In Eclipse, set dependency for DilshadDCS_CS project by right-click->Properties->Java Build Path->Projects->add DilshadDCS_Core, Dilshad_StorageHandler and bigqueue.
