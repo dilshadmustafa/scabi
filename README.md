@@ -178,9 +178,9 @@ Replace **(username)** with your user name in all the steps.
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" Test8_Data2_operate_lambda
 
-13. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
+13. Storage provider configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage provider location for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage provider configuration and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage provider only forms the Data Ring.
 
-	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage system but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
+	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage provider but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
 
 #### <i class="icon-file"></i> HOW TO QUICKLY BUILD SCABI USING ECLIPSE
 
@@ -230,44 +230,49 @@ Replace **(username)** with your user name in all the steps.
 15. In Eclipse, set dependency for bigqueue project by right-click->Properties->Java Build Path->Projects->add Dilshad_StorageHandler.
 16. In Eclipse, add jar files for DilshadDCS_Core, DilshadDCS_CS, DilshadDCS_MS and Test project by right-click->Properties->Java Build Path->Libraries->add the jar files obtained in step (8).
 17. In Eclipse, add log4j-1.2.17.jar file for bigqueue project by right-click->Properties->Java Build Path->Libraries->add log4j-1.2.17.jar file.
-18. In Eclipse, set Java VM arguments by right-click on file DilshadDCS_CS->ComputerServer_D2.java->Run/Debug Settings->Arguments->VM arguments,
+18. In Eclipse, set Program arguments and Java VM arguments by right-click on file DilshadDCS_CS->ComputerServer_D2.java->Run/Debug Settings->Arguments,
 		
-		-Dscabi.local.dir="/home/(username)/testdata/server1_local"
-		-Dscabi.storage.provider="dfs"
-		-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage"
-
+		Set Program arguments as below:
+		
+			5001 localhost 5000 5 debug
+		
 		Create folders /home/(username)/testdata/server1_local, /home/(username)/testdata/storage
 
 		Replace (username) with your user name.
 		
+		Set VM arguments:
+			
+			-Dscabi.local.dir="/home/(username)/testdata/server1_local"
+			-Dscabi.storage.provider="dfs"
+			-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage"
+
 		or to use SeaweedFS as Storage provider: 
 		
-		-Dscabi.local.dir="/home/(username)/testdata/server1_local"
-		-Dscabi.storage.provider="seaweedfs"
-		-Dscabi.seaweedfs.config="localhost-8888"
-		
-		Set Program Arguments as below:
-		5001 localhost 5000 5 debug
+			-Dscabi.local.dir="/home/(username)/testdata/server1_local"
+			-Dscabi.storage.provider="seaweedfs"
+			-Dscabi.seaweedfs.config="localhost-8888"
 	
 19. In Eclipse, set Java VM arguments by right-click on file Test->Test8_Data2_operate_lambda.java (e.g.)->Run/Debug Settings->Arguments->VM arguments, 
 	
-		-Dscabi.local.dir="/home/(username)/testdata/driver_local"
-		-Dscabi.storage.provider="dfs"
-		-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" 
-
 		Create folders /home/(username)/testdata/driver_local, /home/(username)/testdata/storage
 
 		Replace (username) with your user name.
 		
+		Set VM arguments:
+			
+			-Dscabi.local.dir="/home/(username)/testdata/driver_local"
+			-Dscabi.storage.provider="dfs"
+			-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" 
+
 		or to use SeaweedFS as Storage provider: 
 		
-		-Dscabi.local.dir="/home/(username)/testdata/driver_local"
-		-Dscabi.storage.provider="seaweedfs"
-		-Dscabi.seaweedfs.config="localhost-8888"
+			-Dscabi.local.dir="/home/(username)/testdata/driver_local"
+			-Dscabi.storage.provider="seaweedfs"
+			-Dscabi.seaweedfs.config="localhost-8888"
 
-20. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
+20. Storage provider configuration as in the above arguments (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage provider location for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage provider configuration and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage provider only forms the Data Ring.
 
-	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage system but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
+	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage provider but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
 
 21. In a separate terminal, start MongoDB or Cassandra server,
 
