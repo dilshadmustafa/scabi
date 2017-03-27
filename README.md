@@ -143,6 +143,10 @@ Replace **(username)** with your user name in all the steps.
 
 11. In another terminal, to run Compute Service, run commands,
 
+		Create folders /home/(username)/testdata/server1_local, /home/(username)/testdata/storage
+
+		Replace (username) with your user name.
+		
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000
 
@@ -151,7 +155,7 @@ Replace **(username)** with your user name in all the steps.
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000 5 debug 
 		
-		For SeaweedFS, run commands,
+		To use SeaweedFS as Storage provider, run commands,
 
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000
@@ -162,10 +166,14 @@ Replace **(username)** with your user name in all the steps.
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/server1_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" com.dilmus.dilshad.scabi.cs.D2.ComputeServer_D2 5001 localhost 5000 5 debug 
 12. In another terminal, to run example Driver code for Data-driven framework, run commands,
 
+		Create folders /home/(username)/testdata/driver_local, /home/(username)/testdata/storage
+
+		Replace (username) with your user name.
+		
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="dfs" -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" Test8_Data2_operate_lambda
 		
-		For SeaweedFS, run commands,
+		To use SeaweedFS as Storage provider, run commands,
 		
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" Test8_Data2_operate_lambda
@@ -212,7 +220,7 @@ Replace **(username)** with your user name in all the steps.
 		/home/(username)/myworkspace/scabi/DilshadDCS_MS, 
 		/home/(username)/myworkspace/StorageHandler/Dilshad_StorageHandler 
 		/home/(username)/myworkspace/scabi/Test 
-as **separate** projects using File->Import->Existing Projects into Workspace.
+	as **separate** projects using File->Import->Existing Projects into Workspace.
 
 10. In Eclipse, create new Java project and point to existing Java source code in /home/(username)/myworkspace/bigqueue/src/main/java folder.
 11. In Eclipse, set dependency for DilshadDCS_Core project by right-click->Properties->Java Build Path->Projects->add Dilshad_StorageHandler and bigqueue.
@@ -226,9 +234,13 @@ as **separate** projects using File->Import->Existing Projects into Workspace.
 		
 		-Dscabi.local.dir="/home/(username)/testdata/server1_local"
 		-Dscabi.storage.provider="dfs"
-		-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage".
+		-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage"
 
-		or for SeaweedFS: 
+		Create folders /home/(username)/testdata/server1_local, /home/(username)/testdata/storage
+
+		Replace (username) with your user name.
+		
+		or to use SeaweedFS as Storage provider: 
 		
 		-Dscabi.local.dir="/home/(username)/testdata/server1_local"
 		-Dscabi.storage.provider="seaweedfs"
@@ -239,8 +251,12 @@ as **separate** projects using File->Import->Existing Projects into Workspace.
 		-Dscabi.local.dir="/home/(username)/testdata/driver_local"
 		-Dscabi.storage.provider="dfs"
 		-Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" 
+
+		Create folders /home/(username)/testdata/driver_local, /home/(username)/testdata/storage
+
+		Replace (username) with your user name.
 		
-		or for SeaweedFS: 
+		or to use SeaweedFS as Storage provider: 
 		
 		-Dscabi.local.dir="/home/(username)/testdata/driver_local"
 		-Dscabi.storage.provider="seaweedfs"
@@ -266,7 +282,7 @@ as **separate** projects using File->Import->Existing Projects into Workspace.
 
 1. Do steps (1) to (7) as given above in "HOW TO QUICKLY BUILD SCABI USING ECLIPSE".
 2. cd to /home/(username)/myworkspace/scabi folder.
-3. In terminal, from /home/(username)/myworkspace/scabi folder, run command,
+3. In terminal window, from /home/(username)/myworkspace/scabi folder, run command,
 		
 		mvn -npr eclipse:eclipse
 
@@ -282,13 +298,17 @@ as **separate** projects using File->Import->Existing Projects into Workspace.
 
 **RUNNING SEAWEEDFS - QUICK START**
 
-1. Download SeaweedFS from https://github.com/chrislusf/seaweedfs/releases
+1. Download SeaweedFS from https://github.com/chrislusf/seaweedfs/releases and extract to /home/(username)/seaweed folder.
 
-2. Start SeaweedFS Master, Volume and Filer servers, run commands,
+2. To start SeaweedFS Master, Volume and Filer servers, run commands,
 
 		cd /home/(username)/seaweed
 	
-		./weed master -idleTimeout=1000000 -volumeSizeLimitMB=350
+		Create folders /home/(username)/mystorage/mystorage1, /home/(username)/mystorage/forfiler
+
+		Replace (username) with your user name.
+		
+		./weed master -volumeSizeLimitMB=350
 	
 		./weed volume -idleTimeout=1000000 -max=10000 -mserver="localhost:9333" -dir="/home/(username)/mystorage/mystorage1"
 	
