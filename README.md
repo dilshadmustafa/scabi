@@ -178,7 +178,7 @@ Replace **(username)** with your user name in all the steps.
 		cd /home/(username)/myworkspace/scabi/target
 		java -cp scabi-0.2.3.jar:"dependency-jars/*":. -Dscabi.local.dir="/home/(username)/testdata/driver_local" -Dscabi.storage.provider="seaweedfs" -Dscabi.seaweedfs.config="localhost-8888" Test8_Data2_operate_lambda
 
-13. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
+13. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
 
 	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage system but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
 
@@ -244,7 +244,10 @@ Replace **(username)** with your user name in all the steps.
 		
 		-Dscabi.local.dir="/home/(username)/testdata/server1_local"
 		-Dscabi.storage.provider="seaweedfs"
-		-Dscabi.seaweedfs.config="localhost-8888".
+		-Dscabi.seaweedfs.config="localhost-8888"
+		
+		Set Program Arguments as below:
+		5001 localhost 5000 5 debug
 	
 19. In Eclipse, set Java VM arguments by right-click on file Test->Test8_Data2_operate_lambda.java (e.g.)->Run/Debug Settings->Arguments->VM arguments, 
 	
@@ -260,9 +263,9 @@ Replace **(username)** with your user name in all the steps.
 		
 		-Dscabi.local.dir="/home/(username)/testdata/driver_local"
 		-Dscabi.storage.provider="seaweedfs"
-		-Dscabi.seaweedfs.config="localhost-8888".
+		-Dscabi.seaweedfs.config="localhost-8888"
 
-20. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
+20. Storage system configuration as in the above run commands (S3-interface Storage system, SeaweedFS, etc.) for example -Dscabi.seaweedfs.config="localhost-8888" or Storage directory for example -Dscabi.dfs.mount.dir="/home/(username)/testdata/storage" should point to the same Storage system and location for all Compute Service nodes (scabi folder->DilshadDCS_CS->ComputerServer_D2.java) and Driver code (e.g. scabi folder->Test->Test8_Data2_operate_lambda.java) as the same Storage system only forms the Data Ring.
 
 	IStorageHandler.java interface provides a single view of this Data Ring formed by the Storage system but this interface's actual implementation class may actually use multiple Storage systems of same or different type. For example multiple S3-interface Storage systems or a mix of multiple different types of Storage systems each accessed through different ways (S3, HTTP, REST, APIs) may be used by the actual implementation class of IStorageHandler.java interface.
 
