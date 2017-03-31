@@ -215,6 +215,9 @@ public class DMExecute {
 				throw new DScabiException("CommandId is not 1 for first ConfigNode entry in Json", "EXE.DEFD.1");
 			}
 			
+			String isDataInitiatorProvided = djson.getString("IsDataInitiatorProvided");
+			log.debug("dataExecuteForDataUnit() isDataInitiatorProvided : {}", isDataInitiatorProvided);
+			
 			long retryNumber = dj.getLongOf("RetryNumber");
 			log.debug("dataExecuteForDataUnit() retryNumber : {}", retryNumber);
 			long maxRetry = dj.getLongOf("MaxRetry");
@@ -314,10 +317,6 @@ public class DMExecute {
 		
 			String configNodeType = djson.getString("ConfigNodeType");
 			log.debug("dataExecuteForDataUnit() ConfigNodeType : {}", configNodeType);
-			String dataId = djson.getString("DataId");
-			log.debug("dataExecuteForDataUnit() DataId : {}", dataId);
-			String partitionId = dataId + "_" + dj.getCU() + "_" + appId.replace("_", "");
-			log.debug("dataExecuteForDataUnit() PartitionId : {}", partitionId);
 			String splitAppId = dj.getCU() + "_" + appId.replace("_", "");
 			log.debug("dataExecuteForDataUnit() splitAppId : {}", splitAppId);
 			
@@ -326,6 +325,17 @@ public class DMExecute {
 			// Testing purpose dp.append(s);
 
 			synchronized(ComputeServer_D2.m_splitAppIdIStorageHandlerMap) { ComputeServer_D2.m_splitAppIdIStorageHandlerMap.put(splitAppId, storageHandler); }
+			
+			if (isDataInitiatorProvided.equalsIgnoreCase("false")) {
+				result = DMJson.ok();
+				synchronized(ComputeServer_D2.m_taskIdResultMap) { ComputeServer_D2.m_taskIdResultMap.put(taskId, result); }
+				return DMJson.ok();
+			}
+			
+			String dataId = djson.getString("DataId");
+			log.debug("dataExecuteForDataUnit() DataId : {}", dataId);
+			String partitionId = dataId + "_" + dj.getCU() + "_" + appId.replace("_", "");
+			log.debug("dataExecuteForDataUnit() PartitionId : {}", partitionId);
 			
 			if (retryNumber > 0) {
 				/* cw

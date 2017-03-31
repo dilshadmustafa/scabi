@@ -243,7 +243,6 @@ public class Data implements Runnable {
 	private long m_stageStartCommandId = 1;
 	
 	private long m_numOfDataUnitsToCreate = 0;
-	private boolean m_isDataInitiatorProvided = true;
 	
 	private String createStorageAppIdDirIfAbsent(String storageDirPath, String appId, IStorageHandler storageHandler) throws IOException {
 		
@@ -757,7 +756,6 @@ public class Data implements Runnable {
 		m_configNodeType = 0;
 		
 		m_numOfDataUnitsToCreate = 0;
-		m_isDataInitiatorProvided = true;
 		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
@@ -817,7 +815,6 @@ public class Data implements Runnable {
 		m_partitionerObject = null;
 		
 		m_numOfDataUnitsToCreate = 0;
-		m_isDataInitiatorProvided = true;
 		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
@@ -877,7 +874,6 @@ public class Data implements Runnable {
 		m_partitionerObject = partitionerObj;
 		
 		m_numOfDataUnitsToCreate = 0;
-		m_isDataInitiatorProvided = true;
 		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
@@ -937,7 +933,6 @@ public class Data implements Runnable {
 		m_partitionerObject = null;
 
 		m_numOfDataUnitsToCreate = numOfDataUnitsToCreate;
-		m_isDataInitiatorProvided = false;
 		
 		m_startCommandId = 1;
 		m_endCommandId = 1;
@@ -1516,15 +1511,15 @@ public class Data implements Runnable {
 			
 			String s[] = cmdIds.split(",");
 			m_startCommandId = Long.parseLong(s[0]);
+			long sCommandId = m_startCommandId; // because finish() changes m_startCommandId
 			
 			// perform(), performAgain() calculates m_endCommandId based on m_commandID
 			m_commandID = Long.parseLong(s[1]) + 1; 
 			log.debug("act() m_startCommandId : {}, m_commandID : {}", m_startCommandId, m_commandID);
-			
-			log.debug("act() Executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, m_startCommandId, m_commandID - 1);
+			log.debug("act() Executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, sCommandId, m_commandID - 1);
 			perform();
 			finish();
-			log.debug("act() Finished executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, m_startCommandId, m_commandID - 1);			
+			log.debug("act() Finished executing Stage : {}, Start CommandId : {}, End CommandID : {}", i, sCommandId, m_commandID - 1);			
 		}
 		
 		m_startStage = m_stageCount;

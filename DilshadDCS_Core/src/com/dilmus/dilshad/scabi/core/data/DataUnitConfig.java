@@ -155,9 +155,7 @@ public class DataUnitConfig implements IConfig {
 	
 	private String m_appName = null;
 	private String m_appId = null;
-	
-	private boolean m_isDataInitiatorProvided = true;
-	
+		
 	public int setAppName(String appName) {
 		m_appName = appName;
 		return 0;
@@ -426,7 +424,6 @@ public class DataUnitConfig implements IConfig {
 		m_appName = DMJson.empty();
 		m_appId = DMJson.empty();
 		
-		m_isDataInitiatorProvided = true;
 	}
 	
 	public DataUnitConfig(Class<?> cls) throws IOException {
@@ -451,7 +448,6 @@ public class DataUnitConfig implements IConfig {
 		m_appName = DMJson.empty();
 		m_appId = DMJson.empty();
 		
-		m_isDataInitiatorProvided = true;
 	}
 
 	public DataUnitConfig() throws IOException {
@@ -473,7 +469,6 @@ public class DataUnitConfig implements IConfig {
 		m_appName = DMJson.empty();
 		m_appId = DMJson.empty();
 		
-		m_isDataInitiatorProvided = false;
 	}
 	
 	public boolean isJarFilePathListSet() {
