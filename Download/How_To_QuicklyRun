@@ -5,6 +5,13 @@ How to run:
 3. Create data folder for MongoDB, /home/<username>/data/db
 4. Start MongoDB server, sudo mongod --dbpath /home/<username>/data/db
 5. Download scabi.tar.gz from Download folder in Scabi's GitHub project
+
+Note:
+		
+Data-driven framework is available from v0.2.3 
+		
+Please follow the steps in 'How to quickly build Scabi using Maven' section to build Scabi v0.2.3.
+
 6. Unzip scabi.tar.gz to a folder /home/<username>/scabi
 -------------------------------------------------
 7. cd /home/<username>/scabi

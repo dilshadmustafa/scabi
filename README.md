@@ -11,14 +11,14 @@ Welcome to Scabi
 Introduction
 -------------
 
-**Scabi** (<b>Sca</b>le-out <b>bi</b>g-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning and Map/Reduce in pure Java. With Scabi's Data-driven cluster, create Ensemble Machine Learning models for super massive datasets, implement iterative and complex Map/Reduce and parallel algorithms and configure Scabi's Data Ring to use any storage: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
+**Scabi** (<b>Sca</b>le-out <b>bi</b>g-data) is a simple, light-weight cluster computing and storage framework for Big Data processing, Ensemble Machine Learning and Map/Reduce in pure Java. With Scabi's Data-driven cluster, create Ensemble Machine Learning models for super massive datasets, implement iterative and complex Map/Reduce and parallel algorithms and configure Scabi's Data Ring to use any storage: Scality, RedHat CephFS, OpenIO, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc. 
 
 > **Objectives:**
 
 > - Process Petabytes to Exabytes+ of data using billions of massively parallel Scabi Data Units (DU).
 > - Create Ensemble Machine Learning models for super massive datasets with algorithm and ML library of your choice.
 > - Use Data-driven and Compute-driven framework to implement iterative and complex Map/Reduce and parallel algorithms at Web Scale.
-> - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
+> - Configure Scabi's Data Ring to use storage of your choice: Scality, RedHat CephFS, OpenIO, OrangeFS, RedHat Gluster, SeaweedFS, Minio, IBM Cleversafe, etc.
 
 ## Cluster Computing Architectures ##
 
@@ -29,7 +29,7 @@ Introduction
 > - Converged System can provide the advantage of Data Locality in best case scenario when computing is done on the same node containing the data to be processed.
 > - The disadvantage is when we start storing previous months PetaBytes+ scale datasets, the storage requirements will soon become out of proportion (often exponentially) compared to computing    requirements. This will require addition of new nodes.
 
--------------
+
 
 > **DIVERGED SYSTEM**
 
@@ -55,24 +55,36 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 1. Install Oracle Java 8 Java SE 1.8.0_66
 2. Install MongoDB v3.2.1 with default settings, without enabling Login password and security certificate
 3. Create data folder for MongoDB, /home/(username)/data/db
-4. Start MongoDB server, sudo mongod --dbpath /home/(username)/data/db
-5. Download scabi.tar.gz from Download folder in Scabi's GitHub project
+4. Start MongoDB server, 
+
+		sudo mongod --dbpath /home/(username)/data/db
+5. Download scabi.tar.gz from Download folder in Scabi's GitHub project. 
+
+		Note:
+		
+		Data-driven framework is available from v0.2.3 
+		
+		Please follow the steps below in 'How to quickly build Scabi using Maven' section to build Scabi v0.2.3.
 6. Unzip scabi.tar.gz to a folder /home/(username)/scabi
 7. cd /home/(username)/scabi
 
 8. Start Meta Server, 
-	./start_meta.sh
+
+		./start_meta.sh
 
 9. Start Compute Servers,
-	./start_compute.sh 5001 localhost 5000 1000
-	./start_compute.sh 5002 localhost 5000 1000
+
+		./start_compute.sh 5001 localhost 5000 5
+		./start_compute.sh 5002 localhost 5000 5
 
    	To start Compute Servers in other machines and ports, enter command as below,
-	./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
+   	
+		./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
 	
 	To run Meta Server and Compute Server from Windows, use the .bat files,
-	start_meta.bat
-	start_compute.bat 5001 localhost 5000 1000
+	
+		start_meta.bat
+		start_compute.bat 5001 localhost 5000 5
 
 10. Run example code inside the examples folder in /home/[username]/scabi,
 
@@ -90,17 +102,19 @@ Please refer Scabi.pptx in Documentation folder to get started on using Scabi.
 
 **./start_meta.sh**
 
-Usage : 
-./start_meta.sh (No arguments) to use default settings, local host, port 5000, connect to local MongoDB server and port
+	Usage : 
+	
+	./start_meta.sh (No arguments) to use default settings, local host, port 5000, connect to local MongoDB server and port
 
-./start_meta.sh (MetaServer_Port) [debug]
+	./start_meta.sh (MetaServer_Port) [debug]
 
-./start_meta.sh (MetaServer_Port) (Database_HostName) (Database_Port) [debug]
+	./start_meta.sh (MetaServer_Port) (Database_HostName) (Database_Port) [debug]
 
 **./start_compute.sh**
 
-Usage : 
-./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
+	Usage : 
+	
+	./start_compute.sh (ComputeServer_Port) (MetaServer_HostName) (MetaServer_Port) [(NoOfThreads) [debug]]
 
 #### <i class="icon-file"></i> HOW TO QUICKLY BUILD SCABI USING MAVEN
 
@@ -111,7 +125,7 @@ Initial Setup
 3. Install Maven 3.0 or later
 4. Create folder /home/(username)/myworkspace 
 Replace **(username)** with your user name in all the steps.
-5. cd to /home/(username)/myworkspace folder
+5. cd /home/(username)/myworkspace folder
 6. In terminal window, from /home/(username)/myworkspace folder, run commands,
 
 		git clone https://www.github.com/dilshadmustafa/scabi.git
@@ -123,7 +137,7 @@ Replace **(username)** with your user name in all the steps.
 		/home/(username)/myworkspace/StorageHandler, 
 		/home/(username)/myworkspace/bigqueue
 		
-7. cd to /home/(username)/myworkspace/scabi folder.
+7. cd /home/(username)/myworkspace/scabi folder.
 8. In terminal window, from /home/(username)/myworkspace/scabi folder, run command,
 
 		mvn package
@@ -192,7 +206,7 @@ Initial Setup
 4. Install Eclipse Mars or later
 5. Create folder /home/(username)/myworkspace
 Replace **(username)** with your user name in all the steps.
-6. cd to /home/(username)/myworkspace folder
+6. cd /home/(username)/myworkspace folder
 7. In terminal window, from /home/(username)/myworkspace folder, run commands,
 
 		git clone https://www.github.com/dilshadmustafa/scabi.git
@@ -289,7 +303,7 @@ Replace **(username)** with your user name in all the steps.
 **Alternate method 2 - Generate Eclipse project using Maven**
 
 1. Do steps (1) to (7) as given above in "HOW TO QUICKLY BUILD SCABI USING ECLIPSE".
-2. cd to /home/(username)/myworkspace/scabi folder.
+2. cd /home/(username)/myworkspace/scabi folder.
 3. In terminal window, from /home/(username)/myworkspace/scabi folder, run command,
 		
 		mvn -npr eclipse:eclipse
