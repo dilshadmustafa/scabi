@@ -120,6 +120,30 @@ import com.dilmus.dilshad.scabi.common.DMJson;
  * @author Dilshad Mustafa
  *
  */
+
+/*
+ * There are three types of files created by DataPartition through the IStorageHandler interface:-
+ * 
+ * 1) WORM file - Write Once, Read Many file. This type of file is written only once.
+ * 
+ * 2) ARV file  - Any Read is Valid file. This type of file, whether with outdated/stale data, 
+ *                or out-of-order data, is still valid data.
+ * 
+ * 3) ARU file - Any Read is Useful file. This type of file is used only by the cleanup system and only in 
+ *                worst case scenario for best effort estimation. So any data provided by this file is useful.
+ * 
+ * Expected Consistency Level for CRUD operations:-
+ * 
+ * The following is Expected Consistency level for CRUD operations, expected in the IStorageHandler interface
+ * implementation:
+ *  
+ * Create - Read-After-Write Consistency (refer Amazon AWS S3)
+ * Read   - Eventual Consistency
+ * Update - Eventual Consistency
+ * Delete - Eventual Consistency
+ * 
+ */
+
 public class DataPartition implements Iterable<DataElement> {
 
 	private final Logger log = LoggerFactory.getLogger(DataPartition.class);
